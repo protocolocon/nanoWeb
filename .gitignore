@@ -1,2 +1,7 @@
 *~
 /build
+/build_debug_desktop
+/build_debug_web
+/build_release_desktop
+/build_release_web
+

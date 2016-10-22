@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8.12)
 
 # this is the CMake build script for the browser or desktop code
-option(NANO_BROWSER "Build for the Web (locally if deactivated)" ON)
+option(NANO_BROWSER "Build for the Web (for the desktop if OFF)" ON)
 
 # the less file formats activated the better (browser code will be smaller)
 option(CMAKE_BUILD_TYPE "Build type" "Release")
@@ -25,6 +25,7 @@ if(NANO_BROWSER)
       "Try following these instructions:\n"
       "https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html")
   endif()
+  # cannot make this work
   #set(CMAKE_TOOLCHAIN_FILE "$ENV{EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake")
   set(CMAKE_C_COMPILER emcc)
   set(CMAKE_CXX_COMPILER em++)
@@ -85,8 +86,10 @@ if(NANO_BROWSER)
   if(NANO_IOSTREAM)
     SET(FLAGS "${FLAGS} -DNANO_IOSTREAM")
   endif()
+  SET(TARGET_NAME "nanoWeb.js")
 else()
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lglfw -lGL")
+  SET(TARGET_NAME "nanoWeb")
 endif()
 set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS}")
@@ -98,8 +101,9 @@ message("EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
 include_directories(                                                                                                                                           |
   ${PROJECT_SOURCE_DIR}/submodules/nanovg/src)
 
-add_executable(nanoWeb.js
+add_executable(${TARGET_NAME}
   src/web/main.cc
-  src/web/render.cc src/web/render.h
-  src/web/definition_common.h
+  src/web/render.cc
+  src/web/application.cc
+  src/web/compatibility.cc
   submodules/nanovg/src/nanovg.c)

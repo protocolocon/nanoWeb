@@ -6,10 +6,12 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "definition_common.h"
 #include "render.h"
+#include "application.h"
+#include "compatibility.h"
+#include <cassert>
 
-IOS(using namespace std);
+using namespace std;
 
 namespace webui {
 
@@ -17,8 +19,8 @@ namespace webui {
     public:
         Context(): renderForced(true) {
             if (!render.init()) {
-                IOS(cout << "cannot initialize render" << endl);
-                abort();
+                cout << "cannot initialize render" << endl;
+                assert(false && "cannot initialize render");
             }
         }
 
@@ -27,9 +29,11 @@ namespace webui {
         }
 
         void mainIteration() {
+            if (!app.initialized()) app.init(RequestXHR::query("application"));
             if (renderForced) {
                 glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+                render.swapBuffers();
             }
         }
 
@@ -37,6 +41,7 @@ namespace webui {
 
     private:
         Render render;
+        Application app;
         bool renderForced;
     };
 
@@ -49,7 +54,7 @@ namespace webui {
     extern "C" {
         void javascriptCanvasResize(int width, int height) {
             ctx.forceRender();
-            IOS(cout << "canvas resize: " << width << ' ' << height << endl);
+            cout << "canvas resize: " << width << ' ' << height << endl;
             ctx.getRender().setWindowSize(width, height);
         }
     }
@@ -58,12 +63,6 @@ namespace webui {
 
 int main() {
     // main loop
-    EMS(emscripten_set_main_loop(webui::mainIteration, 0 /* fps */, true /* infinite loop*/));
-    DSK(while (true) {
-            webui::ctx.mainIteration();
-            webui::ctx.getRender().swapBuffers();
-            this_thread::sleep_for(chrono::milliseconds(10));
-        });
-
+    webui::setMainLoop(webui::mainIteration);
     return 0;
 }

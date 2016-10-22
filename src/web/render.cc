@@ -7,7 +7,8 @@
 */
 
 #include "render.h"
-#include "definition_common.h"
+#include "compatibility.h"
+
 #include "nanovg.h"
 #define NANOVG_GLES2_IMPLEMENTATION
 #include "nanovg_gl.h"
@@ -21,14 +22,14 @@ using namespace std;
 namespace webui {
 
     void errorCallback(int error, const char* description) {
-        IOS(cout << "error: glfw " << error << ": " << description << endl);
+        cout << "error: glfw " << error << ": " << description << endl;
     }
 
     bool Render::init() {
         // init glfw
         glfwSetErrorCallback(errorCallback);
         if (!glfwInit()) {
-            IOS(cout << "error: cannot init glfw" << endl);
+            cout << "error: cannot init glfw" << endl;
             return false;
         }
 
@@ -37,10 +38,10 @@ namespace webui {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-        int width(EMS(EM_ASM_INT_V(return canvas.width)) DSK(1024));
-        int height(EMS(EM_ASM_INT_V(return canvas.height)) DSK(800));
+        int width(defaultWidth()); //EMS(EM_ASM_INT_V(return canvas.width)) DSK(1024));
+        int height(defaultHeight()); //EMS(EM_ASM_INT_V(return canvas.height)) DSK(800));
         if (!(win = glfwCreateWindow(width, height, "NanoWeb", nullptr, nullptr))) {
-            IOS(cout << "error: cannot create glfw window" << endl);
+            cout << "error: cannot create glfw window" << endl;
             glfwTerminate();
             return false;
         }
@@ -50,7 +51,7 @@ namespace webui {
 
         // nanovg
         if (!(vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG))) {
-            IOS(cout << "Could not init nanovg.\n" << endl);
+            cout << "Could not init nanovg.\n" << endl;
             return false;
 	}
         setWindowSize(width, height);
@@ -74,7 +75,7 @@ namespace webui {
     bool Render::checkError() {
         GLuint error(glGetError());
         if (error != GL_NO_ERROR) {
-            IOS(cout << "GL error: " << error << endl);
+            cout << "GL error: " << error << endl;
             assert(false && "checkError sync on GL errors");
             return false;
         }
