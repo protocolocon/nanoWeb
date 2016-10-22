@@ -6,8 +6,8 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
+#include <cassert>
 #include <cstddef>
-#include <emscripten.h>
 
 using namespace std;
 
@@ -25,20 +25,16 @@ namespace webui {
         return EM_ASM_INT_V(return canvas.height);
     }
 
-
-    // class RequestXHR
-    RequestXHR::~RequestXHR() {
+    void log(const char* format, ...) {
     }
 
-    RequestXHR RequestXHR::query(const char* req) {
-        void* buffer;
-        int nBuffer, error;
-        emscripten_wget_data(req, &buffer, &nBuffer, &error);
-        if (error)  {
-            cout << "error in query: " << req << endl;
-            return RequestXHR(nullptr, 0);
-        }
-        return RequestXHR(reinterpret_cast<char*>(buffer), nBuffer);
+
+    // class RequestXHR
+    void RequestXHR::query(const char* req, const char* param) {
+        assert(status != Pending && "internal: XHR query in a pending request");
+        clear();
+        status = Pending;
+        emscripten_async_wget2_data(req, "GET", param, this, false, onLoadStatic, onErrorStatic, onProgressStatic);
     }
 
 }

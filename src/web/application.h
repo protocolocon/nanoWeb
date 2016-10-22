@@ -8,18 +8,18 @@
 
 #pragma once
 
-namespace webui {
+#include "compatibility.h"
 
-    class RequestXHR;
+namespace webui {
 
     class Application {
     public:
         Application();
-        bool initialized() const;
-        bool init(const RequestXHR& data);
+        void refresh();
 
     private:
-        bool status;
+        bool init;
+        RequestXHR xhr;
     };
 
 }

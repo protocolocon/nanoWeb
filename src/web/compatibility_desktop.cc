@@ -7,6 +7,7 @@
 */
 
 #include <thread>
+#include <cassert>
 
 using namespace std;
 
@@ -28,11 +29,11 @@ namespace webui {
     }
 
     // class RequestXHR
-    RequestXHR::~RequestXHR() {
-    }
-
-    RequestXHR RequestXHR::query(const char* req) {
-        return RequestXHR(nullptr, 0);
+    void RequestXHR::query(const char* req, const char* param) {
+        assert(status != Pending && "internal: XHR query in a pending request");
+        clear();
+        status = Pending;
+        // TODO
     }
 
 }

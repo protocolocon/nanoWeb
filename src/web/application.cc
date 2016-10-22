@@ -8,26 +8,29 @@
 
 #include "application.h"
 #include "json.h"
-#include "compatibility.h"
 
 using namespace std;
 
 namespace webui {
 
-    Application::Application(): status(false) {
+    Application::Application(): init(false) {
     }
 
-    bool Application::initialized() const {
-        return status;
-    }
+    void Application::refresh() {
+        if (!init) {
+            if (xhr.getStatus() == RequestXHR::Empty) xhr.query("application");
+            else if (xhr.getStatus() == RequestXHR::Ready) {
+                init = true;
 
-    bool Application::init(const RequestXHR& data) {
-        JSON val[100];
-        int n = jsonparse(data.getData(), val, sizeof(val) / sizeof(JSON));
-        cout << n << endl;
+                auto data(xhr.getData());
+                auto nData(xhr.getNData());
+                if (nData && data[nData-1] == '\n') data[nData-1] = 0; // zero-terminated
 
-        status = true;
-        return false;
+                JSON val[100];
+                int n = jsonparse(data, val, sizeof(val) / sizeof(JSON));
+                LOG("JSON: %d", n);
+            }
+        }
     }
 
 }

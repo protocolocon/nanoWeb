@@ -15,6 +15,14 @@
 #define GLFW_INCLUDE_ES2
 #include <GLFW/glfw3.h>
 
+// logging
+#ifdef __EMSCRIPTEN__
+#  include <emscripten.h>
+#  define LOG(msg, ...) emscripten_log(EM_LOG_CONSOLE, msg, ##__VA_ARGS__)
+#else
+#  define LOG(msg, ...) printf(msg "\n", ##__VA_ARGS__)
+#endif
+
 namespace webui {
 
     void setMainLoop(void (*loop)(void));
@@ -24,14 +32,29 @@ namespace webui {
     // XHR
     class RequestXHR {
     public:
+        RequestXHR();
         ~RequestXHR();
-        static RequestXHR query(const char* req);
+        void query(const char* req, const char* param = "");
+        void clear();
+
+        // status
+        enum Status { Empty, Pending, Ready, Error };
+
+        // getters
+        inline Status getStatus() const { return status; }
         inline char* getData() { return data; }
         inline const char* getData() const { return data; }
+        inline const int getNData() const { return nData; }
 
     private:
-        RequestXHR(char* data, int nData): data(data), nData(nData) { }
+        static void onLoadStatic(unsigned, void* ctx, void* buffer, unsigned nBuffer);
+        static void onErrorStatic(unsigned, void* ctx, int bytes, const char* msg);
+        static void onProgressStatic(unsigned, void* ctx, int bytes, int total);
+        void onLoad(char* buffer, int nBuffer);
+        void onError(int bytes, const char* msg);
+        void onProgress(int bytes, int total);
 
+        Status status;
         char* data;
         int nData;
     };

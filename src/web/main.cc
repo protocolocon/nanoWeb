@@ -29,8 +29,10 @@ namespace webui {
         }
 
         void mainIteration() {
-            if (!app.initialized()) app.init(RequestXHR::query("application"));
+            app.refresh();
             if (renderForced) {
+                renderForced = false;
+                LOG("render");
                 glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
                 render.swapBuffers();
