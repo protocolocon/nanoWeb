@@ -1,3 +1,6 @@
 [submodule "submodules/nanovg"]
 	path = submodules/nanovg
 	url = https://github.com/protocolocon/nanovg.git
+[submodule "submodules/nanosvg"]
+	path = submodules/nanosvg
+	url = https://github.com/protocolocon/nanosvg.git
