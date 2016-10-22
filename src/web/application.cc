@@ -7,7 +7,10 @@
 */
 
 #include "application.h"
+#include "json.h"
 #include "compatibility.h"
+
+using namespace std;
 
 namespace webui {
 
@@ -19,6 +22,10 @@ namespace webui {
     }
 
     bool Application::init(const RequestXHR& data) {
+        JSON val[100];
+        int n = jsonparse(data.getData(), val, sizeof(val) / sizeof(JSON));
+        cout << n << endl;
+
         status = true;
         return false;
     }

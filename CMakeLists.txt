@@ -92,13 +92,14 @@ else()
   SET(TARGET_NAME "nanoWeb")
 endif()
 set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS} -std=c++14")
 
 message("BUILD_TYPE:       ${CMAKE_BUILD_TYPE}")
 message("CXX_FLAGS:        ${CMAKE_CXX_FLAGS}")
 message("EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
 
 include_directories(                                                                                                                                           |
+  ${PROJECT_SOURCE_DIR}/submodules/json
   ${PROJECT_SOURCE_DIR}/submodules/nanovg/src)
 
 add_executable(${TARGET_NAME}
@@ -106,4 +107,5 @@ add_executable(${TARGET_NAME}
   src/web/render.cc
   src/web/application.cc
   src/web/compatibility.cc
+  submodules/json/json.c
   submodules/nanovg/src/nanovg.c)

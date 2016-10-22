@@ -26,6 +26,8 @@ namespace webui {
     public:
         ~RequestXHR();
         static RequestXHR query(const char* req);
+        inline char* getData() { return data; }
+        inline const char* getData() const { return data; }
 
     private:
         RequestXHR(char* data, int nData): data(data), nData(nData) { }
