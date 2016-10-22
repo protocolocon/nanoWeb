@@ -1,6 +1,6 @@
 #!/bin/bash
 
-generator=ninja
+generator=make
 
 # usage
 function usage {
