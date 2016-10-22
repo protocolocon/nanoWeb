@@ -14,8 +14,12 @@ namespace webui {
 
     class Application {
     public:
+        Application();
         bool initialized() const;
         bool init(const RequestXHR& data);
+
+    private:
+        bool status;
     };
 
 }

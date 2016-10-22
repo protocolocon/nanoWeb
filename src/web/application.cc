@@ -11,11 +11,15 @@
 
 namespace webui {
 
+    Application::Application(): status(false) {
+    }
+
     bool Application::initialized() const {
-        return false;
+        return status;
     }
 
     bool Application::init(const RequestXHR& data) {
+        status = true;
         return false;
     }
 
