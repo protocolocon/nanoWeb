@@ -13,7 +13,7 @@ using namespace std;
 
 namespace webui {
 
-    void setMainLoop(void (*loop)(void)) {
+    void setMainLoop(int argc, char** argv, void (*loop)(void)) {
         emscripten_set_main_loop(loop, 0 /* fps */, true /* infinite loop*/);
     }
 

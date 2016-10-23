@@ -63,8 +63,8 @@ namespace webui {
 
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     // main loop
-    webui::setMainLoop(webui::mainIteration);
+    webui::setMainLoop(argc, argv, webui::mainIteration);
     return 0;
 }

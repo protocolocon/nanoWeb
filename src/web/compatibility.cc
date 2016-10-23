@@ -44,6 +44,10 @@ namespace webui {
         reinterpret_cast<RequestXHR*>(ctx)->onProgress(bytes, total);
     }
 
+    size_t RequestXHR::onAddDataStatic(char* data, size_t size, size_t nmemb, RequestXHR* xhr) {
+        return xhr->onAddData(data, size, nmemb);
+    }
+
     void RequestXHR::onLoad(char* buffer, int nBuffer) {
         data = buffer;
         nData = nBuffer;

@@ -25,7 +25,7 @@
 
 namespace webui {
 
-    void setMainLoop(void (*loop)(void));
+    void setMainLoop(int argc, char** argv, void (*loop)(void));
     int defaultWidth();
     int defaultHeight();
 
@@ -51,9 +51,11 @@ namespace webui {
         static void onLoadStatic(unsigned, void* ctx, void* buffer, unsigned nBuffer);
         static void onErrorStatic(unsigned, void* ctx, int bytes, const char* msg);
         static void onProgressStatic(unsigned, void* ctx, int bytes, int total);
+        static size_t onAddDataStatic(char* data, size_t size, size_t nmemb, RequestXHR* xhr);
         void onLoad(char* buffer, int nBuffer);
         void onError(int bytes, const char* msg);
         void onProgress(int bytes, int total);
+        size_t onAddData(char* data, size_t size, size_t nmemb);
 
         Status status;
         char* data;
