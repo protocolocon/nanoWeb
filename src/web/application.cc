@@ -8,6 +8,7 @@
 
 #include "application.h"
 #include "json.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -17,20 +18,33 @@ namespace webui {
     }
 
     void Application::refresh() {
-        if (!init) {
-            if (xhr.getStatus() == RequestXHR::Empty) xhr.query("application");
-            else if (xhr.getStatus() == RequestXHR::Ready) {
-                init = true;
+        if (!init) initialize();
+    }
 
-                auto data(xhr.getData());
-                auto nData(xhr.getNData());
-                if (nData && data[nData-1] == '\n') data[nData-1] = 0; // zero-terminated
+    void Application::initialize() {
+        if (xhr.getStatus() == RequestXHR::Empty) xhr.query("application.json");
+        else if (xhr.getStatus() == RequestXHR::Ready) {
+            init = true;
+            xhr.makeCString();
 
-                JSON val[100];
-                int n = jsonparse(data, val, sizeof(val) / sizeof(JSON));
-                LOG("JSON: %d", n);
-            }
+            JSON json[16384];
+            int nJson = jsonparse(xhr.getData(), json, sizeof(json) / sizeof(JSON));
+            if (nJson) parseDescription(json, json + nJson); else LOG("failed parsing json: %s", xhr.getData());
+            xhr.clear();
         }
+    }
+
+    void Application::parseDescription(JSON* json, JSON* end) {
+        char orig(0);
+        do {
+            swap(*const_cast<char*>(json->end), orig);
+            LOG("Type: %c  Size: %d  Value: %s", *json->src, end - json, json->src);
+            swap(*const_cast<char*>(json->end), orig);
+            if (json + 1 < end && (json + 1)->parent == json) // children
+                parseDescription(json + 1, json->next ? json->next : end);
+            else if (json + 1 < end && (!json->next || json->next > json + 1)) // key value
+                parseDescription(json + 1, json->next ? json->next : end);
+        } while ((json = json->next) && json < end);
     }
 
 }

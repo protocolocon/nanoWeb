@@ -35,6 +35,7 @@ namespace webui {
         RequestXHR();
         ~RequestXHR();
         void query(const char* req, const char* param = "");
+        void makeCString();
         void clear();
 
         // status

@@ -10,6 +10,8 @@
 
 #include "compatibility.h"
 
+struct JSON;
+
 namespace webui {
 
     class Application {
@@ -18,6 +20,9 @@ namespace webui {
         void refresh();
 
     private:
+        void initialize();
+        void parseDescription(JSON* json, JSON* end);
+
         bool init;
         RequestXHR xhr;
     };

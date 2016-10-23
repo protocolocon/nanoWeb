@@ -59,4 +59,12 @@ namespace webui {
     void RequestXHR::onProgress(int bytes, int total) {
     }
 
+    void RequestXHR::makeCString() {
+        if (status == Ready && data && nData) {
+            // add zero at the end (required by JSON)
+            data = (char*)realloc(data, nData + 1);
+            data[nData] = 0;
+        }
+    }
+
 }
