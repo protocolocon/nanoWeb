@@ -124,14 +124,14 @@ message("BUILD_TYPE:       ${CMAKE_BUILD_TYPE}")
 message("CXX_FLAGS:        ${CMAKE_CXX_FLAGS}")
 message("EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
 
-include_directories(                                                                                                                                           |
-  ${PROJECT_SOURCE_DIR}/submodules/json
+include_directories(
   ${PROJECT_SOURCE_DIR}/submodules/nanovg/src)
 
 add_executable(${TARGET_NAME}
   src/web/main.cc
+  src/web/widget.cc
   src/web/render.cc
+  src/web/ml_parser.cc
   src/web/application.cc
   src/web/compatibility.cc
-  submodules/json/json.c
   submodules/nanovg/src/nanovg.c)

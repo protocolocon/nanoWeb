@@ -9,10 +9,14 @@
 #pragma once
 
 #include "compatibility.h"
+#include <string>
+#include <unordered_map>
 
 struct JSON;
 
 namespace webui {
+
+    class Widget;
 
     class Application {
     public:
@@ -21,10 +25,12 @@ namespace webui {
 
     private:
         void initialize();
-        void parseDescription(JSON* json, JSON* end);
 
         bool init;
         RequestXHR xhr;
+
+        Widget* root;
+        std::unordered_map<std::string, Widget*> widgets;
     };
 
 }

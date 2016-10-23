@@ -6,8 +6,7 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "render.h"
-#include "application.h"
+#include "main.h"
 #include "compatibility.h"
 #include <cassert>
 
@@ -15,37 +14,23 @@ using namespace std;
 
 namespace webui {
 
-    class Context {
-    public:
-        Context(): renderForced(true) {
-            if (!render.init()) {
-                cout << "cannot initialize render" << endl;
-                assert(false && "cannot initialize render");
-            }
+    Context::Context(): renderForced(true) {
+        if (!render.init()) {
+            LOG("cannot initialize render");
+            assert(false && "cannot initialize render");
         }
+    }
 
-        inline void forceRender() {
-            renderForced = true;
-        }
-
-        void mainIteration() {
-            app.refresh();
-            if (renderForced) {
-                renderForced = false;
-                LOG("render");
-                glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    void Context::mainIteration() {
+        app.refresh();
+        if (renderForced) {
+            renderForced = false;
+            LOG("render");
+            glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
                 render.swapBuffers();
-            }
         }
-
-        inline Render& getRender() { return render; }
-
-    private:
-        Render render;
-        Application app;
-        bool renderForced;
-    };
+    }
 
     Context ctx;
 
@@ -56,7 +41,7 @@ namespace webui {
     extern "C" {
         void javascriptCanvasResize(int width, int height) {
             ctx.forceRender();
-            cout << "canvas resize: " << width << ' ' << height << endl;
+            LOG("canvas resize %d x %d", width, height);
             ctx.getRender().setWindowSize(width, height);
         }
     }
