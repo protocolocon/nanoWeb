@@ -28,7 +28,8 @@ namespace webui {
             LOG("render");
             glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-                render.swapBuffers();
+            app.render();
+            render.swapBuffers();
         }
     }
 

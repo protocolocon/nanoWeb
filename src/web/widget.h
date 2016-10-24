@@ -6,6 +6,9 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
+#pragma once
+
+#include "vector.h"
 #include "compatibility.h"
 #include <vector>
 #include <string>
@@ -24,20 +27,26 @@ namespace webui {
         inline Widget* getParent() { return parent; }
         inline auto& getChildren() { return children; }
 
-        virtual void render(Context& ctx) { }
+        // polymorphic interface
+        virtual void render(Context& ctx);
+        virtual bool set(const std::string& param, const std::string& value); // returns true if set
 
         // getters
         inline const std::string& getId() const { return id; }
 
         // setters
         inline void setId(const std::string& id_) { id = id_; }
+        inline void setWidth(int w) { size[0] = w; }
+        inline void setHeight(int h) { size[1] = h; }
 
         // debug
         void dump(int level = 0) const;
 
-    private:
-        std::string id;
+    protected:
         Widget* parent;
+        V2i pos;
+        V2i size;
+        std::string id;
         std::vector<Widget*> children;
     };
 

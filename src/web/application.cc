@@ -10,6 +10,9 @@
 #include "main.h"
 #include "widget.h"
 #include "ml_parser.h"
+#include "widget_button.h"
+#include "widget_application.h"
+#include <cstdlib>
 #include <cassert>
 #include <algorithm>
 
@@ -33,6 +36,14 @@ namespace webui {
         for (auto& widget: widgets)
             delete widget.second;
         widgets.clear();
+    }
+
+    void Application::render() {
+        if (root) {
+            ctx.getRender().beginFrame();
+            root->render(ctx);
+            ctx.getRender().endFrame();
+        }
     }
 
     void Application::initialize() {
@@ -82,15 +93,9 @@ namespace webui {
                 }
                 widget->addChild(widgetChild);
             } else {
-                // key / value
-                auto val(entryVal.getSimpleValue(parser));
-                if (key == "id") {
-                    widget->setId(val);
-                } else if (key == "width") {
-                    LOG("key/Value: %s/%s", key.c_str(), val.c_str());
-                } else if (key == "height") {
-                    LOG("key/Value: %s/%s", key.c_str(), val.c_str());
-                }
+                auto value(entryVal.getSimpleValue(parser));
+                if (!widget->set(key, value))
+                    LOG("warning: unknwon attribute %s with value %s", key.c_str(), value.c_str());
             }
             iEntry = next;
         }
@@ -98,8 +103,8 @@ namespace webui {
     }
 
     Widget* Application::createWidget(const std::string& name, Widget* parent) {
-        if (name == "Application" || name == "Button")
-            return new Widget(parent);
+        /**/ if (name == "Application") return new WidgetApplication(parent);
+        else if (name == "Button")      return new WidgetButton(parent);
         return nullptr;
     }
 

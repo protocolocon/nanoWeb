@@ -134,4 +134,6 @@ add_executable(${TARGET_NAME}
   src/web/ml_parser.cc
   src/web/application.cc
   src/web/compatibility.cc
+  src/web/widget_button.cc
+  src/web/widget_application.cc
   submodules/nanovg/src/nanovg.c)

@@ -68,6 +68,14 @@ namespace webui {
         glViewport(0, 0, width, height);
     }
 
+    void Render::beginFrame() {
+        nvgBeginFrame(vg, windowSize[0], windowSize[1], 1.0f/*aspect ratio*/);
+    }
+
+    void Render::endFrame() {
+        nvgEndFrame(vg);
+    }
+
     void Render::swapBuffers() {
         glfwSwapBuffers(win);
     }

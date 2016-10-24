@@ -25,6 +25,9 @@ namespace webui {
         void refresh();
         void clear();
 
+        // render
+        void render();
+
         // debug
         void dump() const;
 

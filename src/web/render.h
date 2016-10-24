@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "vector.h"
+
 struct NVGcontext;
 struct GLFWwindow;
 
@@ -20,13 +22,20 @@ namespace webui {
         void setWindowSize(int width, int height);
         void swapBuffers();
         static bool checkError();
+
+        // nanovg
+        void beginFrame();
+        void endFrame();
+
+        // getters
         inline int getWidth() const { return windowSize[0]; }
         inline int getHeight() const { return windowSize[1]; }
+        inline NVGcontext* getVg() { return vg; }
 
     private:
         GLFWwindow* win;
         NVGcontext* vg;
-        int windowSize[2];
+        V2i windowSize;
     };
 
 }
