@@ -8,7 +8,9 @@
 
 #pragma once
 
+#include "compatibility.h"
 #include <string>
+#include <cstdlib>
 
 namespace webui {
 

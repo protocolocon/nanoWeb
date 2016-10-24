@@ -9,6 +9,7 @@
 #include "widget.h"
 #include "main.h"
 #include "nanovg.h"
+#include <cstdlib>
 
 using namespace std;
 
