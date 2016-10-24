@@ -12,25 +12,38 @@
 #include <string>
 #include <unordered_map>
 
-struct JSON;
-
 namespace webui {
 
     class Widget;
+    class Context;
+    class MLParser;
 
     class Application {
     public:
-        Application();
+        Application(Context& ctx);
+        ~Application();
         void refresh();
+        void clear();
+
+        // debug
+        void dump() const;
 
     private:
-        void initialize();
-
         bool init;
+        Context& ctx;
         RequestXHR xhr;
 
+        // widget tree and registration
         Widget* root;
         std::unordered_map<std::string, Widget*> widgets;
+
+        void initialize();
+        Widget* initializeConstruct(const MLParser& parser);
+        bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry);
+
+        // widget factory and registration
+        Widget* createWidget(const std::string& name, Widget* parent);
+        bool registerWidget(Widget* widget);
     };
 
 }

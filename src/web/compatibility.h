@@ -46,6 +46,7 @@ namespace webui {
         inline char* getData() { return data; }
         inline const char* getData() const { return data; }
         inline const int getNData() const { return nData; }
+        inline char operator[](int i) const { return data[i]; }
 
     private:
         static void onLoadStatic(unsigned, void* ctx, void* buffer, unsigned nBuffer);

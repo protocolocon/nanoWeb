@@ -10,4 +10,9 @@
 
 namespace webui {
 
+    void Widget::dump(int level) const {
+        LOG("%*s%s: -", level * 2, "", id.c_str());
+        for (const auto* child: children) child->dump(level + 1);
+    }
+
 }

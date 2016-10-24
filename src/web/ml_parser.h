@@ -14,10 +14,8 @@ namespace webui {
 
     class MLParser {
     public:
-        void parse(const char* ml, int n);
-
-        void dump() const;
-        void dumpTree() const;
+        // returns false on error
+        bool parse(const char* ml, int n);
 
         struct Entry {
             Entry(const char* pos = nullptr): pos(pos), next(0) { }
@@ -25,6 +23,12 @@ namespace webui {
             const char* pos;
             int next;
         };
+
+        inline int size() const { return entries.size(); }
+        inline const Entry& operator[](int i) const { return entries[i]; }
+
+        void dump() const;
+        void dumpTree() const;
 
     private:
         const char* mlOrig;

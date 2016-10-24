@@ -13,14 +13,15 @@ using namespace std;
 
 namespace webui {
 
-    void MLParser::parse(const char* ml, int n) {
+    bool MLParser::parse(const char* ml, int n) {
         mlOrig = ml;
         mlEnd = ml + n;
         line = 1;
         errorFlag = false;
         entries.clear();
         if (!parseLevel(ml))
-            error(ml, "trailing content");
+            return error(ml, "trailing content");
+        return true;
     }
 
     bool MLParser::parseLevel(const char*& ml) {
@@ -181,11 +182,9 @@ namespace webui {
     }
 
     void MLParser::dumpTreeRecur(int iEntry, int fEntry, int level) const {
-        //LOG("recur %d %d %d", iEntry, fEntry, level);
         while (iEntry < fEntry) {
             const auto& entry(entries[iEntry]);
             int next(entry.next ? entry.next : fEntry);
-            //LOG("iter: %d %d -> %d", iEntry, fEntry, next);
             if (next > iEntry + 1) // children
                 dumpTreeRecur(iEntry + 1, next, level + 1);
             else

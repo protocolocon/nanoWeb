@@ -14,7 +14,7 @@ using namespace std;
 
 namespace webui {
 
-    Context::Context(): renderForced(true) {
+    Context::Context(): app(*this), renderForced(true) {
         if (!render.init()) {
             LOG("cannot initialize render");
             assert(false && "cannot initialize render");
