@@ -9,11 +9,23 @@
 #include "widget_application.h"
 #include "nanovg.h"
 
+using namespace std;
+
 namespace webui {
 
     void WidgetApplication::render(Context& ctx) {
         LOG("app");
+        glClearColor(color.rf(), color.gf(), color.bf(), color.af());
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         for (auto* child: children) child->render(ctx);
+    }
+
+    bool WidgetApplication::set(const string& param, const string& value) {
+        if (!Widget::set(param, value)) {
+            /**/ if (param == "color") color = value;
+            else return false;
+        }
+        return true;
     }
 
 }

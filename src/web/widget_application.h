@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "types.h"
 #include "widget.h"
 
 namespace webui {
@@ -16,9 +17,13 @@ namespace webui {
 
     class WidgetApplication: public Widget {
     public:
-        inline WidgetApplication(Widget* parent = nullptr): Widget(parent) { }
+        inline WidgetApplication(Widget* parent = nullptr): Widget(parent), color(-1) { }
 
         virtual void render(Context& ctx) override;
+        virtual bool set(const std::string& param, const std::string& value) override;
+
+    protected:
+        RGBA color;
     };
 
 }
