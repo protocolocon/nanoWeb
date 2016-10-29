@@ -16,16 +16,20 @@ using namespace std;
 namespace webui {
 
     void Widget::render(Context& ctx) {
-        LOG("widget");
-        for (auto* child: children) child->render(ctx);
+        if (visible) {
+            LOG("widget");
+            for (auto* child: children) child->render(ctx);
+        }
     }
 
     bool Widget::layout(V2s posAvail, V2s sizeAvail, float time) {
-        curPos = posAvail;
-        curSize = sizeAvail;
-
         bool stable(true);
-        for (auto* child: children) stable &= child->layout(curPos, child->getSizeTarget(curSize), time);
+        if (visible) {
+            curPos = posAvail;
+            curSize = sizeAvail;
+
+            for (auto* child: children) stable &= child->layout(curPos, child->getSizeTarget(curSize), time);
+        }
         return stable;
     }
 
@@ -44,10 +48,35 @@ namespace webui {
             if ((hRelative = ss.first[ss.second - 1] == '%')) size.y = int(atof(ss.first) * 2.56f + 0.5f); else size.y = atoi(ss.first);
             return true;
         case Identifier::onEnter:
+        case Identifier::onLeave:
             return app.addAction(id, iEntry, actions);
         default:
             return false;
         }
+    }
+
+    bool Widget::update(Application& app, V2s cursor) {
+        if (!visible) return false;
+        bool recurse(false), executed(false);
+        if (cursor >= curPos && cursor < curPos + curSize) {
+            // inside
+            if (!inside) {
+                inside = 1;
+                executed = app.execute(app.getActionTable(actions).onEnter);
+            }
+            recurse = true;
+        } else {
+            // outside
+            if (inside) {
+                inside = 0;
+                executed = app.execute(app.getActionTable(actions).onLeave);
+                recurse = true;
+            }
+        }
+        if (recurse)
+            for (auto* child: children)
+                executed |= child->update(app, cursor);
+        return executed;
     }
 
     void Widget::dump(const StringManager& strMng, int level) const {

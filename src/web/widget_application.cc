@@ -9,12 +9,14 @@
 #include "widget_application.h"
 #include "nanovg.h"
 #include "application.h"
+#include <cassert>
 
 using namespace std;
 
 namespace webui {
 
     void WidgetApplication::render(Context& ctx) {
+        assert(visible);
         LOG("app");
         glClearColor(color.rf(), color.gf(), color.bf(), color.af());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);

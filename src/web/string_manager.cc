@@ -14,11 +14,14 @@ namespace webui {
 
     StringId StringManager::add(const char *str, int nStr) {
         if (!str) return -1;
-        int iIndex(searchNearestIndex(str));
-        if (iIndex < int(index.size()) && !strcmp(&doc[index[iIndex]], str)) return index[iIndex];
+        if (nStr < 0) nStr = strlen(str);
+        int iIndex(searchNearestIndex(str, nStr));
+        if (iIndex < int(index.size()) &&
+            !strncmp(&doc[index[iIndex]], str, nStr) &&
+            !doc[index[iIndex] + nStr])
+            return index[iIndex];
 
         // add string
-        if (nStr < 0) nStr = strlen(str);
         auto i(doc.size());
         doc.resize(doc.size() + nStr + 1);
         memcpy(&doc[i], str, nStr);
@@ -54,7 +57,9 @@ namespace webui {
 
     StringId StringManager::search(const char* str, int nStr) const {
         int ini(searchNearestIndex(str, nStr));
-        return (ini < int(index.size()) && !strncmp(&doc[index[ini]], str, nStr)) ? index[ini] : -1;
+        return (ini < int(index.size()) &&
+                !strncmp(&doc[index[ini]], str, nStr) &&
+                !doc[index[ini] + nStr]) ? index[ini] : -1;
     }
 
     StringId StringManager::searchPrefix(const char *str) const {

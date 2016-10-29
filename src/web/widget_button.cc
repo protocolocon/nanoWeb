@@ -15,15 +15,17 @@ using namespace std;
 namespace webui {
 
     void WidgetButton::render(Context& ctx) {
-        LOG("button");
-        auto vg(ctx.getRender().getVg());
+        if (visible) {
+            LOG("button");
+            auto vg(ctx.getRender().getVg());
 
-        nvgBeginPath(vg);
-        nvgRect(vg, curPos[0], curPos[1], curSize[0], curSize[1]);
-        nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), color.a()));
-        nvgFill(vg);
+            nvgBeginPath(vg);
+            nvgRect(vg, curPos[0], curPos[1], curSize[0], curSize[1]);
+            nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), color.a()));
+            nvgFill(vg);
 
-        for (auto* child: children) child->render(ctx);
+            for (auto* child: children) child->render(ctx);
+        }
     }
 
     bool WidgetButton::set(Application& app, Identifier id, int iEntry) {

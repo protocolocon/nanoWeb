@@ -21,7 +21,7 @@ using namespace std;
 
 namespace webui {
 
-    Application::Application(Context& ctx): init(false), ctx(ctx), actionTables(1) {
+    Application::Application(Context& ctx): init(false), ctx(ctx), actionTables(1), actionCommands(1, CommandLast) {
         addReservedWords(strMng);
     }
 
@@ -29,8 +29,15 @@ namespace webui {
         clear();
     }
 
-    void Application::refresh() {
+    void Application::refresh(V2s cursor) {
         if (!init) initialize();
+        else if (root) {
+            if (root->update(*this, cursor)) {
+                LOG("layout");
+                root->layout(V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()), -1.0f);
+                ctx.forceRender();
+            }
+        }
     }
 
     void Application::clear() {
@@ -149,8 +156,9 @@ namespace webui {
         }
         auto& table(actionTables[actions]);
         int* tableEntry;
-        switch (actionId) {
+        switch (actionId) { // get the table entry to add commands to
         case Identifier::onEnter: tableEntry = &table.onEnter; break;
+        case Identifier::onLeave: tableEntry = &table.onLeave; break;
         default: LOG("unknown action"); return false;
         }
         return addActionCommands(iEntry, *tableEntry);
@@ -169,8 +177,8 @@ namespace webui {
             if (parser[paramEntry].next == paramEntry + 1 || (!parser[paramEntry].next && parser.getLevelEnd(paramEntry) == paramEntry))
                 paramEntry = 0;
             switch (command) {
-            case Identifier::log:    ok &= addCommandLog(paramEntry); break;
-            case Identifier::toggle: ok &= addCommandToggle(paramEntry); break;
+            case Identifier::log:           ok &= addCommandGenericStrId(command, CommandLog, paramEntry); break;
+            case Identifier::toggleVisible: ok &= addCommandGenericStrId(command, CommandToggleVisible, paramEntry); break;
             default:
                 ss = entry.asStrSize(parser);
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
@@ -182,24 +190,60 @@ namespace webui {
         return ok;
     }
 
-    bool Application::addCommandLog(int iEntry) {
+    bool Application::addCommandGenericStrId(Identifier name, CommandId command, int iEntry) {
         if (!iEntry || parser[iEntry].next) {
-            LOG("log command requires one parameter");
+            LOG("%s command requires one parameter", strMng.get(StringId(int(name))));
             return false;
         }
-        actionCommands.push_back(CommandLog);
+        actionCommands.push_back(command);
         actionCommands.push_back(entryAsStrId(iEntry).getId());
         return true;
     }
 
-    bool Application::addCommandToggle(int iEntry) {
-        if (!iEntry || parser[iEntry].next) {
-            LOG("toggle command requires one parameter");
-            return false;
+    bool Application::executeInner(int commandList) {
+        bool cont(true), executed(false);
+        auto* command(&actionCommands[commandList]);
+        while (cont) {
+            switch (*command) {
+            case CommandLog:
+                LOG("%s", strMng.get(StringId(*++command)));
+                ++command;
+                break;
+            case CommandToggleVisible:
+                executed |= executeToggleVisible(StringId(*++command));
+                ++command;
+                break;
+            case CommandLast:
+                cont = false;
+                break;
+            }
         }
-        actionCommands.push_back(CommandToggle);
-        // TODO
-        return true;
+        return executed;
+    }
+
+    bool Application::executeToggleVisible(StringId widgetId_) {
+        const char* widgetId(strMng.get(widgetId_));
+        int len(strlen(widgetId));
+        bool toggled(false);
+        if (len) {
+            LOG("toggle visibility of %s", widgetId);
+            StringId first, last;
+            if (widgetId[len - 1] == '*') {
+                // match prefix
+                abort(); // TODO
+            } else {
+                // exact match
+                first = last = widgetId_;
+            }
+            LOG("toggle visibility of %s %s %d %d", strMng.get(first), strMng.get(last), first.getId(), last.getId());
+            for (auto& widget: widgets) {
+                if (widget.first >= first && widget.first <= last) {
+                    widget.second->toggleVisible();
+                    toggled = true;
+                }
+            }
+        }
+        return toggled;
     }
 
     void Application::dump() const {

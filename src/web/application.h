@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "vector.h"
 #include "ml_parser.h"
 #include "compatibility.h"
 #include "string_manager.h"
@@ -25,11 +26,15 @@ namespace webui {
     public:
         Application(Context& ctx);
         ~Application();
-        void refresh();
+
+        // wipes-out application definition
         void clear();
 
         // resize
         void resize(int width, int height);
+
+        // check if application status needs pdate
+        void refresh(V2s cursor);
 
         // render
         void render();
@@ -40,8 +45,15 @@ namespace webui {
         inline Identifier entryId(int idx) const { return parser[idx].asId(parser, strMng); }
         inline StringId entryAsStrId(int idx) { return parser[idx].asStrId(parser, strMng); }
 
-        // add action to widget
-        bool addAction(Identifier actionId, int iEntry, int& actions);
+        // actions
+        struct ActionTable {
+            inline ActionTable(): onEnter(0), onLeave(0) { }
+            int onEnter;
+            int onLeave;
+        };
+        bool addAction(Identifier actionId, int iEntry, int& actions); // add action to widget
+        inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
+        inline bool execute(int commandList) { return commandList ? executeInner(commandList) : false; } // true if commands executed
 
         // debug
         void dump() const;
@@ -53,14 +65,10 @@ namespace webui {
         MLParser parser;
         StringManager strMng;
 
-        // actions
-        struct ActionTable {
-            inline ActionTable(): onEnter(0) { }
-            int onEnter;
-        };
+        // commands
         enum CommandId {
             CommandLog,
-            CommandToggle,
+            CommandToggleVisible,
             CommandLast
         };
         std::vector<ActionTable> actionTables;
@@ -80,8 +88,10 @@ namespace webui {
 
         // actions
         bool addActionCommands(int iEntry, int& tableEntry);
-        bool addCommandLog(int iEntry);
+        bool addCommandGenericStrId(Identifier name, CommandId command, int iEntry);
         bool addCommandToggle(int iEntry);
+        bool executeInner(int commandList);
+        bool executeToggleVisible(StringId widgetId); // returns true if something toggled
     };
 
 }

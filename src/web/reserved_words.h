@@ -36,12 +36,13 @@ namespace webui {
         height           = OffsetEnum(width),
         color            = OffsetEnum(height),
         onEnter          = OffsetEnum(color),
-        ALast            = OffsetEnum(onEnter),
+        onLeave          = OffsetEnum(onEnter),
+        ALast            = OffsetEnum(onLeave),
 
         // commands
         log              = OffsetEnum(ALast),
-        toggle           = OffsetEnum(log),
-        CLast            = OffsetEnum(toggle),
+        toggleVisible    = OffsetEnum(log),
+        CLast            = OffsetEnum(toggleVisible),
     };
 
 }

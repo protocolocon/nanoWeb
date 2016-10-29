@@ -15,33 +15,41 @@ using namespace std;
 namespace webui {
 
     bool WidgetLayoutHor::layout(V2s posAvail, V2s sizeAvail, float time) {
-        curPos = posAvail;
-        curSize = sizeAvail;
-
-        // calculate sizes
-        bool resizable[children.size()];
-        int sizes[children.size()];
-        int resizables(0), total(0);
-        for (size_t idx = 0; idx < children.size(); idx++) {
-            resizable[idx] = children[idx]->isWidthRelative();
-            sizes[idx] = children[idx]->getWidthTarget(sizeAvail.x);
-            total += sizes[idx];
-            if (resizable[idx]) resizables += sizes[idx];
-        }
-        // reduce resizable widgets
-        if (total > sizeAvail.x) {
-            float ratio(float(sizeAvail.x - total + resizables) / float(resizables));
-            for (size_t idx = 0; idx < children.size(); idx++) {
-                if (resizable[idx])
-                    sizes[idx] = int(float(sizes[idx]) * ratio + 0.5f);
-            }
-        }
-        // position each widget
-        short pos(posAvail.x);
         bool stable(true);
-        for (size_t idx = 0; idx < children.size(); idx++) {
-            stable &= children[idx]->layout(V2s(pos, posAvail.y), V2s(sizes[idx], children[idx]->getHeightTarget(curSize.y)), time);
-            pos += sizes[idx];
+        if (visible) {
+            curPos = posAvail;
+            curSize = sizeAvail;
+
+            // calculate sizes
+            bool resizable[children.size()];
+            int sizes[children.size()];
+            int resizables(0), total(0);
+            for (size_t idx = 0; idx < children.size(); idx++) {
+                auto* child(children[idx]);
+                if (child->isVisible()) {
+                    resizable[idx] = child->isWidthRelative();
+                    sizes[idx] = child->getWidthTarget(sizeAvail.x);
+                    total += sizes[idx];
+                    if (resizable[idx]) resizables += sizes[idx];
+                } else {
+                    resizable[idx] = false;
+                    sizes[idx] = 0;
+                }
+            }
+            // reduce resizable widgets
+            if (total > sizeAvail.x) {
+                float ratio(float(sizeAvail.x - total + resizables) / float(resizables));
+                for (size_t idx = 0; idx < children.size(); idx++) {
+                    if (resizable[idx])
+                        sizes[idx] = int(float(sizes[idx]) * ratio + 0.5f);
+                }
+            }
+            // position each widget
+            short pos(posAvail.x);
+            for (size_t idx = 0; idx < children.size(); idx++) {
+                stable &= children[idx]->layout(V2s(pos, posAvail.y), V2s(sizes[idx], children[idx]->getHeightTarget(curSize.y)), time);
+                pos += sizes[idx];
+            }
         }
         return stable;
     }

@@ -76,6 +76,12 @@ namespace webui {
         nvgEndFrame(vg);
     }
 
+    V2s Render::getCursorPos() const {
+        double mx, my;
+        glfwGetCursorPos(win, &mx, &my);
+        return V2s(short(mx), short(my));
+    }
+
     void Render::swapBuffers() {
         glfwSwapBuffers(win);
     }

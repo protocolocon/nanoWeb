@@ -22,7 +22,7 @@ namespace webui {
     }
 
     void Context::mainIteration() {
-        app.refresh();
+        app.refresh(render.getCursorPos());
         if (renderForced) {
             renderForced = false;
             LOG("render");

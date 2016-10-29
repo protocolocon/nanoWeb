@@ -10,8 +10,9 @@ Application {
             color: "#ffc000"
             onEnter: [
                 log("enter"),
-                toggle(buttonTest2)
+                toggleVisible(buttonTest2)
             ]
+            onLeave: log("leave")
         }
         Button {
             id: buttonTest2

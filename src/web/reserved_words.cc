@@ -29,10 +29,11 @@ namespace webui {
         add(height);
         add(color);
         add(onEnter);
+        add(onLeave);
         add(ALast);
 
         add(log);
-        add(toggle);
+        add(toggleVisible);
         add(CLast);
     }
 

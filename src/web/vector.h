@@ -96,6 +96,14 @@ namespace webui {
             return !operator==(o);
         }
 
+        inline bool operator>=(const Vector& o) const {
+            return x >= o.x && y >= o.y;
+        }
+
+        inline bool operator<(const Vector& o) const {
+            return x < o.x && y < o.y;
+        }
+
         inline C operator[](int i) const {
             return v[i];
         }

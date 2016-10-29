@@ -31,11 +31,12 @@ namespace webui {
         inline int getWidth() const { return windowSize[0]; }
         inline int getHeight() const { return windowSize[1]; }
         inline NVGcontext* getVg() { return vg; }
+        V2s getCursorPos() const;
 
     private:
         GLFWwindow* win;
         NVGcontext* vg;
-        V2i windowSize;
+        V2s windowSize;
     };
 
 }
