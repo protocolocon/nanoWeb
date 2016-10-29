@@ -9,7 +9,8 @@ Application {
             height: 50%
             color: "#ffc000"
             onEnter: [
-                log("enter")
+                log("enter"),
+                toggle(buttonTest2)
             ]
         }
         Button {
@@ -17,6 +18,7 @@ Application {
             width: 128
             height: 70%
             color: "#00c080"
+            onEnter: log("enter 2")
         }
         Button {
             id: buttonTest3

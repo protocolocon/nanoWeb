@@ -44,16 +44,15 @@ namespace webui {
             if ((hRelative = ss.first[ss.second - 1] == '%')) size.y = int(atof(ss.first) * 2.56f + 0.5f); else size.y = atoi(ss.first);
             return true;
         case Identifier::onEnter:
-            // TODO
-            return true;
+            return app.addAction(id, iEntry, actions);
         default:
             return false;
         }
     }
 
     void Widget::dump(const StringManager& strMng, int level) const {
-        LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c)", level * 2, "", strMng.get(id),
-            curPos.x, curPos.y, curSize.x, curSize.y, size.x, wRelative ? '%' : ' ', size.y, hRelative ? '%' : ' ');
+        LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c) actions: %d", level * 2, "", strMng.get(id),
+            curPos.x, curPos.y, curSize.x, curSize.y, size.x, wRelative ? '%' : ' ', size.y, hRelative ? '%' : ' ', actions);
         for (const auto* child: children) child->dump(strMng, level + 1);
     }
 

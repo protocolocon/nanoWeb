@@ -31,6 +31,7 @@ namespace webui {
         inline void clear() { entries.clear(); }
         inline int size() const { return entries.size(); }
         inline const Entry& operator[](int i) const { return entries[i]; }
+        int getLevelEnd(int iEntry) const;
 
         void dump() const;
         void dumpTree() const;
@@ -48,7 +49,7 @@ namespace webui {
         bool parseLevel(const char*& ml);
         bool parseObject(const char*& ml);
         bool parseValue(const char*& ml);
-        bool parseList(const char*& ml);
+        bool parseList(const char*& ml, char expectedEndChar);
 
         // return true on EOF
         bool skipSpace(const char*& ml) const;

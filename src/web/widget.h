@@ -22,7 +22,7 @@ namespace webui {
 
     class Widget {
     public:
-        inline Widget(Widget* parent = nullptr): parent(parent), size(0x100, 0x100), wRelative(1), hRelative(1) { }
+        inline Widget(Widget* parent = nullptr): parent(parent), size(0x100, 0x100), wRelative(1), hRelative(1), actions(0) { }
         virtual ~Widget() { }
 
         // hierarchy
@@ -65,6 +65,7 @@ namespace webui {
         uint8_t hRelative:1;
         uint8_t reserved:6;
         uint8_t zoom;
+        int actions;
     };
 
 }

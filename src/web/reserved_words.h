@@ -28,14 +28,20 @@ namespace webui {
         Application      = 0,
         LayoutHor        = OffsetEnum(Application),
         Button           = OffsetEnum(LayoutHor),
-        WidgetLast       = OffsetEnum(Button),
+        WLast            = OffsetEnum(Button),
 
         // attributes
-        id               = OffsetEnum(Button),
+        id               = OffsetEnum(WLast),
         width            = OffsetEnum(id),
         height           = OffsetEnum(width),
         color            = OffsetEnum(height),
         onEnter          = OffsetEnum(color),
+        ALast            = OffsetEnum(onEnter),
+
+        // commands
+        log              = OffsetEnum(ALast),
+        toggle           = OffsetEnum(log),
+        CLast            = OffsetEnum(toggle),
     };
 
 }

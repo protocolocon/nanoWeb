@@ -76,18 +76,18 @@ namespace webui {
         return false;
     }
 
-    bool MLParser::parseList(const char*& ml) {
+    bool MLParser::parseList(const char*& ml, char expectedEndChar) {
         /* expecting:
            <value>[, <value>[, ...]]
         */
         if (skipSpace(ml)) return error(ml, "unsinished list");
-        if (*ml == ']') { ++ml; return false; }
+        if (*ml == expectedEndChar) { ++ml; return false; }
         int prev(-1);
         while (ml < mlEnd) {
             prev = newEntry(ml, prev);
             if (parseValue(ml) || errorFlag) return error(ml, "expecting value");
             if (skipSpace(ml)) return error(ml, "unfinished list");
-            if (*ml == ']') { ++ml; break; }
+            if (*ml == expectedEndChar) { ++ml; break; }
             if (*ml != ',') return error(ml, "expecting ',' to separate values");
             ++ml;
             if (skipSpace(ml)) return error(ml, "unfinished list");
@@ -102,10 +102,15 @@ namespace webui {
            " ... "
            <id>
         */
-        if (*ml == '[') { ++ml; return parseList(ml); }
+        if (*ml == '[') { ++ml; return parseList(ml, ']'); }
         else if (*ml == '{') { ++ml; return parseObject(ml); }
         else if (*ml == '"') return skipString(ml);
-        else if (isalnum(*ml)) return skipId(ml);
+        else if (isalnum(*ml)) {
+            if (skipId(ml)) return error(ml, "EOF parsing id");
+            if (skipSpace(ml)) return error(ml, "EOF skipping space");
+            if (*ml == '(') { ++ml; return parseList(ml, ')'); } // function parameters
+            return false;
+        }
         else return error(ml, "expecting value");
     }
 
@@ -117,7 +122,7 @@ namespace webui {
 
     bool MLParser::skipId(const char*& ml) const {
         while (ml < mlEnd) {
-            if (*ml == ':' || *ml == '{' || *ml == ',' || *ml == ']' || isspace(*ml)) return false;
+            if (*ml == ':' || *ml == '{' || *ml == '(' || *ml == ',' || *ml == ']' || *ml == ')' || isspace(*ml)) return false;
             ++ml;
         }
         return true;
@@ -173,6 +178,15 @@ namespace webui {
         return false;
     }
 
+    int MLParser::getLevelEnd(int iEntry) const {
+        int i(iEntry);
+        while (--i >= 0) {
+            const auto& entry(entries[i]);
+            if (entry.next > iEntry) return entry.next;
+        }
+        return int(entries.size());
+    }
+
     void MLParser::dump() const {
         char buffer[20];
         buffer[sizeof(buffer) - 1] = 0;
@@ -191,11 +205,15 @@ namespace webui {
         while (iEntry < fEntry) {
             const auto& entry(entries[iEntry]);
             int next(entry.next ? entry.next : fEntry);
-            if (next > iEntry + 1) // children
+            if (next > iEntry + 1) {// children
+                if (isalnum(*entry.pos)) {
+                    auto strSize(entry.asStrSize(*this));
+                    LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
+                }
                 dumpTreeRecur(iEntry + 1, next, level + 1);
-            else {
+            } else {
                 auto strSize(entry.asStrSize(*this));
-                LOG("%*s%.*s", level*2, "", strSize.second, strSize.first);
+                LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
             }
             iEntry = next;
         }
@@ -204,7 +222,10 @@ namespace webui {
     // Entry
     pair<const char*, int> MLParser::Entry::asStrSize(const MLParser& parser) const {
         auto ml(pos);
-        if (!parser.skipValue(ml)) return make_pair(pos, ml - pos);
+        if (!parser.skipValue(ml)) {
+            if (*pos == '"') return make_pair(pos + 1, ml - pos - 2);
+            return make_pair(pos, ml - pos);
+        }
         return make_pair(nullptr, 0);
     }
 
@@ -216,7 +237,10 @@ namespace webui {
 
     StringId MLParser::Entry::asStrId(const MLParser& parser, StringManager& strMng) const {
         auto ml(pos);
-        if (!parser.skipValue(ml)) return strMng.add(pos, ml - pos);
+        if (!parser.skipValue(ml)) {
+            if (*pos == '"') return strMng.add(pos + 1, ml - pos - 2);
+            return strMng.add(pos, ml - pos);
+        }
         return StringId();
     }
 

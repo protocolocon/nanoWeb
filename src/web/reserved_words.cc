@@ -22,11 +22,18 @@ namespace webui {
         add(Application);
         add(LayoutHor);
         add(Button);
+        add(WLast);
+
         add(id);
         add(width);
         add(height);
         add(color);
         add(onEnter);
+        add(ALast);
+
+        add(log);
+        add(toggle);
+        add(CLast);
     }
 
 }

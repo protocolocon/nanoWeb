@@ -40,6 +40,9 @@ namespace webui {
         inline Identifier entryId(int idx) const { return parser[idx].asId(parser, strMng); }
         inline StringId entryAsStrId(int idx) { return parser[idx].asStrId(parser, strMng); }
 
+        // add action to widget
+        bool addAction(Identifier actionId, int iEntry, int& actions);
+
         // debug
         void dump() const;
 
@@ -49,6 +52,19 @@ namespace webui {
         RequestXHR xhr;
         MLParser parser;
         StringManager strMng;
+
+        // actions
+        struct ActionTable {
+            inline ActionTable(): onEnter(0) { }
+            int onEnter;
+        };
+        enum CommandId {
+            CommandLog,
+            CommandToggle,
+            CommandLast
+        };
+        std::vector<ActionTable> actionTables;
+        std::vector<int> actionCommands;
 
         // widget tree and registration
         Widget* root;
@@ -61,6 +77,11 @@ namespace webui {
         // widget factory and registration
         Widget* createWidget(Identifier id, Widget* parent);
         bool registerWidget(Widget* widget);
+
+        // actions
+        bool addActionCommands(int iEntry, int& tableEntry);
+        bool addCommandLog(int iEntry);
+        bool addCommandToggle(int iEntry);
     };
 
 }
