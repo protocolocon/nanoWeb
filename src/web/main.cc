@@ -6,8 +6,8 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "main.h"
 #include "compatibility.h"
+#include "main.h"
 #include <cassert>
 
 using namespace std;
@@ -31,6 +31,13 @@ namespace webui {
         }
     }
 
+    void Context::resize(int width, int height) {
+        LOG("canvas resize %d x %d", width, height);
+        forceRender();
+        render.setWindowSize(width, height);
+        app.resize(width, height);
+    }
+
     Context ctx;
 
     inline void mainIteration() {
@@ -39,9 +46,7 @@ namespace webui {
 
     extern "C" {
         void javascriptCanvasResize(int width, int height) {
-            ctx.forceRender();
-            LOG("canvas resize %d x %d", width, height);
-            ctx.getRender().setWindowSize(width, height);
+            ctx.resize(width, height);
         }
     }
 

@@ -20,16 +20,28 @@ namespace webui {
         for (auto* child: children) child->render(ctx);
     }
 
+    bool Widget::layout(V2s posAvail, V2s sizeAvail, float time) {
+        curPos = posAvail;
+        curSize = sizeAvail;
+
+        bool stable(true);
+        for (auto* child: children) stable &= child->layout(curPos, child->getSizeTarget(curSize), time);
+        return stable;
+    }
+
     bool Widget::set(const string& param, const string& value) {
-        /**/ if (param == "id") id = value;
-        else if (param == "width") size[0] = atoi(value.c_str());
-        else if (param == "height") size[1] = atoi(value.c_str());
-        else return false;
+        if (param == "id") id = value;
+        else if (param == "width") {
+            if ((wRelative = value[value.size() - 1] == '%')) size.x = int(atof(value.c_str()) * 2.56f + 0.5f); else size.x = atoi(value.c_str());
+        } else if (param == "height") {
+            if ((hRelative = value[value.size() - 1] == '%')) size.y = int(atof(value.c_str()) * 2.56f + 0.5f); else size.y = atoi(value.c_str());
+        } else return false;
         return true;
     }
 
     void Widget::dump(int level) const {
-        LOG("%*s%s: -", level * 2, "", id.c_str());
+        LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c)", level * 2, "", id.c_str(),
+            curPos.x, curPos.y, curSize.x, curSize.y, size.x, wRelative ? '%' : ' ', size.y, hRelative ? '%' : ' ');
         for (const auto* child: children) child->dump(level + 1);
     }
 

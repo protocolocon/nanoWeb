@@ -8,13 +8,6 @@
 
 #pragma once
 
-// openGL includes
-#ifndef GL_GLEXT_PROTOTYPES
-#  define GL_GLEXT_PROTOTYPES
-#endif
-#define GLFW_INCLUDE_ES2
-#include <GLFW/glfw3.h>
-
 // logging
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
@@ -22,6 +15,13 @@
 #else
 #  define LOG(msg, ...) printf(msg "\n", ##__VA_ARGS__)
 #endif
+
+// openGL includes
+#ifndef GL_GLEXT_PROTOTYPES
+#  define GL_GLEXT_PROTOTYPES
+#endif
+#define GLFW_INCLUDE_ES2
+#include <GLFW/glfw3.h>
 
 namespace webui {
 
@@ -64,23 +64,3 @@ namespace webui {
     };
 
 }
-
-#if defined(NANO_IOSTREAM) || !defined(__EMSCRIPTEN__)
-#  include <iostream>
-#else
-
-// fake cout
-namespace std {
-
-    class ostream {
-    public:
-        template <typename T>
-        inline ostream& operator<<(const T&) { return *this; }
-    };
-
-    extern ostream cout;
-    extern char endl;
-
-}
-
-#endif

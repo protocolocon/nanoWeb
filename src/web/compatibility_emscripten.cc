@@ -38,11 +38,3 @@ namespace webui {
     }
 
 }
-
-// fake cout
-#if !defined(NANO_IOSTREAM)
-namespace std {
-    ostream cout;
-    char endl;
-}
-#endif

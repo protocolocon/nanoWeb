@@ -9,6 +9,7 @@
 #pragma once
 
 #include <limits>
+#include <algorithm>
 
 namespace webui {
 
@@ -103,6 +104,10 @@ namespace webui {
             return v[i];
         }
 
+        inline Vector min(const Vector& v) const {
+            return Vector(std::min(x, v.x), std::min(y, v.y));
+        }
+
         static inline bool close(C a, C b, C epsilon = std::numeric_limits<C>::epsilon()) {
             return a-b < epsilon && b-a < epsilon;
         }
@@ -113,6 +118,7 @@ namespace webui {
 
     };
 
+    using V2s = Vector<short>;
     using V2i = Vector<int>;
     using V2f = Vector<float>;
     using V2d = Vector<double>;

@@ -17,6 +17,8 @@ namespace webui {
 
         void mainIteration();
 
+        void resize(int width, int height);
+
         inline void forceRender() { renderForced = true; }
 
         inline Render& getRender() { return render; }

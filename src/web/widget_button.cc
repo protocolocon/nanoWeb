@@ -19,7 +19,7 @@ namespace webui {
         auto vg(ctx.getRender().getVg());
 
         nvgBeginPath(vg);
-        nvgRect(vg, pos[0], pos[1], size[0], size[1]);
+        nvgRect(vg, curPos[0], curPos[1], curSize[0], curSize[1]);
         nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), color.a()));
         nvgFill(vg);
 

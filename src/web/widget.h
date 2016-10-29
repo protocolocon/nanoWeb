@@ -19,7 +19,7 @@ namespace webui {
 
     class Widget {
     public:
-        inline Widget(Widget* parent = nullptr): parent(parent) { }
+        inline Widget(Widget* parent = nullptr): parent(parent), size(0x100, 0x100), wRelative(1), hRelative(1) { }
         virtual ~Widget() { }
 
         // hierarchy
@@ -29,10 +29,16 @@ namespace webui {
 
         // polymorphic interface
         virtual void render(Context& ctx);
+        virtual bool layout(V2s pos, V2s size, float time); // returns true if stable
         virtual bool set(const std::string& param, const std::string& value); // returns true if set
 
         // getters
         inline const std::string& getId() const { return id; }
+        inline int getWidthTarget(int width)   const { return wRelative ? (width  * int(size.x)) >> 8 : size.x; }
+        inline int getHeightTarget(int height) const { return hRelative ? (height * int(size.y)) >> 8 : size.y; }
+        inline V2s getSizeTarget(V2s size)     const { return V2s(getWidthTarget(size.x), getHeightTarget(size.y)); }
+        inline bool isWidthRelative()  const { return wRelative; }
+        inline bool isHeightRelative() const { return hRelative; }
 
         // setters
         inline void setId(const std::string& id_) { id = id_; }
@@ -43,11 +49,19 @@ namespace webui {
         void dump(int level = 0) const;
 
     protected:
+        // dynamic part
+        V2s curPos;         // absolute position
+        V2s curSize;
+
+        // static part
         Widget* parent;
-        V2i pos;
-        V2i size;
         std::string id;
         std::vector<Widget*> children;
+        V2s size;
+        uint8_t wRelative:1;
+        uint8_t hRelative:1;
+        uint8_t reserved:6;
+        uint8_t zoom;
     };
 
 }

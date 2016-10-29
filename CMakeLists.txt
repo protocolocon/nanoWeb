@@ -135,5 +135,6 @@ add_executable(${TARGET_NAME}
   src/web/application.cc
   src/web/compatibility.cc
   src/web/widget_button.cc
+  src/web/widget_layout_hor.cc
   src/web/widget_application.cc
   submodules/nanovg/src/nanovg.c)

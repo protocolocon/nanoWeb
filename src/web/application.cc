@@ -11,6 +11,7 @@
 #include "widget.h"
 #include "ml_parser.h"
 #include "widget_button.h"
+#include "widget_layout_hor.h"
 #include "widget_application.h"
 #include <cstdlib>
 #include <cassert>
@@ -38,6 +39,11 @@ namespace webui {
         widgets.clear();
     }
 
+    void Application::resize(int width, int height) {
+        if (root)
+            root->layout(V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()), -1.0f);
+    }
+
     void Application::render() {
         if (root) {
             ctx.getRender().beginFrame();
@@ -57,8 +63,10 @@ namespace webui {
                 xhr.makeCString();
                 LOG("cannot parse: %s", xhr.getData());
                 clear();
-            }
-            parser.dumpTree();
+            } else
+                resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
+
+            //parser.dumpTree();
             xhr.clear();
             ctx.forceRender();
             dump();
@@ -105,6 +113,7 @@ namespace webui {
     Widget* Application::createWidget(const std::string& name, Widget* parent) {
         /**/ if (name == "Application") return new WidgetApplication(parent);
         else if (name == "Button")      return new WidgetButton(parent);
+        else if (name == "LayoutHor")   return new WidgetLayoutHor(parent);
         return nullptr;
     }
 

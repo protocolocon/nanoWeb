@@ -25,6 +25,9 @@ namespace webui {
         void refresh();
         void clear();
 
+        // resize
+        void resize(int width, int height);
+
         // render
         void render();
 

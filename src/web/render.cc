@@ -22,14 +22,14 @@ using namespace std;
 namespace webui {
 
     void errorCallback(int error, const char* description) {
-        cout << "error: glfw " << error << ": " << description << endl;
+        LOG("error: glfw %d: %s", error, description);
     }
 
     bool Render::init() {
         // init glfw
         glfwSetErrorCallback(errorCallback);
         if (!glfwInit()) {
-            cout << "error: cannot init glfw" << endl;
+            LOG("error: cannot init glfw");
             return false;
         }
 
@@ -41,7 +41,7 @@ namespace webui {
         int width(defaultWidth()); //EMS(EM_ASM_INT_V(return canvas.width)) DSK(1024));
         int height(defaultHeight()); //EMS(EM_ASM_INT_V(return canvas.height)) DSK(800));
         if (!(win = glfwCreateWindow(width, height, "NanoWeb", nullptr, nullptr))) {
-            cout << "error: cannot create glfw window" << endl;
+            LOG("error: cannot create glfw window");
             glfwTerminate();
             return false;
         }
@@ -51,7 +51,7 @@ namespace webui {
 
         // nanovg
         if (!(vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG))) {
-            cout << "Could not init nanovg.\n" << endl;
+            LOG("Could not init nanovg");
             return false;
 	}
         setWindowSize(width, height);
@@ -83,7 +83,7 @@ namespace webui {
     bool Render::checkError() {
         GLuint error(glGetError());
         if (error != GL_NO_ERROR) {
-            cout << "GL error: " << error << endl;
+            LOG("GL error: %u", error);
             assert(false && "checkError sync on GL errors");
             return false;
         }
