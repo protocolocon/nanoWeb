@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "ml_parser.h"
 #include "compatibility.h"
 #include "string_manager.h"
 #include "reserved_words.h"
@@ -33,6 +34,12 @@ namespace webui {
         // render
         void render();
 
+        // get parsed entry
+        inline const MLParser::Entry& entry(int idx) const { return parser[idx]; }
+        inline std::pair<const char*, int> entryAsStrSize(int idx) const { return parser[idx].asStrSize(parser); }
+        inline Identifier entryId(int idx) const { return parser[idx].asId(parser, strMng); }
+        inline StringId entryAsStrId(int idx) { return parser[idx].asStrId(parser, strMng); }
+
         // debug
         void dump() const;
 
@@ -40,6 +47,7 @@ namespace webui {
         bool init;
         Context& ctx;
         RequestXHR xhr;
+        MLParser parser;
         StringManager strMng;
 
         // widget tree and registration

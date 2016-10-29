@@ -21,12 +21,14 @@ namespace webui {
 
         struct Entry {
             Entry(const char* pos = nullptr): pos(pos), next(0) { }
-            std::string getSimpleValue(const MLParser& parser) const; // string, id or number
-            Identifier getId(const MLParser& parser, const StringManager& strMng) const;
+            std::pair<const char*, int> asStrSize(const MLParser& parser) const;           // string, id or number
+            Identifier asId(const MLParser& parser, const StringManager& strMng) const;    // string, id or number
+            StringId asStrId(const MLParser& parser, StringManager& strMng) const;         // string, id or number
             const char* pos;
             int next;
         };
 
+        inline void clear() { entries.clear(); }
         inline int size() const { return entries.size(); }
         inline const Entry& operator[](int i) const { return entries[i]; }
 

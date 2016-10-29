@@ -26,10 +26,15 @@ namespace webui {
         for (auto* child: children) child->render(ctx);
     }
 
-    bool WidgetButton::set(Identifier id, StringManager& strMng, const string& value) {
-        if (!Widget::set(id, strMng, value)) {
-            /**/ if (id == Identifier::color) color = value;
-            else return false;
+    bool WidgetButton::set(Application& app, Identifier id, int iEntry) {
+        if (!Widget::set(app, id, iEntry)) {
+            switch (id) {
+            case Identifier::color:
+                color = app.entry(iEntry).pos;
+                return true;
+            default:
+                return false;
+            }
         }
         return true;
     }

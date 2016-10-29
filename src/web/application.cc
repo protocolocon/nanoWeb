@@ -9,7 +9,6 @@
 #include "application.h"
 #include "main.h"
 #include "widget.h"
-#include "ml_parser.h"
 #include "widget_button.h"
 #include "reserved_words.h"
 #include "widget_layout_hor.h"
@@ -60,13 +59,13 @@ namespace webui {
             init = true;
 
             assert(!root);
-            MLParser parser;
             if (!parser.parse(xhr.getData(), xhr.getNData()) || !(root = initializeConstruct(parser))) {
                 xhr.makeCString();
                 LOG("cannot parse: %s", xhr.getData());
                 clear();
             } else
                 resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
+            parser.clear();
 
             //parser.dumpTree();
             xhr.clear();
@@ -77,7 +76,7 @@ namespace webui {
 
     Widget* Application::initializeConstruct(const MLParser& parser) {
         if (parser.size() > 1 && parser[0].next == 1 && parser[1].next == 0 && *parser[1].pos == '{') {
-            auto* widget(createWidget(parser[0].getId(parser, strMng), nullptr));
+            auto* widget(createWidget(parser[0].asId(parser, strMng), nullptr));
             if (widget && initializeConstruct(parser, widget, 2, parser.size()) && registerWidget(widget))
                 return widget;
             delete widget;
@@ -93,8 +92,11 @@ namespace webui {
             assert(iEntry + 1 < fEntry && entryKey.next == iEntry + 1);
             const auto& entryVal(parser[iEntry + 1]);
             // key and next after value
-            auto key(entryKey.getId(parser, strMng));
-            if (key == Identifier::InvalidId) LOG("error: invalid identifier {%s}", entryKey.getSimpleValue(parser).c_str());
+            auto key(entryKey.asId(parser, strMng));
+            if (key == Identifier::InvalidId) {
+                auto ss(entryKey.asStrSize(parser));
+                LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
+            }
             int next(entryVal.next ? entryVal.next : fEntry);
             if (key < Identifier::WidgetLast && (widgetChild = createWidget(key, widget/*parent*/))) {
                 // child widget
@@ -104,9 +106,10 @@ namespace webui {
                 }
                 widget->addChild(widgetChild);
             } else {
-                auto value(entryVal.getSimpleValue(parser));
-                if (!widget->set(key, strMng, value))
-                    LOG("warning: unknwon attribute %s with value %s", strMng.get(StringId(int(key))), value.c_str());
+                if (!widget->set(*this, key, iEntry + 1)) {
+                    auto ss(entryVal.asStrSize(parser));
+                    LOG("warning: unknwon attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
+                }
             }
             iEntry = next;
         }
@@ -114,10 +117,12 @@ namespace webui {
     }
 
     Widget* Application::createWidget(Identifier id, Widget* parent) {
-        /**/ if (id == Identifier::Application) return new WidgetApplication(parent);
-        else if (id == Identifier::Button)      return new WidgetButton(parent);
-        else if (id == Identifier::LayoutHor)   return new WidgetLayoutHor(parent);
-        return nullptr;
+        switch (id) {
+        case Identifier::Application: return new WidgetApplication(parent);
+        case Identifier::Button:      return new WidgetButton(parent);
+        case Identifier::LayoutHor:   return new WidgetLayoutHor(parent);
+        default:                      return nullptr;
+        }
     }
 
     bool Application::registerWidget(Widget* widget) {

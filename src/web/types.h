@@ -18,8 +18,10 @@ namespace webui {
     public:
         RGBA(): c(0) { }
         RGBA(uint32_t c): c(c) { }
-        RGBA(const std::string& str): c(strtol(str.c_str() + 2/*skip '"#' */, nullptr, 16)) {
-            if (str.size() - 3 == 6) c = c << 8 | 0xff; // alpha
+        RGBA(const char* str) {
+            char* end;
+            c = strtol(str + 2/*skip '"#' */, &end, 16);
+            if (end - str - 2 == 6) c = c << 8 | 0xff; // alpha
         }
 
         inline uint8_t r() const { return  c >> 24; }

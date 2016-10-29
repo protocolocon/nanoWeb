@@ -29,14 +29,26 @@ namespace webui {
         return stable;
     }
 
-    bool Widget::set(Identifier id, StringManager& strMng, const string& value) {
-        if (id == Identifier::id) this->id = strMng.add(value.data(), value.size());
-        else if (id == Identifier::width) {
-            if ((wRelative = value[value.size() - 1] == '%')) size.x = int(atof(value.c_str()) * 2.56f + 0.5f); else size.x = atoi(value.c_str());
-        } else if (id == Identifier::height) {
-            if ((hRelative = value[value.size() - 1] == '%')) size.y = int(atof(value.c_str()) * 2.56f + 0.5f); else size.y = atoi(value.c_str());
-        } else return false;
-        return true;
+    bool Widget::set(Application& app, Identifier id, int iEntry) {
+        pair<const char*, int> ss;
+        switch (id) {
+        case Identifier::id:
+            this->id = app.entryAsStrId(iEntry);
+            return true;
+        case Identifier::width:
+            ss = app.entryAsStrSize(iEntry);
+            if ((wRelative = ss.first[ss.second - 1] == '%')) size.x = int(atof(ss.first) * 2.56f + 0.5f); else size.x = atoi(ss.first);
+            return true;
+        case Identifier::height:
+            ss = app.entryAsStrSize(iEntry);
+            if ((hRelative = ss.first[ss.second - 1] == '%')) size.y = int(atof(ss.first) * 2.56f + 0.5f); else size.y = atoi(ss.first);
+            return true;
+        case Identifier::onEnter:
+            // TODO
+            return true;
+        default:
+            return false;
+        }
     }
 
     void Widget::dump(const StringManager& strMng, int level) const {

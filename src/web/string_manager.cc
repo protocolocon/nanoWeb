@@ -21,7 +21,8 @@ namespace webui {
         if (nStr < 0) nStr = strlen(str);
         auto i(doc.size());
         doc.resize(doc.size() + nStr + 1);
-        memcpy(&doc[i], str, nStr + 1);
+        memcpy(&doc[i], str, nStr);
+        doc[i + nStr] = 0;
 
         // add index
         index.insert(index.begin() + iIndex, i);

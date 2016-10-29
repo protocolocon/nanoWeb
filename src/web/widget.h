@@ -18,6 +18,7 @@
 namespace webui {
 
     class Context;
+    class Application;
 
     class Widget {
     public:
@@ -32,7 +33,7 @@ namespace webui {
         // polymorphic interface
         virtual void render(Context& ctx);
         virtual bool layout(V2s pos, V2s size, float time); // returns true if stable
-        virtual bool set(Identifier id, StringManager& strMng, const std::string& value); // returns true if set
+        virtual bool set(Application& app, Identifier id, int iEntryValue); // returns true if set
 
         // getters
         inline const StringId getId() const { return id; }

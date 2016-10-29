@@ -18,7 +18,7 @@ namespace webui {
         mlEnd = ml + n;
         line = 1;
         errorFlag = false;
-        entries.clear();
+        clear();
         if (!parseLevel(ml))
             return error(ml, "trailing content");
         return true;
@@ -193,23 +193,31 @@ namespace webui {
             int next(entry.next ? entry.next : fEntry);
             if (next > iEntry + 1) // children
                 dumpTreeRecur(iEntry + 1, next, level + 1);
-            else
-                LOG("%*s%s", level*2, "", entry.getSimpleValue(*this).c_str());
+            else {
+                auto strSize(entry.asStrSize(*this));
+                LOG("%*s%.*s", level*2, "", strSize.second, strSize.first);
+            }
             iEntry = next;
         }
     }
 
     // Entry
-    string MLParser::Entry::getSimpleValue(const MLParser& parser) const {
+    pair<const char*, int> MLParser::Entry::asStrSize(const MLParser& parser) const {
         auto ml(pos);
-        if (!parser.skipValue(ml)) return string(pos, ml - pos);
-        return "";
+        if (!parser.skipValue(ml)) return make_pair(pos, ml - pos);
+        return make_pair(nullptr, 0);
     }
 
-    Identifier MLParser::Entry::getId(const MLParser& parser, const StringManager& strMng) const {
+    Identifier MLParser::Entry::asId(const MLParser& parser, const StringManager& strMng) const {
         auto ml(pos);
         if (!parser.skipValue(ml)) return Identifier(strMng.search(pos, ml - pos).getId());
         return Identifier::InvalidId;
+    }
+
+    StringId MLParser::Entry::asStrId(const MLParser& parser, StringManager& strMng) const {
+        auto ml(pos);
+        if (!parser.skipValue(ml)) return strMng.add(pos, ml - pos);
+        return StringId();
     }
 
 }
