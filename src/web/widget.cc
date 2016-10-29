@@ -29,11 +29,11 @@ namespace webui {
         return stable;
     }
 
-    bool Widget::set(const string& param, const string& value) {
-        if (param == "id") id = value;
-        else if (param == "width") {
+    bool Widget::set(Identifier id, const string& value) {
+        if (id == Identifier::id) this->id = value;
+        else if (id == Identifier::width) {
             if ((wRelative = value[value.size() - 1] == '%')) size.x = int(atof(value.c_str()) * 2.56f + 0.5f); else size.x = atoi(value.c_str());
-        } else if (param == "height") {
+        } else if (id == Identifier::height) {
             if ((hRelative = value[value.size() - 1] == '%')) size.y = int(atof(value.c_str()) * 2.56f + 0.5f); else size.y = atoi(value.c_str());
         } else return false;
         return true;

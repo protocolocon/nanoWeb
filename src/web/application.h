@@ -9,6 +9,8 @@
 #pragma once
 
 #include "compatibility.h"
+#include "string_manager.h"
+#include "reserved_words.h"
 #include <string>
 #include <unordered_map>
 
@@ -38,6 +40,7 @@ namespace webui {
         bool init;
         Context& ctx;
         RequestXHR xhr;
+        StringManager strMng;
 
         // widget tree and registration
         Widget* root;
@@ -48,7 +51,7 @@ namespace webui {
         bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry);
 
         // widget factory and registration
-        Widget* createWidget(const std::string& name, Widget* parent);
+        Widget* createWidget(Identifier id, Widget* parent);
         bool registerWidget(Widget* widget);
     };
 

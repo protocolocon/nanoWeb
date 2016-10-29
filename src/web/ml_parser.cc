@@ -151,6 +151,12 @@ namespace webui {
         return true;
     }
 
+    bool MLParser::skipValue(const char*& ml) const {
+        if (*ml == '"') return skipString(ml);
+        else if (isalnum(*ml)) return skipId(ml);
+        return false;
+    }
+
     bool MLParser::error(const char* ml, const char* msg) {
         errorFlag = true;
         LOG("error parsing ML: %s at line %d (document position %d)", msg, line, ml - mlOrig);
@@ -173,7 +179,7 @@ namespace webui {
         for (const auto& entry: entries) {
             for (int i = 0; i < sizeof(buffer) - 1; i++)
                 buffer[i] = (entry.pos + i < mlEnd && entry.pos[i] >= 32) ? entry.pos[i] : '.';
-            LOG("%4d |%s| %4d", &entry - entries.data(), buffer, entry.next);
+            LOG("%4ld |%s| %4d", &entry - entries.data(), buffer, entry.next);
         }
     }
 
@@ -196,10 +202,14 @@ namespace webui {
     // Entry
     string MLParser::Entry::getSimpleValue(const MLParser& parser) const {
         auto ml(pos);
-        if (*ml == '"') parser.skipString(ml);
-        else if (isalnum(*ml)) parser.skipId(ml);
-        else return "";
-        return string(pos, ml - pos);
+        if (!parser.skipValue(ml)) return string(pos, ml - pos);
+        return "";
+    }
+
+    Identifier MLParser::Entry::getId(const MLParser& parser, const StringManager& strMng) const {
+        auto ml(pos);
+        if (!parser.skipValue(ml)) return Identifier(strMng.search(pos, ml - pos).getId());
+        return Identifier::InvalidId;
     }
 
 }

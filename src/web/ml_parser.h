@@ -7,6 +7,8 @@
 */
 
 #include "compatibility.h"
+#include "string_manager.h"
+#include "reserved_words.h"
 #include <vector>
 #include <string>
 
@@ -20,6 +22,7 @@ namespace webui {
         struct Entry {
             Entry(const char* pos = nullptr): pos(pos), next(0) { }
             std::string getSimpleValue(const MLParser& parser) const; // string, id or number
+            Identifier getId(const MLParser& parser, const StringManager& strMng) const;
             const char* pos;
             int next;
         };
@@ -50,6 +53,7 @@ namespace webui {
         bool skipLine(const char*& ml) const;
         bool skipId(const char*& ml) const;
         bool skipString(const char*& ml) const;
+        bool skipValue(const char*& ml) const;
 
         // returns false
         bool error(const char* ml, const char* msg);

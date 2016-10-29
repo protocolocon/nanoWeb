@@ -20,9 +20,9 @@ namespace webui {
         for (auto* child: children) child->render(ctx);
     }
 
-    bool WidgetApplication::set(const string& param, const string& value) {
-        if (!Widget::set(param, value)) {
-            /**/ if (param == "color") color = value;
+    bool WidgetApplication::set(Identifier id, const string& value) {
+        if (!Widget::set(id, value)) {
+            /**/ if (id == Identifier::color) color = value;
             else return false;
         }
         return true;

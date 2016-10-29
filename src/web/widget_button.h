@@ -20,7 +20,7 @@ namespace webui {
         inline WidgetButton(Widget* parent = nullptr): Widget(parent) { }
 
         virtual void render(Context& ctx) override;
-        virtual bool set(const std::string& param, const std::string& value) override;
+        virtual bool set(Identifier id, const std::string& value) override;
 
     protected:
         RGBA color;

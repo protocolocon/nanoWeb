@@ -10,6 +10,7 @@
 
 #include "vector.h"
 #include "compatibility.h"
+#include "reserved_words.h"
 #include <vector>
 #include <string>
 
@@ -30,7 +31,7 @@ namespace webui {
         // polymorphic interface
         virtual void render(Context& ctx);
         virtual bool layout(V2s pos, V2s size, float time); // returns true if stable
-        virtual bool set(const std::string& param, const std::string& value); // returns true if set
+        virtual bool set(Identifier id, const std::string& value); // returns true if set
 
         // getters
         inline const std::string& getId() const { return id; }

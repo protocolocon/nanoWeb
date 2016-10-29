@@ -11,6 +11,7 @@
 #include "widget.h"
 #include "ml_parser.h"
 #include "widget_button.h"
+#include "reserved_words.h"
 #include "widget_layout_hor.h"
 #include "widget_application.h"
 #include <cstdlib>
@@ -22,6 +23,7 @@ using namespace std;
 namespace webui {
 
     Application::Application(Context& ctx): init(false), ctx(ctx) {
+        addReservedWords(strMng);
     }
 
     Application::~Application() {
@@ -75,8 +77,8 @@ namespace webui {
 
     Widget* Application::initializeConstruct(const MLParser& parser) {
         if (parser.size() > 1 && parser[0].next == 1 && parser[1].next == 0 && *parser[1].pos == '{') {
-            auto* widget(createWidget(parser[0].getSimpleValue(parser), nullptr));
-            if (initializeConstruct(parser, widget, 2, parser.size()) && registerWidget(widget))
+            auto* widget(createWidget(parser[0].getId(parser, strMng), nullptr));
+            if (widget && initializeConstruct(parser, widget, 2, parser.size()) && registerWidget(widget))
                 return widget;
             delete widget;
         }
@@ -91,7 +93,8 @@ namespace webui {
             assert(iEntry + 1 < fEntry && entryKey.next == iEntry + 1);
             const auto& entryVal(parser[iEntry + 1]);
             // key and next after value
-            auto key(entryKey.getSimpleValue(parser));
+            auto key(entryKey.getId(parser, strMng));
+            if (key == Identifier::InvalidId) LOG("error: invalid identifier {%s}", entryKey.getSimpleValue(parser).c_str());
             int next(entryVal.next ? entryVal.next : fEntry);
             if ((widgetChild = createWidget(key, widget/*parent*/))) {
                 // child widget
@@ -103,17 +106,17 @@ namespace webui {
             } else {
                 auto value(entryVal.getSimpleValue(parser));
                 if (!widget->set(key, value))
-                    LOG("warning: unknwon attribute %s with value %s", key.c_str(), value.c_str());
+                    LOG("warning: unknwon attribute %s with value %s", strMng.get(StringId(int(key))), value.c_str());
             }
             iEntry = next;
         }
         return true;
     }
 
-    Widget* Application::createWidget(const std::string& name, Widget* parent) {
-        /**/ if (name == "Application") return new WidgetApplication(parent);
-        else if (name == "Button")      return new WidgetButton(parent);
-        else if (name == "LayoutHor")   return new WidgetLayoutHor(parent);
+    Widget* Application::createWidget(Identifier id, Widget* parent) {
+        /**/ if (id == Identifier::Application) return new WidgetApplication(parent);
+        else if (id == Identifier::Button)      return new WidgetButton(parent);
+        else if (id == Identifier::LayoutHor)   return new WidgetLayoutHor(parent);
         return nullptr;
     }
 

@@ -13,6 +13,7 @@
 #  include <emscripten.h>
 #  define LOG(msg, ...) emscripten_log(EM_LOG_CONSOLE, msg, ##__VA_ARGS__)
 #else
+#  include <cstdio>
 #  define LOG(msg, ...) printf(msg "\n", ##__VA_ARGS__)
 #endif
 
