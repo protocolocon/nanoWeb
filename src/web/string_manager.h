@@ -18,6 +18,8 @@ namespace webui {
         StringId(int id): id(id) { }
         inline int getId() const { return id; }
         inline bool valid() const { return id >= 0; }
+        inline std::size_t operator()(StringId id) const { return id.getId(); }
+        inline bool operator==(StringId rhs) const { return id == rhs.id; }
 
     private:
         int id;

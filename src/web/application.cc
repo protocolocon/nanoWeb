@@ -96,7 +96,7 @@ namespace webui {
             auto key(entryKey.getId(parser, strMng));
             if (key == Identifier::InvalidId) LOG("error: invalid identifier {%s}", entryKey.getSimpleValue(parser).c_str());
             int next(entryVal.next ? entryVal.next : fEntry);
-            if ((widgetChild = createWidget(key, widget/*parent*/))) {
+            if (key < Identifier::WidgetLast && (widgetChild = createWidget(key, widget/*parent*/))) {
                 // child widget
                 if (!initializeConstruct(parser, widgetChild, iEntry + 2, next) || !registerWidget(widgetChild)) {
                     delete widgetChild;
@@ -105,7 +105,7 @@ namespace webui {
                 widget->addChild(widgetChild);
             } else {
                 auto value(entryVal.getSimpleValue(parser));
-                if (!widget->set(key, value))
+                if (!widget->set(key, strMng, value))
                     LOG("warning: unknwon attribute %s with value %s", strMng.get(StringId(int(key))), value.c_str());
             }
             iEntry = next;
@@ -121,16 +121,16 @@ namespace webui {
     }
 
     bool Application::registerWidget(Widget* widget) {
-        if (widget->getId().empty()) {
+        if (!widget->getId().valid()) {
             // set an internal id
             static int id(0);
             char buffer[16];
             int nBuffer(snprintf(buffer, sizeof(buffer), "@%x", id++));
-            widget->setId(string(buffer, nBuffer));
+            widget->setId(strMng.add(buffer, nBuffer));
         }
         const auto& id(widget->getId());
         if (widgets.count(id)) {
-            LOG("repeated widget id: %s", id.c_str());
+            LOG("repeated widget id: %s", strMng.get(id));
             return false;
         }
         widgets[id] = widget;
@@ -140,11 +140,11 @@ namespace webui {
     void Application::dump() const {
         if (root) {
             LOG("Application tree");
-            root->dump();
+            root->dump(strMng);
         }
         LOG("Registered widgets:");
         for (const auto& widget: widgets)
-            LOG("  %s", widget.first.c_str());
+            LOG("  %s", strMng.get(widget.first));
     }
 
 }

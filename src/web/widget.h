@@ -10,6 +10,7 @@
 
 #include "vector.h"
 #include "compatibility.h"
+#include "string_manager.h"
 #include "reserved_words.h"
 #include <vector>
 #include <string>
@@ -31,10 +32,10 @@ namespace webui {
         // polymorphic interface
         virtual void render(Context& ctx);
         virtual bool layout(V2s pos, V2s size, float time); // returns true if stable
-        virtual bool set(Identifier id, const std::string& value); // returns true if set
+        virtual bool set(Identifier id, StringManager& strMng, const std::string& value); // returns true if set
 
         // getters
-        inline const std::string& getId() const { return id; }
+        inline const StringId getId() const { return id; }
         inline int getWidthTarget(int width)   const { return wRelative ? (width  * int(size.x)) >> 8 : size.x; }
         inline int getHeightTarget(int height) const { return hRelative ? (height * int(size.y)) >> 8 : size.y; }
         inline V2s getSizeTarget(V2s size)     const { return V2s(getWidthTarget(size.x), getHeightTarget(size.y)); }
@@ -42,12 +43,12 @@ namespace webui {
         inline bool isHeightRelative() const { return hRelative; }
 
         // setters
-        inline void setId(const std::string& id_) { id = id_; }
+        inline void setId(StringId id_) { id = id_; }
         inline void setWidth(int w) { size[0] = w; }
         inline void setHeight(int h) { size[1] = h; }
 
         // debug
-        void dump(int level = 0) const;
+        void dump(const StringManager& strMng, int level = 0) const;
 
     protected:
         // dynamic part
@@ -55,8 +56,8 @@ namespace webui {
         V2s curSize;
 
         // static part
+        StringId id;
         Widget* parent;
-        std::string id;
         std::vector<Widget*> children;
         V2s size;
         uint8_t wRelative:1;

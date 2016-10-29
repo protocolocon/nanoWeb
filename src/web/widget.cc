@@ -29,8 +29,8 @@ namespace webui {
         return stable;
     }
 
-    bool Widget::set(Identifier id, const string& value) {
-        if (id == Identifier::id) this->id = value;
+    bool Widget::set(Identifier id, StringManager& strMng, const string& value) {
+        if (id == Identifier::id) this->id = strMng.add(value.data(), value.size());
         else if (id == Identifier::width) {
             if ((wRelative = value[value.size() - 1] == '%')) size.x = int(atof(value.c_str()) * 2.56f + 0.5f); else size.x = atoi(value.c_str());
         } else if (id == Identifier::height) {
@@ -39,10 +39,10 @@ namespace webui {
         return true;
     }
 
-    void Widget::dump(int level) const {
-        LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c)", level * 2, "", id.c_str(),
+    void Widget::dump(const StringManager& strMng, int level) const {
+        LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c)", level * 2, "", strMng.get(id),
             curPos.x, curPos.y, curSize.x, curSize.y, size.x, wRelative ? '%' : ' ', size.y, hRelative ? '%' : ' ');
-        for (const auto* child: children) child->dump(level + 1);
+        for (const auto* child: children) child->dump(strMng, level + 1);
     }
 
 }

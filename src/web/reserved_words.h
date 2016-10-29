@@ -23,9 +23,14 @@ namespace webui {
 
     enum class Identifier: int {
         InvalidId        = -1,
+
+        // widgets
         Application      = 0,
         LayoutHor        = OffsetEnum(Application),
         Button           = OffsetEnum(LayoutHor),
+        WidgetLast       = OffsetEnum(Button),
+
+        // attributes
         id               = OffsetEnum(Button),
         width            = OffsetEnum(id),
         height           = OffsetEnum(width),

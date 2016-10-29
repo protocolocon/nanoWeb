@@ -44,7 +44,7 @@ namespace webui {
 
         // widget tree and registration
         Widget* root;
-        std::unordered_map<std::string, Widget*> widgets;
+        std::unordered_map<StringId, Widget*, StringId> widgets;
 
         void initialize();
         Widget* initializeConstruct(const MLParser& parser);

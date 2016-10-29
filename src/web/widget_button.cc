@@ -26,8 +26,8 @@ namespace webui {
         for (auto* child: children) child->render(ctx);
     }
 
-    bool WidgetButton::set(Identifier id, const string& value) {
-        if (!Widget::set(id, value)) {
+    bool WidgetButton::set(Identifier id, StringManager& strMng, const string& value) {
+        if (!Widget::set(id, strMng, value)) {
             /**/ if (id == Identifier::color) color = value;
             else return false;
         }
