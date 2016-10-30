@@ -20,7 +20,7 @@ namespace webui {
         inline WidgetApplication(Widget* parent = nullptr): Widget(parent), color(-1) { }
 
         virtual void render(Context& ctx) override;
-        virtual bool set(Application& app, Identifier id, int iEntryValue) override;
+        virtual bool set(Application& app, Identifier id, int iEntryValue, int fEntryValue) override;
 
     protected:
         RGBA color;

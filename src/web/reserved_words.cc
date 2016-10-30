@@ -30,6 +30,7 @@ namespace webui {
         add(color);
         add(onEnter);
         add(onLeave);
+        add(onClick);
         add(ALast);
 
         add(log);

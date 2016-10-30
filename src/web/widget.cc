@@ -33,23 +33,27 @@ namespace webui {
         return stable;
     }
 
-    bool Widget::set(Application& app, Identifier id, int iEntry) {
+    bool Widget::set(Application& app, Identifier id, int iEntry, int fEntry) {
         pair<const char*, int> ss;
         switch (id) {
         case Identifier::id:
+            if (fEntry > iEntry + 1) { LOG("id expects a simple value %d %d", iEntry, fEntry); return false; }
             this->id = app.entryAsStrId(iEntry);
             return true;
         case Identifier::width:
+            if (fEntry > iEntry + 1) { LOG("width expects a simple value"); return false; }
             ss = app.entryAsStrSize(iEntry);
             if ((wRelative = ss.first[ss.second - 1] == '%')) size.x = int(atof(ss.first) * 2.56f + 0.5f); else size.x = atoi(ss.first);
             return true;
         case Identifier::height:
+            if (fEntry > iEntry + 1) { LOG("height expects a simple value"); return false; }
             ss = app.entryAsStrSize(iEntry);
             if ((hRelative = ss.first[ss.second - 1] == '%')) size.y = int(atof(ss.first) * 2.56f + 0.5f); else size.y = atoi(ss.first);
             return true;
         case Identifier::onEnter:
         case Identifier::onLeave:
-            return app.addAction(id, iEntry, actions);
+        case Identifier::onClick:
+            return app.addAction(id, iEntry, fEntry, actions);
         default:
             return false;
         }

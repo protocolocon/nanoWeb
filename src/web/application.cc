@@ -100,22 +100,23 @@ namespace webui {
             const auto& entryVal(parser[iEntry + 1]);
             // key and next after value
             auto key(entryKey.asId(parser, strMng));
+            int next(entryVal.next ? entryVal.next : fEntry);
             if (key == Identifier::InvalidId) {
                 auto ss(entryKey.asStrSize(parser));
                 LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
-            }
-            int next(entryVal.next ? entryVal.next : fEntry);
-            if (key < Identifier::WLast && (widgetChild = createWidget(key, widget/*parent*/))) {
-                // child widget
-                if (!initializeConstruct(parser, widgetChild, iEntry + 2, next) || !registerWidget(widgetChild)) {
-                    delete widgetChild;
-                    return false;
-                }
-                widget->addChild(widgetChild);
             } else {
-                if (!widget->set(*this, key, iEntry + 1)) {
-                    auto ss(entryVal.asStrSize(parser));
-                    LOG("warning: unknwon attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
+                if (key < Identifier::WLast && (widgetChild = createWidget(key, widget/*parent*/))) {
+                    // child widget
+                    if (!initializeConstruct(parser, widgetChild, iEntry + 2, next) || !registerWidget(widgetChild)) {
+                        delete widgetChild;
+                        return false;
+                    }
+                    widget->addChild(widgetChild);
+                } else {
+                    if (!widget->set(*this, key, iEntry + 1, next)) {
+                        auto ss(entryVal.asStrSize(parser));
+                        LOG("warning: unknwon attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
+                    }
                 }
             }
             iEntry = next;
@@ -149,7 +150,7 @@ namespace webui {
         return true;
     }
 
-    bool Application::addAction(Identifier actionId, int iEntry, int& actions) {
+    bool Application::addAction(Identifier actionId, int iEntry, int fEntry, int& actions) {
         if (!actions) {
             actions = int(actionTables.size());
             actionTables.resize(actionTables.size() + 1);
@@ -159,39 +160,37 @@ namespace webui {
         switch (actionId) { // get the table entry to add commands to
         case Identifier::onEnter: tableEntry = &table.onEnter; break;
         case Identifier::onLeave: tableEntry = &table.onLeave; break;
+        case Identifier::onClick: tableEntry = &table.onClick; break;
         default: LOG("unknown action"); return false;
         }
-        return addActionCommands(iEntry, *tableEntry);
+        return addActionCommands(iEntry, fEntry, *tableEntry);
     }
 
-    bool Application::addActionCommands(int iEntry, int& tableEntry) {
+    bool Application::addActionCommands(int iEntry, int fEntry, int& tableEntry) {
         if (*parser[iEntry].pos == '[') iEntry++;
         bool ok(true);
         pair<const char*, int> ss;
         tableEntry = int(actionCommands.size());
-        while (iEntry) {
+        while (iEntry < fEntry) {
             const auto& entry(parser[iEntry]);
             auto command(entry.asId(parser, strMng));
-            // check if parameters are empty
-            int paramEntry(iEntry + 1);
-            if (parser[paramEntry].next == paramEntry + 1 || (!parser[paramEntry].next && parser.getLevelEnd(paramEntry) == paramEntry))
-                paramEntry = 0;
+            int next(entry.next ? entry.next : fEntry);
             switch (command) {
-            case Identifier::log:           ok &= addCommandGenericStrId(command, CommandLog, paramEntry); break;
-            case Identifier::toggleVisible: ok &= addCommandGenericStrId(command, CommandToggleVisible, paramEntry); break;
+            case Identifier::log:           ok &= addCommandGenericStrId(command, CommandLog, iEntry + 1, next); break;
+            case Identifier::toggleVisible: ok &= addCommandGenericStrId(command, CommandToggleVisible, iEntry + 1, next); break;
             default:
                 ss = entry.asStrSize(parser);
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
                 return false;
             }
-            iEntry = entry.next;
+            iEntry = next;
         }
         actionCommands.push_back(CommandLast);
         return ok;
     }
 
-    bool Application::addCommandGenericStrId(Identifier name, CommandId command, int iEntry) {
-        if (!iEntry || parser[iEntry].next) {
+    bool Application::addCommandGenericStrId(Identifier name, CommandId command, int iEntry, int fEntry) {
+        if (fEntry - iEntry != 1) {
             LOG("%s command requires one parameter", strMng.get(StringId(int(name))));
             return false;
         }

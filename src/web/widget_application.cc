@@ -23,10 +23,11 @@ namespace webui {
         for (auto* child: children) child->render(ctx);
     }
 
-    bool WidgetApplication::set(Application& app, Identifier id, int iEntry) {
-        if (!Widget::set(app, id, iEntry)) {
+    bool WidgetApplication::set(Application& app, Identifier id, int iEntry, int fEntry) {
+        if (!Widget::set(app, id, iEntry, fEntry)) {
             switch (id) {
             case Identifier::color:
+                if (fEntry > iEntry + 1) { LOG("color expects a simple value"); return false; }
                 color = app.entry(iEntry).pos;
                 return true;
             default:

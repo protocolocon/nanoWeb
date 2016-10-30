@@ -33,7 +33,7 @@ namespace webui {
         // polymorphic interface
         virtual void render(Context& ctx);
         virtual bool layout(V2s pos, V2s size, float time); // returns true if stable
-        virtual bool set(Application& app, Identifier id, int iEntryValue); // returns true if set
+        virtual bool set(Application& app, Identifier id, int iEntryValue, int fEntryValue); // returns true if set
 
         // update widget status
         bool update(Application& app, V2s cursor); // returns true if actions were executed (affecting application)

@@ -20,6 +20,7 @@ Application {
             height: 70%
             color: "#00c080"
             onEnter: log("enter 2")
+            onClick: toggleVisible(buttonTest3)
         }
         Button {
             id: buttonTest3

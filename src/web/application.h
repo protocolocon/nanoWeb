@@ -47,11 +47,12 @@ namespace webui {
 
         // actions
         struct ActionTable {
-            inline ActionTable(): onEnter(0), onLeave(0) { }
+            inline ActionTable(): onEnter(0), onLeave(0), onClick(0) { }
             int onEnter;
             int onLeave;
+            int onClick;
         };
-        bool addAction(Identifier actionId, int iEntry, int& actions); // add action to widget
+        bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions); // add action to widget
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
         inline bool execute(int commandList) { return commandList ? executeInner(commandList) : false; } // true if commands executed
 
@@ -87,8 +88,8 @@ namespace webui {
         bool registerWidget(Widget* widget);
 
         // actions
-        bool addActionCommands(int iEntry, int& tableEntry);
-        bool addCommandGenericStrId(Identifier name, CommandId command, int iEntry);
+        bool addActionCommands(int iEntry, int fEntry, int& tableEntry);
+        bool addCommandGenericStrId(Identifier name, CommandId command, int iEntry, int fEntry);
         bool addCommandToggle(int iEntry);
         bool executeInner(int commandList);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
