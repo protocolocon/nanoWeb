@@ -31,8 +31,9 @@ namespace webui {
         inline int getTimeRatio() const { return timeRatio; }
         inline int getTime1MRatio() const { return time1MRatio; }
         inline void resetRatio() { timeRatio = 0x10000; time1MRatio = 0; }
-        inline bool getCloser(int& x, int target) const {
-            int xx((x * time1MRatio + target * timeRatio) >> 16);
+        template <typename T>
+        inline bool getCloser(T& x, int target) const {
+            int xx((int(x) * time1MRatio + target * timeRatio) >> 16);
             if (x == xx && xx != target) xx = xx < target ? xx + 1 : xx - 1;
             x = xx;
             return xx == target;

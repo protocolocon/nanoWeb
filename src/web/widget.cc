@@ -16,9 +16,10 @@ using namespace std;
 
 namespace webui {
 
-    void Widget::render(Context& ctx) {
-        if (visible)
-            for (auto* child: children) child->render(ctx);
+    void Widget::render(Context& ctx, int alphaMult) {
+        alphaMult *= alpha;
+        if (alphaMult)
+            for (auto* child: children) child->render(ctx, alphaMult);
     }
 
     bool Widget::input(Application& app) {
@@ -44,7 +45,13 @@ namespace webui {
         curSize = sizeAvail;
         if (visible)
             for (auto* child: children) stable &= child->layout(ctx, curPos, child->getSizeTarget(curSize));
-        return stable;
+        return animeAlpha(ctx) && stable;
+    }
+
+    bool Widget::animeAlpha(Context& ctx) {
+        if ( visible && alpha < 0xff) return ctx.getCloser(alpha, 0xff);
+        if (!visible && alpha)        return ctx.getCloser(alpha, 0x00);
+        return true;
     }
 
     bool Widget::set(Application& app, Identifier id, int iEntry, int fEntry) {

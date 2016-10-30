@@ -61,7 +61,7 @@ namespace webui {
     void Application::render() {
         if (root) {
             ctx.getRender().beginFrame();
-            root->render(ctx);
+            root->render(ctx, 0x100);
             ctx.getRender().endFrame();
         }
     }

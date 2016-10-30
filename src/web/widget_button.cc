@@ -14,16 +14,17 @@ using namespace std;
 
 namespace webui {
 
-    void WidgetButton::render(Context& ctx) {
-        if (visible) {
+    void WidgetButton::render(Context& ctx, int alphaMult) {
+        alphaMult *= alpha;
+        if (alphaMult) {
             auto vg(ctx.getRender().getVg());
 
             nvgBeginPath(vg);
             nvgRect(vg, curPos[0], curPos[1], curSize[0], curSize[1]);
-            nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), (color.a() * alpha) >> 8));
+            nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), (color.a() * alphaMult) >> 8));
             nvgFill(vg);
 
-            for (auto* child: children) child->render(ctx);
+            for (auto* child: children) child->render(ctx, alphaMult);
         }
     }
 

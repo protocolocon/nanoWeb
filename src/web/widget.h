@@ -31,13 +31,16 @@ namespace webui {
         inline auto& getChildren() { return children; }
 
         // polymorphic interface
-        virtual void render(Context& ctx);
+        virtual void render(Context& ctx, int alphaMult);
         virtual bool input(Application& app); // returns true if actions were executed (affecting application)
         virtual bool layout(Context& ctx, V2s pos, V2s size); // returns true if stable
         virtual bool set(Application& app, Identifier id, int iEntryValue, int fEntryValue); // returns true if set
 
         // update widget status
         bool update(Application& app); // returns true if actions were executed (affecting application)
+
+        // animations
+        bool animeAlpha(Context& ctx);
 
         // getters
         inline const StringId getId() const { return id; }

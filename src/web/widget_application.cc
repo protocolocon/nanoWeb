@@ -15,11 +15,11 @@ using namespace std;
 
 namespace webui {
 
-    void WidgetApplication::render(Context& ctx) {
+    void WidgetApplication::render(Context& ctx, int alphaMult) {
         assert(visible);
         glClearColor(color.rf(), color.gf(), color.bf(), color.af());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        for (auto* child: children) child->render(ctx);
+        for (auto* child: children) child->render(ctx, alphaMult);
     }
 
     bool WidgetApplication::set(Application& app, Identifier id, int iEntry, int fEntry) {

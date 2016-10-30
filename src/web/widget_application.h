@@ -19,7 +19,7 @@ namespace webui {
     public:
         inline WidgetApplication(Widget* parent = nullptr): Widget(parent), color(-1) { }
 
-        virtual void render(Context& ctx) override;
+        virtual void render(Context& ctx, int alphaMult) override;
         virtual bool set(Application& app, Identifier id, int iEntryValue, int fEntryValue) override;
 
     protected:
