@@ -9,7 +9,9 @@
 #include "compatibility.h"
 #include "main.h"
 #include "input.h"
+#include <cmath>
 #include <cassert>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -24,10 +26,21 @@ namespace webui {
     }
 
     void Context::mainIteration() {
+        // calculate time / and frame offset
+        struct timeval now;
+        gettimeofday(&now, nullptr);
+        timeDiffUs = -timeUs;
+        timeUs = now.tv_sec * 1000000 + now.tv_usec;
+        timeDiffUs += timeUs;
+        timeRatio = int(65536.f * powf(0.96f, float(timeDiffUs >> 9)));
+        time1MRatio = 65536 - timeRatio;
+
+        // refressh application
         app.refresh();
+
+        // render if required
         if (renderForced) {
             renderForced = false;
-            LOG("render");
             app.render();
             render.swapBuffers();
         }

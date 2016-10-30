@@ -33,7 +33,7 @@ namespace webui {
         // polymorphic interface
         virtual void render(Context& ctx);
         virtual bool input(Application& app); // returns true if actions were executed (affecting application)
-        virtual bool layout(V2s pos, V2s size, float time); // returns true if stable
+        virtual bool layout(Context& ctx, V2s pos, V2s size); // returns true if stable
         virtual bool set(Application& app, Identifier id, int iEntryValue, int fEntryValue); // returns true if set
 
         // update widget status
@@ -41,6 +41,8 @@ namespace webui {
 
         // getters
         inline const StringId getId() const { return id; }
+        inline int getWidth()  const { return curSize.x; }
+        inline int getHeight() const { return curSize.y; }
         inline int getWidthTarget(int width)   const { return wRelative ? (width  * int(size.x)) >> 8 : size.x; }
         inline int getHeightTarget(int height) const { return hRelative ? (height * int(size.y)) >> 8 : size.y; }
         inline V2s getSizeTarget(V2s size)     const { return V2s(getWidthTarget(size.x), getHeightTarget(size.y)); }

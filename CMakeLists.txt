@@ -62,6 +62,9 @@ endif()
 set(FLAGS "-Wall -Wno-unknown-warning-option -Wno-misleading-indentation")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(FLAGS "${FLAGS} -O0 -g")
+  if(NANO_BROWSER)
+    set(FLAGS "${FLAGS} -s ASSERTIONS=1")
+  endif()
 else()
   set(CMAKE_BUILD_TYPE "Release")
   set(FLAGS "${FLAGS} -O3 -DNDEBUG")
@@ -129,6 +132,7 @@ include_directories(
 
 add_executable(${TARGET_NAME}
   src/web/main.cc
+  src/web/util.cc
   src/web/input.cc
   src/web/widget.cc
   src/web/render.cc

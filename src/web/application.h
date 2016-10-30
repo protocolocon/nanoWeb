@@ -66,6 +66,9 @@ namespace webui {
         MLParser parser;
         StringManager strMng;
 
+        // layout
+        bool layoutStable;
+
         // commands
         enum CommandId {
             CommandLog,

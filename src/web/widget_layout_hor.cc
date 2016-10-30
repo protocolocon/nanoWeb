@@ -14,41 +14,24 @@ using namespace std;
 
 namespace webui {
 
-    bool WidgetLayoutHor::layout(V2s posAvail, V2s sizeAvail, float time) {
+    bool WidgetLayoutHor::layout(Context& ctx, V2s posAvail, V2s sizeAvail) {
         bool stable(true);
         if (visible) {
             curPos = posAvail;
             curSize = sizeAvail;
 
-            // calculate sizes
-            bool resizable[children.size()];
-            int sizes[children.size()];
-            int resizables(0), total(0);
+            // use linear arrangement util
+            auto& la(ctx.getLinearArrangement());
+            la.init(posAvail.x, children.size());
+            for (auto child: children)
+                if (child->isVisible())
+                    la.add(child->getWidth(), child->getWidthTarget(sizeAvail.x), child->isWidthRelative());
+                else
+                    la.add(child->getWidth(), 0, true);
+            stable = la.calculate(ctx, sizeAvail.x);
             for (size_t idx = 0; idx < children.size(); idx++) {
                 auto* child(children[idx]);
-                if (child->isVisible()) {
-                    resizable[idx] = child->isWidthRelative();
-                    sizes[idx] = child->getWidthTarget(sizeAvail.x);
-                    total += sizes[idx];
-                    if (resizable[idx]) resizables += sizes[idx];
-                } else {
-                    resizable[idx] = false;
-                    sizes[idx] = 0;
-                }
-            }
-            // reduce resizable widgets
-            if (total > sizeAvail.x) {
-                float ratio(float(sizeAvail.x - total + resizables) / float(resizables));
-                for (size_t idx = 0; idx < children.size(); idx++) {
-                    if (resizable[idx])
-                        sizes[idx] = int(float(sizes[idx]) * ratio + 0.5f);
-                }
-            }
-            // position each widget
-            short pos(posAvail.x);
-            for (size_t idx = 0; idx < children.size(); idx++) {
-                stable &= children[idx]->layout(V2s(pos, posAvail.y), V2s(sizes[idx], children[idx]->getHeightTarget(curSize.y)), time);
-                pos += sizes[idx];
+                stable &= child->layout(ctx, V2s(la.get(idx), posAvail.y), V2s(la.get(idx + 1) - la.get(idx), child->getHeightTarget(curSize.y)));
             }
         }
         return stable;

@@ -38,14 +38,12 @@ namespace webui {
         return false;
     }
 
-    bool Widget::layout(V2s posAvail, V2s sizeAvail, float time) {
+    bool Widget::layout(Context& ctx, V2s posAvail, V2s sizeAvail) {
         bool stable(true);
-        if (visible) {
-            curPos = posAvail;
-            curSize = sizeAvail;
-
-            for (auto* child: children) stable &= child->layout(curPos, child->getSizeTarget(curSize), time);
-        }
+        curPos = posAvail;
+        curSize = sizeAvail;
+        if (visible)
+            for (auto* child: children) stable &= child->layout(ctx, curPos, child->getSizeTarget(curSize));
         return stable;
     }
 

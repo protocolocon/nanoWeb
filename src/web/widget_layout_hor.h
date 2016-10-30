@@ -20,7 +20,7 @@ namespace webui {
         inline WidgetLayoutHor(Widget* parent = nullptr): Widget(parent) { }
 
         // polymorphic interface
-        virtual bool layout(V2s pos, V2s size, float time); // returns true if stable
+        virtual bool layout(Context& ctx, V2s pos, V2s size); // returns true if stable
     };
 
 }

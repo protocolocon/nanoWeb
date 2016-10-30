@@ -22,7 +22,7 @@ using namespace std;
 
 namespace webui {
 
-    Application::Application(Context& ctx): ctx(ctx), actionTables(1), actionCommands(1, CommandLast) {
+    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, CommandLast) {
         addReservedWords(strMng);
         initialize();
     }
@@ -33,15 +33,15 @@ namespace webui {
 
     void Application::refresh() {
         refreshNetwork();
-        if (Input::refresh(ctx.getRender().getWin())) {
-            LOG("layout");
-            root->layout(V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()), -1.0f);
+        if (root && (Input::refresh(ctx.getRender().getWin()) || !layoutStable)) {
+            layoutStable = root->layout(ctx, V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()));
             ctx.forceRender();
         }
     }
 
     bool Application::update() {
-        return root ? root->update(*this) : false;
+        assert(root);
+        return root->update(*this);
     }
 
     void Application::clear() {
@@ -53,7 +53,7 @@ namespace webui {
 
     void Application::resize(int width, int height) {
         if (root)
-            root->layout(V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()), -1.0f);
+            root->layout(ctx, V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()));
     }
 
     void Application::render() {
