@@ -37,7 +37,7 @@ namespace webui {
         pair<const char*, int> ss;
         switch (id) {
         case Identifier::id:
-            if (fEntry > iEntry + 1) { LOG("id expects a simple value %d %d", iEntry, fEntry); return false; }
+            if (fEntry > iEntry + 1) { LOG("id expects a simple value"); return false; }
             this->id = app.entryAsStrId(iEntry);
             return true;
         case Identifier::width:

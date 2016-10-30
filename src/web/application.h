@@ -60,7 +60,6 @@ namespace webui {
         void dump() const;
 
     private:
-        bool init;
         Context& ctx;
         RequestXHR xhr;
         MLParser parser;
@@ -82,6 +81,7 @@ namespace webui {
         void initialize();
         Widget* initializeConstruct(const MLParser& parser);
         bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry);
+        void refreshNetwork();
 
         // widget factory and registration
         Widget* createWidget(Identifier id, Widget* parent);

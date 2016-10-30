@@ -21,8 +21,9 @@ using namespace std;
 
 namespace webui {
 
-    Application::Application(Context& ctx): init(false), ctx(ctx), actionTables(1), actionCommands(1, CommandLast) {
+    Application::Application(Context& ctx): ctx(ctx), actionTables(1), actionCommands(1, CommandLast) {
         addReservedWords(strMng);
+        initialize();
     }
 
     Application::~Application() {
@@ -30,13 +31,14 @@ namespace webui {
     }
 
     void Application::refresh(V2s cursor) {
-        if (!init) initialize();
-        else if (root) {
-            if (root->update(*this, cursor)) {
-                LOG("layout");
-                root->layout(V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()), -1.0f);
-                ctx.forceRender();
-            }
+        refreshNetwork();
+        if (root &&                         // application has been loaded
+            (cursor.x || cursor.y) &&       // in the browser, when cursor is outside, cursor is (0, 0)
+            root->update(*this, cursor)) {  // update executed commands probably affecting the layout
+
+            LOG("layout");
+            root->layout(V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()), -1.0f);
+            ctx.forceRender();
         }
     }
 
@@ -61,10 +63,13 @@ namespace webui {
     }
 
     void Application::initialize() {
-        if (xhr.getStatus() == RequestXHR::Empty) xhr.query("application.ml");
-        else if (xhr.getStatus() == RequestXHR::Ready) {
-            init = true;
+        assert(xhr.getStatus() == RequestXHR::Empty);
+        xhr.query("application.ml");
+    }
 
+    void Application::refreshNetwork() {
+        if (xhr.getStatus() == RequestXHR::Ready) {
+            // TODO: different queries
             assert(!root);
             if (!parser.parse(xhr.getData(), xhr.getNData()) || !(root = initializeConstruct(parser))) {
                 xhr.makeCString();
@@ -234,7 +239,6 @@ namespace webui {
                 // exact match
                 first = last = widgetId_;
             }
-            LOG("toggle visibility of %s %s %d %d", strMng.get(first), strMng.get(last), first.getId(), last.getId());
             for (auto& widget: widgets) {
                 if (widget.first >= first && widget.first <= last) {
                     widget.second->toggleVisible();
