@@ -23,17 +23,12 @@ namespace webui {
             assert(false && "cannot initialize render");
         }
         Input::init(render.getWin(), &app);
+        updateTime();
     }
 
     void Context::mainIteration() {
         // calculate time / and frame offset
-        struct timeval now;
-        gettimeofday(&now, nullptr);
-        timeDiffUs = -timeUs;
-        timeUs = now.tv_sec * 1000000 + now.tv_usec;
-        timeDiffUs += timeUs;
-        timeRatio = int(65536.f * powf(0.96f, float(timeDiffUs >> 9)));
-        time1MRatio = 65536 - timeRatio;
+        updateTime();
 
         // refressh application
         app.refresh();
@@ -51,6 +46,16 @@ namespace webui {
         forceRender();
         render.setWindowSize(width, height);
         app.resize(width, height);
+    }
+
+    void Context::updateTime() {
+        struct timeval now;
+        gettimeofday(&now, nullptr);
+        timeDiffUs = -timeUs;
+        timeUs = now.tv_sec * 1000000 + now.tv_usec;
+        timeDiffUs += timeUs;
+        timeRatio = int(65536.f * powf(0.96f, float(timeDiffUs >> 9)));
+        time1MRatio = 65536 - timeRatio;
     }
 
     Context ctx;

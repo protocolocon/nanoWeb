@@ -22,7 +22,7 @@ namespace webui {
 
     class Widget {
     public:
-        inline Widget(Widget* parent = nullptr): parent(parent), size(0x100, 0x100), all(0x7), actions(0) { }
+        inline Widget(Widget* parent = nullptr): parent(parent), size(0x100, 0x100), all(0x00ff4007), actions(0) { }
         virtual ~Widget() { }
 
         // hierarchy
@@ -70,7 +70,7 @@ namespace webui {
         std::vector<Widget*> children;
         V2s size;
         union {
-            uint16_t all;
+            uint32_t all;
             struct {
                 uint8_t wRelative:1;      // widget width is relative to container
                 uint8_t hRelative:1;      // widget height is relative to container
@@ -78,6 +78,8 @@ namespace webui {
                 uint8_t inside:1;         // cursor is inside widget
                 uint8_t reserved:4;
                 uint8_t zoom;
+                uint8_t alpha;
+                uint8_t reserved2;
             };
         };
         int actions;

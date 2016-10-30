@@ -52,8 +52,10 @@ namespace webui {
     }
 
     void Application::resize(int width, int height) {
-        if (root)
+        if (root) {
+            ctx.resetRatio();
             root->layout(ctx, V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()));
+        }
     }
 
     void Application::render() {

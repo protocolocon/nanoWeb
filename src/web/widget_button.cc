@@ -20,7 +20,7 @@ namespace webui {
 
             nvgBeginPath(vg);
             nvgRect(vg, curPos[0], curPos[1], curSize[0], curSize[1]);
-            nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), color.a()));
+            nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), (color.a() * alpha) >> 8));
             nvgFill(vg);
 
             for (auto* child: children) child->render(ctx);

@@ -30,6 +30,7 @@ namespace webui {
         inline int getTimeDiffUs() const { return timeDiffUs; }
         inline int getTimeRatio() const { return timeRatio; }
         inline int getTime1MRatio() const { return time1MRatio; }
+        inline void resetRatio() { timeRatio = 0x10000; time1MRatio = 0; }
         inline bool getCloser(int& x, int target) const {
             int xx((x * time1MRatio + target * timeRatio) >> 16);
             if (x == xx && xx != target) xx = xx < target ? xx + 1 : xx - 1;
@@ -48,6 +49,8 @@ namespace webui {
         int time1MRatio;
 
         LinearArrangement linearArrangement;
+
+        void updateTime();
     };
 
 }
