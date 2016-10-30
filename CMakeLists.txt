@@ -59,7 +59,7 @@ if(NOT NANO_BROWSER)
   endif()
 endif()
 
-set(FLAGS "")
+set(FLAGS "-Wall -Wno-unknown-warning-option -Wno-misleading-indentation")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(FLAGS "${FLAGS} -O0 -g")
 else()
@@ -129,6 +129,7 @@ include_directories(
 
 add_executable(${TARGET_NAME}
   src/web/main.cc
+  src/web/input.cc
   src/web/widget.cc
   src/web/render.cc
   src/web/ml_parser.cc

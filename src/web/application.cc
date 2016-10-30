@@ -8,6 +8,7 @@
 
 #include "application.h"
 #include "main.h"
+#include "input.h"
 #include "widget.h"
 #include "widget_button.h"
 #include "reserved_words.h"
@@ -30,16 +31,17 @@ namespace webui {
         clear();
     }
 
-    void Application::refresh(V2s cursor) {
+    void Application::refresh() {
         refreshNetwork();
-        if (root &&                         // application has been loaded
-            (cursor.x || cursor.y) &&       // in the browser, when cursor is outside, cursor is (0, 0)
-            root->update(*this, cursor)) {  // update executed commands probably affecting the layout
-
+        if (Input::refresh(ctx.getRender().getWin())) {
             LOG("layout");
             root->layout(V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()), -1.0f);
             ctx.forceRender();
         }
+    }
+
+    bool Application::update() {
+        return root ? root->update(*this) : false;
     }
 
     void Application::clear() {

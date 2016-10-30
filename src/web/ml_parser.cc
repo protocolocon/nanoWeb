@@ -164,7 +164,7 @@ namespace webui {
 
     bool MLParser::error(const char* ml, const char* msg) {
         errorFlag = true;
-        LOG("error parsing ML: %s at line %d (document position %d)", msg, line, ml - mlOrig);
+        LOG("error parsing ML: %s at line %d (document position %ld)", msg, line, ml - mlOrig);
         char buffer[64 + 1];
         for (int i = -32; i < 32; i++) {
             if (ml + i >= mlOrig && ml +i < mlEnd && ml[i] >= 32)
@@ -191,7 +191,7 @@ namespace webui {
         char buffer[20];
         buffer[sizeof(buffer) - 1] = 0;
         for (const auto& entry: entries) {
-            for (int i = 0; i < sizeof(buffer) - 1; i++)
+            for (int i = 0; i < int(sizeof(buffer)) - 1; i++)
                 buffer[i] = (entry.pos + i < mlEnd && entry.pos[i] >= 32) ? entry.pos[i] : '.';
             LOG("%4ld |%s| %4d", &entry - entries.data(), buffer, entry.next);
         }

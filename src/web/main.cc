@@ -8,6 +8,7 @@
 
 #include "compatibility.h"
 #include "main.h"
+#include "input.h"
 #include <cassert>
 
 using namespace std;
@@ -19,10 +20,11 @@ namespace webui {
             LOG("cannot initialize render");
             assert(false && "cannot initialize render");
         }
+        Input::init(render.getWin(), &app);
     }
 
     void Context::mainIteration() {
-        app.refresh(render.getCursorPos());
+        app.refresh();
         if (renderForced) {
             renderForced = false;
             LOG("render");

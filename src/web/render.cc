@@ -38,8 +38,8 @@ namespace webui {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-        int width(defaultWidth()); //EMS(EM_ASM_INT_V(return canvas.width)) DSK(1024));
-        int height(defaultHeight()); //EMS(EM_ASM_INT_V(return canvas.height)) DSK(800));
+        int width(defaultWidth());
+        int height(defaultHeight());
         if (!(win = glfwCreateWindow(width, height, "NanoWeb", nullptr, nullptr))) {
             LOG("error: cannot create glfw window");
             glfwTerminate();
@@ -74,12 +74,6 @@ namespace webui {
 
     void Render::endFrame() {
         nvgEndFrame(vg);
-    }
-
-    V2s Render::getCursorPos() const {
-        double mx, my;
-        glfwGetCursorPos(win, &mx, &my);
-        return V2s(short(mx), short(my));
     }
 
     void Render::swapBuffers() {

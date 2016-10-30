@@ -17,7 +17,6 @@ namespace webui {
 
     void WidgetApplication::render(Context& ctx) {
         assert(visible);
-        LOG("app");
         glClearColor(color.rf(), color.gf(), color.bf(), color.af());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         for (auto* child: children) child->render(ctx);

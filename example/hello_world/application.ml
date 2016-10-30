@@ -5,7 +5,7 @@ Application {
     LayoutHor {
         Button {
             id: buttonTest
-            width: 25%
+            width: 100%
             height: 50%
             color: "#ffc000"
             onEnter: [
@@ -16,7 +16,7 @@ Application {
         }
         Button {
             id: buttonTest2
-            width: 128
+            width: 100%
             height: 70%
             color: "#00c080"
             onEnter: log("enter 2")
@@ -24,9 +24,10 @@ Application {
         }
         Button {
             id: buttonTest3
-            width: 50%
+            width: 100%
             height: 60%
             color: "#00c0ff"
+            onClick: toggleVisible(buttonTest)
         }
     }
 }

@@ -30,8 +30,8 @@ namespace webui {
         // getters
         inline int getWidth() const { return windowSize[0]; }
         inline int getHeight() const { return windowSize[1]; }
+        inline GLFWwindow* getWin() { return win; }
         inline NVGcontext* getVg() { return vg; }
-        V2s getCursorPos() const;
 
     private:
         GLFWwindow* win;

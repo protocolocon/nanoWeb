@@ -8,6 +8,7 @@
 
 #include "widget.h"
 #include "main.h"
+#include "input.h"
 #include "nanovg.h"
 #include <cstdlib>
 
@@ -16,10 +17,25 @@ using namespace std;
 namespace webui {
 
     void Widget::render(Context& ctx) {
-        if (visible) {
-            LOG("widget");
+        if (visible)
             for (auto* child: children) child->render(ctx);
+    }
+
+    bool Widget::input(Application& app) {
+        if (Input::mouseButtonAction) {
+            // this widget takes care of the event and does not propagate upwards
+            Input::mouseButtonAction = false;
+            if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT) {
+                if (Input::mouseAction == GLFW_PRESS)
+                    Input::mouseButtonPress = this;
+                else if (Input::mouseAction == GLFW_RELEASE) {
+                    // it's a click only if the widget of press is the widget of release
+                    if (Input::mouseButtonPress == this)
+                        return app.execute(app.getActionTable(actions).onClick);
+                }
+            }
         }
+        return false;
     }
 
     bool Widget::layout(V2s posAvail, V2s sizeAvail, float time) {
@@ -59,10 +75,10 @@ namespace webui {
         }
     }
 
-    bool Widget::update(Application& app, V2s cursor) {
+    bool Widget::update(Application& app) {
         if (!visible) return false;
         bool recurse(false), executed(false);
-        if (cursor >= curPos && cursor < curPos + curSize) {
+        if (Input::cursor >= curPos && Input::cursor < curPos + curSize) {
             // inside
             if (!inside) {
                 inside = 1;
@@ -79,7 +95,11 @@ namespace webui {
         }
         if (recurse)
             for (auto* child: children)
-                executed |= child->update(app, cursor);
+                executed |= child->update(app);
+
+        // specific input actions
+        if (inside && (Input::mouseButtonAction || Input::keyboardAction)) executed |= input(app);
+
         return executed;
     }
 

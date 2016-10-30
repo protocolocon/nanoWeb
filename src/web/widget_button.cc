@@ -16,7 +16,6 @@ namespace webui {
 
     void WidgetButton::render(Context& ctx) {
         if (visible) {
-            LOG("button");
             auto vg(ctx.getRender().getVg());
 
             nvgBeginPath(vg);

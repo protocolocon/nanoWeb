@@ -33,8 +33,9 @@ namespace webui {
         // resize
         void resize(int width, int height);
 
-        // check if application status needs pdate
-        void refresh(V2s cursor);
+        // check if application status needs update
+        void refresh();
+        bool update();
 
         // render
         void render();
