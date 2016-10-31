@@ -48,10 +48,11 @@ namespace webui {
 
         // actions
         struct ActionTable {
-            inline ActionTable(): onEnter(0), onLeave(0), onClick(0) { }
+            inline ActionTable(): onEnter(0), onLeave(0), onClick(0), onRender(0) { }
             int onEnter;
             int onLeave;
             int onClick;
+            int onRender;
         };
         bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions); // add action to widget
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
@@ -73,6 +74,10 @@ namespace webui {
         enum CommandId {
             CommandLog,
             CommandToggleVisible,
+            CommandBeginPath,
+            CommandRoundedRect,
+            CommandFillColor,
+            CommandStrokeColor,
             CommandLast
         };
         std::vector<ActionTable> actionTables;
@@ -94,6 +99,9 @@ namespace webui {
         // actions
         bool addActionCommands(int iEntry, int fEntry, int& tableEntry);
         bool addCommandGenericStrId(Identifier name, CommandId command, int iEntry, int fEntry);
+        bool addCommandGenericVoid(Identifier name, CommandId command, int iEntry, int fEntry);
+        bool addCommandGenericCoord(Identifier name, CommandId command, int iEntry, int fEntry, int nCoord);
+        bool addCommandGenericColor(Identifier name, CommandId command, int iEntry, int fEntry);
         bool addCommandToggle(int iEntry);
         bool executeInner(int commandList);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled

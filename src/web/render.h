@@ -8,7 +8,9 @@
 
 #pragma once
 
+#include "types.h"
 #include "vector.h"
+#include "nanovg.h"
 
 struct NVGcontext;
 struct GLFWwindow;
@@ -26,6 +28,11 @@ namespace webui {
         // nanovg
         void beginFrame();
         void endFrame();
+        inline int multAlpha(int m, int a) { return alpha = (m * a) >> 8; }
+        inline void beginPath() const { nvgBeginPath(vg); }
+        inline void roundedRect(int x, int y, int w, int h, int r) const { nvgRoundedRect(vg, x, y, w, h, r); }
+        inline void fillColor(RGBA color) const { nvgFillColor(vg, color.toVGColor(alpha)); nvgFill(vg); }
+        inline void strokeColor(RGBA color) const { nvgStrokeColor(vg, color.toVGColor(alpha)); nvgStroke(vg); }
 
         // getters
         inline int getWidth() const { return windowSize[0]; }
@@ -37,6 +44,7 @@ namespace webui {
         GLFWwindow* win;
         NVGcontext* vg;
         V2s windowSize;
+        int alpha;
     };
 
 }

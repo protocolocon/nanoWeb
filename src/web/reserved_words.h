@@ -38,12 +38,17 @@ namespace webui {
         onEnter          = OffsetEnum(color),
         onLeave          = OffsetEnum(onEnter),
         onClick          = OffsetEnum(onLeave),
-        ALast            = OffsetEnum(onClick),
+        onRender         = OffsetEnum(onClick),
+        ALast            = OffsetEnum(onRender),
 
         // commands
         log              = OffsetEnum(ALast),
         toggleVisible    = OffsetEnum(log),
-        CLast            = OffsetEnum(toggleVisible),
+        beginPath        = OffsetEnum(toggleVisible),
+        roundedRect      = OffsetEnum(beginPath),
+        fillColor        = OffsetEnum(roundedRect),
+        strokeColor      = OffsetEnum(fillColor),
+        CLast            = OffsetEnum(strokeColor),
     };
 
 }

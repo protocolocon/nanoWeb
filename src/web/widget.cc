@@ -17,7 +17,12 @@ using namespace std;
 namespace webui {
 
     void Widget::render(Context& ctx, int alphaMult) {
-        alphaMult *= alpha;
+        auto& render(ctx.getRender());
+        alphaMult = render.multAlpha(alphaMult, alpha);
+
+        auto& app(ctx.getApplication());
+        app.execute(app.getActionTable(actions).onRender);
+
         if (alphaMult)
             for (auto* child: children) child->render(ctx, alphaMult);
     }
@@ -74,6 +79,7 @@ namespace webui {
         case Identifier::onEnter:
         case Identifier::onLeave:
         case Identifier::onClick:
+        case Identifier::onRender:
             return app.addAction(id, iEntry, fEntry, actions);
         default:
             return false;

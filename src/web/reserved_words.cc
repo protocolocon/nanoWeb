@@ -31,10 +31,15 @@ namespace webui {
         add(onEnter);
         add(onLeave);
         add(onClick);
+        add(onRender);
         add(ALast);
 
         add(log);
         add(toggleVisible);
+        add(beginPath);
+        add(roundedRect);
+        add(fillColor);
+        add(strokeColor);
         add(CLast);
     }
 

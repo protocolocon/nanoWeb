@@ -15,14 +15,18 @@ using namespace std;
 namespace webui {
 
     void WidgetButton::render(Context& ctx, int alphaMult) {
-        alphaMult *= alpha;
+        auto& render(ctx.getRender());
+        alphaMult = render.multAlpha(alphaMult, alpha);
         if (alphaMult) {
-            auto vg(ctx.getRender().getVg());
+            auto vg(render.getVg());
 
             nvgBeginPath(vg);
             nvgRect(vg, curPos[0], curPos[1], curSize[0], curSize[1]);
             nvgFillColor(vg, nvgRGBA(color.r(), color.g(), color.b(), (color.a() * alphaMult) >> 8));
             nvgFill(vg);
+
+            auto& app(ctx.getApplication());
+            app.execute(app.getActionTable(actions).onRender);
 
             for (auto* child: children) child->render(ctx, alphaMult);
         }

@@ -9,6 +9,7 @@
 #include <thread>
 #include <cstring>
 #include <cassert>
+#include <sys/time.h>
 #include <curl/curl.h>
 
 using namespace std;
@@ -49,6 +50,13 @@ namespace webui {
     int defaultHeight() {
         return 1024;
     }
+
+    int getTimeNowMs() {
+        struct timeval now;
+        gettimeofday(&now, nullptr);
+        return now.tv_sec * 1000 + now.tv_usec / 1000;
+    }
+
 
     // class RequestXHR
     void RequestXHR::query(const char* req, const char* param) {

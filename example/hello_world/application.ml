@@ -28,6 +28,12 @@ Application {
             height: 60%
             color: "#00c0ff"
             onClick: toggleVisible(buttonTest)
+            onRender: [
+                beginPath(),
+                roundedRect(x, y, w, h, 6),
+                fillColor("#303030"),
+                strokeColor("#000000")
+            ]
         }
     }
 }

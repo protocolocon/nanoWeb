@@ -25,9 +25,10 @@ namespace webui {
         inline void forceRender() { renderForced = true; }
 
         inline Render& getRender() { return render; }
+        inline Application& getApplication() { return app; }
 
-        inline int getTimeUs() const { return timeUs; }
-        inline int getTimeDiffUs() const { return timeDiffUs; }
+        inline int getTimeMs() const { return timeMs; }
+        inline int getTimeDiffMs() const { return timeDiffMs; }
         inline int getTimeRatio() const { return timeRatio; }
         inline int getTime1MRatio() const { return time1MRatio; }
         inline void resetRatio() { timeRatio = 0x10000; time1MRatio = 0; }
@@ -44,8 +45,8 @@ namespace webui {
         Render render;
         Application app;
         bool renderForced;
-        int timeUs;
-        int timeDiffUs;
+        int timeMs;
+        int timeDiffMs;
         int timeRatio;
         int time1MRatio;
 

@@ -22,7 +22,7 @@ using namespace std;
 
 namespace webui {
 
-    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, CommandLast) {
+    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, CommandLast), root(nullptr) {
         addReservedWords(strMng);
         initialize();
     }
@@ -60,7 +60,8 @@ namespace webui {
 
     void Application::render() {
         if (root) {
-            ctx.getRender().beginFrame();
+            auto& render(ctx.getRender());
+            render.beginFrame();
             root->render(ctx, 0x100);
             ctx.getRender().endFrame();
         }
@@ -124,7 +125,7 @@ namespace webui {
                 } else {
                     if (!widget->set(*this, key, iEntry + 1, next)) {
                         auto ss(entryVal.asStrSize(parser));
-                        LOG("warning: unknwon attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
+                        LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
                     }
                 }
             }
@@ -167,9 +168,10 @@ namespace webui {
         auto& table(actionTables[actions]);
         int* tableEntry;
         switch (actionId) { // get the table entry to add commands to
-        case Identifier::onEnter: tableEntry = &table.onEnter; break;
-        case Identifier::onLeave: tableEntry = &table.onLeave; break;
-        case Identifier::onClick: tableEntry = &table.onClick; break;
+        case Identifier::onEnter:  tableEntry = &table.onEnter;  break;
+        case Identifier::onLeave:  tableEntry = &table.onLeave;  break;
+        case Identifier::onClick:  tableEntry = &table.onClick;  break;
+        case Identifier::onRender: tableEntry = &table.onRender; break;
         default: LOG("unknown action"); return false;
         }
         return addActionCommands(iEntry, fEntry, *tableEntry);
@@ -185,8 +187,12 @@ namespace webui {
             auto command(entry.asId(parser, strMng));
             int next(entry.next ? entry.next : fEntry);
             switch (command) {
-            case Identifier::log:           ok &= addCommandGenericStrId(command, CommandLog, iEntry + 1, next); break;
-            case Identifier::toggleVisible: ok &= addCommandGenericStrId(command, CommandToggleVisible, iEntry + 1, next); break;
+            case Identifier::log:           ok &= addCommandGenericStrId (command, CommandLog,           iEntry + 1, next);    break;
+            case Identifier::toggleVisible: ok &= addCommandGenericStrId (command, CommandToggleVisible, iEntry + 1, next);    break;
+            case Identifier::beginPath:     ok &= addCommandGenericVoid  (command, CommandBeginPath,     iEntry + 1, next);    break;
+            case Identifier::roundedRect:   ok &= addCommandGenericCoord (command, CommandRoundedRect,   iEntry + 1, next, 5); break;
+            case Identifier::fillColor:     ok &= addCommandGenericColor (command, CommandFillColor,     iEntry + 1, next);    break;
+            case Identifier::strokeColor:   ok &= addCommandGenericColor (command, CommandStrokeColor,   iEntry + 1, next);    break;
             default:
                 ss = entry.asStrSize(parser);
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
@@ -208,9 +214,42 @@ namespace webui {
         return true;
     }
 
+    bool Application::addCommandGenericVoid(Identifier name, CommandId command, int iEntry, int fEntry) {
+        if (fEntry - iEntry != 0) {
+            LOG("%s command requires no parameters", strMng.get(StringId(int(name))));
+            return false;
+        }
+        actionCommands.push_back(command);
+        return true;
+    }
+
+    bool Application::addCommandGenericCoord(Identifier name, CommandId command, int iEntry, int fEntry, int nCoord) {
+        if (fEntry - iEntry != nCoord) {
+            LOG("%s command requires %d parameters", strMng.get(StringId(int(name))), nCoord);
+            return false;
+        }
+        actionCommands.push_back(command);
+        while (nCoord--) {
+            // TODO
+            actionCommands.push_back(0);
+        }
+        return true;
+    }
+
+    bool Application::addCommandGenericColor(Identifier name, CommandId command, int iEntry, int fEntry) {
+        if (fEntry - iEntry != 1) {
+            LOG("%s command requires one parameter", strMng.get(StringId(int(name))));
+            return false;
+        }
+        actionCommands.push_back(command);
+        actionCommands.push_back(RGBA(entry(iEntry).pos).rgba());
+        return true;
+    }
+
     bool Application::executeInner(int commandList) {
         bool cont(true), executed(false);
         auto* command(&actionCommands[commandList]);
+        auto& render(ctx.getRender());
         while (cont) {
             switch (*command) {
             case CommandLog:
@@ -221,7 +260,29 @@ namespace webui {
                 executed |= executeToggleVisible(StringId(*++command));
                 ++command;
                 break;
+            case CommandBeginPath:
+                render.beginPath();
+                ++command;
+                break;
+            case CommandRoundedRect:
+                render.roundedRect(10, 10, 100, 100, 5);
+                command += 6;
+                break;
+            case CommandFillColor:
+                render.fillColor(RGBA(*++command));
+                ++command;
+                break;
+            case CommandStrokeColor:
+                render.strokeColor(RGBA(*++command));
+                ++command;
+                break;
             case CommandLast:
+                cont = false;
+                break;
+            default:
+                LOG("internal: executing command error: %d %d %zu", *command, commandList, actionCommands.size());
+                for (command = &actionCommands[commandList]; command < &actionCommands.back(); command++)
+                    LOG("%08x", *command);
                 cont = false;
                 break;
             }

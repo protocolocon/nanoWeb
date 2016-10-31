@@ -29,6 +29,7 @@ namespace webui {
     void setMainLoop(int argc, char** argv, void (*loop)(void));
     int defaultWidth();
     int defaultHeight();
+    int getTimeNowMs();
 
     // XHR
     class RequestXHR {

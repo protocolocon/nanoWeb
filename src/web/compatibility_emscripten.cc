@@ -28,6 +28,10 @@ namespace webui {
     void log(const char* format, ...) {
     }
 
+    int getTimeNowMs() {
+        return int(emscripten_get_now());
+    }
+
 
     // class RequestXHR
     void RequestXHR::query(const char* req, const char* param) {

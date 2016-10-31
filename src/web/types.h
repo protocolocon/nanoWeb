@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "nanovg.h"
 #include "compatibility.h"
 #include <string>
 #include <cstdlib>
@@ -33,6 +34,11 @@ namespace webui {
         inline float gf() const { return u2f(g()); }
         inline float bf() const { return u2f(b()); }
         inline float af() const { return u2f(a()); }
+
+        inline uint32_t rgba() const { return c; }
+
+        inline NVGcolor toVGColor() const { return NVGcolor {{{ rf(), gf(), bf(), af() }}}; }
+        inline NVGcolor toVGColor(int alpha) const { return NVGcolor {{{ rf(), gf(), bf(), float(a() * alpha) * (1.0f / 65535.0f) }}}; }
 
     private:
         uint32_t c;
