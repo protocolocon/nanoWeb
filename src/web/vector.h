@@ -100,6 +100,11 @@ namespace webui {
             return x >= o.x && y >= o.y;
         }
 
+        inline void operator=(const Vector& o) {
+            x = o.x;
+            y = o.y;
+        }
+
         inline bool operator<(const Vector& o) const {
             return x < o.x && y < o.y;
         }

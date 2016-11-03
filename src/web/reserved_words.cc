@@ -39,7 +39,10 @@ namespace webui {
         add(beginPath);
         add(roundedRect);
         add(fillColor);
+        add(fillVertGrad);
+        add(strokeWidth);
         add(strokeColor);
+        add(stroke);
         add(CLast);
     }
 

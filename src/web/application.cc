@@ -183,16 +183,20 @@ namespace webui {
         pair<const char*, int> ss;
         tableEntry = int(actionCommands.size());
         while (iEntry < fEntry) {
+            using P = ParamType;
             const auto& entry(parser[iEntry]);
             auto command(entry.asId(parser, strMng));
             int next(entry.next ? entry.next : fEntry);
             switch (command) {
-            case Identifier::log:           ok &= addCommandGenericStrId (command, CommandLog,           iEntry + 1, next);    break;
-            case Identifier::toggleVisible: ok &= addCommandGenericStrId (command, CommandToggleVisible, iEntry + 1, next);    break;
-            case Identifier::beginPath:     ok &= addCommandGenericVoid  (command, CommandBeginPath,     iEntry + 1, next);    break;
-            case Identifier::roundedRect:   ok &= addCommandGenericCoord (command, CommandRoundedRect,   iEntry + 1, next, 5); break;
-            case Identifier::fillColor:     ok &= addCommandGenericColor (command, CommandFillColor,     iEntry + 1, next);    break;
-            case Identifier::strokeColor:   ok &= addCommandGenericColor (command, CommandStrokeColor,   iEntry + 1, next);    break;
+            case Identifier::log:           ok &= addCommandGeneric(command, CommandLog,           iEntry + 1, next, {P::StrId}); break;
+            case Identifier::toggleVisible: ok &= addCommandGeneric(command, CommandToggleVisible, iEntry + 1, next, {P::StrId}); break;
+            case Identifier::beginPath:     ok &= addCommandGeneric(command, CommandBeginPath,     iEntry + 1, next, {}); break;
+            case Identifier::roundedRect:   ok &= addCommandGeneric(command, CommandRoundedRect,   iEntry + 1, next, {P::Coord, P::Coord, P::Coord, P::Coord, P::Coord}); break;
+            case Identifier::fillColor:     ok &= addCommandGeneric(command, CommandFillColor,     iEntry + 1, next, {P::Color}); break;
+            case Identifier::fillVertGrad:  ok &= addCommandGeneric(command, CommandFillVertGrad,  iEntry + 1, next, {P::Coord, P::Coord, P::Color, P::Color}); break;
+            case Identifier::strokeWidth:   ok &= addCommandGeneric(command, CommandStrokeWidth,   iEntry + 1, next, {P::Float}); break;
+            case Identifier::strokeColor:   ok &= addCommandGeneric(command, CommandStrokeColor,   iEntry + 1, next, {P::Color}); break;
+            case Identifier::stroke:        ok &= addCommandGeneric(command, CommandStroke,        iEntry + 1, next, {}); break;
             default:
                 ss = entry.asStrSize(parser);
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
@@ -204,49 +208,58 @@ namespace webui {
         return ok;
     }
 
-    bool Application::addCommandGenericStrId(Identifier name, CommandId command, int iEntry, int fEntry) {
-        if (fEntry - iEntry != 1) {
-            LOG("%s command requires one parameter", strMng.get(StringId(int(name))));
+    bool Application::addCommandGeneric(Identifier name, CommandId command, int iEntry, int fEntry, const vector<ParamType>& params) {
+        if (fEntry - iEntry != int(params.size())) {
+            LOG("%s command requires %zu parameters but %d were provided", strMng.get(StringId(int(name))), params.size(), fEntry - iEntry);
             return false;
         }
         actionCommands.push_back(command);
-        actionCommands.push_back(entryAsStrId(iEntry).getId());
-        return true;
-    }
-
-    bool Application::addCommandGenericVoid(Identifier name, CommandId command, int iEntry, int fEntry) {
-        if (fEntry - iEntry != 0) {
-            LOG("%s command requires no parameters", strMng.get(StringId(int(name))));
-            return false;
-        }
-        actionCommands.push_back(command);
-        return true;
-    }
-
-    bool Application::addCommandGenericCoord(Identifier name, CommandId command, int iEntry, int fEntry, int nCoord) {
-        if (fEntry - iEntry != nCoord) {
-            LOG("%s command requires %d parameters", strMng.get(StringId(int(name))), nCoord);
-            return false;
-        }
-        actionCommands.push_back(command);
-        while (nCoord--) {
-            // TODO
-            actionCommands.push_back(0);
+        for (auto param: params) {
+            int value;
+            float f;
+            switch (param) {
+            case ParamType::StrId: value = entryAsStrId(iEntry++).getId(); break;
+            case ParamType::Coord: value = parseCoord(iEntry++); break;
+            case ParamType::Float: f = strtof(parser[iEntry++].pos, nullptr); value = *(int*)&f; break;
+            case ParamType::Color: value = RGBA(entry(iEntry++).pos).rgba(); break;
+            default: assert(false && "internal");
+            }
+            actionCommands.push_back(value);
         }
         return true;
     }
 
-    bool Application::addCommandGenericColor(Identifier name, CommandId command, int iEntry, int fEntry) {
-        if (fEntry - iEntry != 1) {
-            LOG("%s command requires one parameter", strMng.get(StringId(int(name))));
-            return false;
+    int Application::parseCoord(int iEntry) const {
+        bool bad(false);
+        int out(0);
+        auto param(entryAsStrSize(iEntry));
+        const auto* end(param.first + param.second);
+        if (isalpha(*param.first)) {
+            // identifier
+            /**/ if (*param.first == 'x') { out |= 0 << 16; param.first++; }
+            else if (*param.first == 'y') { out |= 1 << 16; param.first++; }
+            else if (*param.first == 'w') { out |= 2 << 16; param.first++; }
+            else if (*param.first == 'h') { out |= 3 << 16; param.first++; }
+            else bad = true;
+            if (isalnum(*param.first)) bad = true;
+        } else
+            out |= 4 << 16;
+        bool neg(false);
+        if (*param.first == '+' || (neg = (*param.first == '-'))) param.first++;
+        while (param.first < end && isspace(*param.first)) param.first++;
+        if (param.first < end) {
+            float num(strtof(param.first, nullptr));
+            if (neg) num = -num;
+            out |= int(num*4) & 0xffff;
         }
-        actionCommands.push_back(command);
-        actionCommands.push_back(RGBA(entry(iEntry).pos).rgba());
-        return true;
+        if (bad) {
+            param = entryAsStrSize(iEntry);
+            LOG("unrecognized coord string: %.*s", param.second, param.first);
+        }
+        return out;
     }
 
-    bool Application::executeInner(int commandList) {
+    bool Application::executeNoCheck(int commandList) {
         bool cont(true), executed(false);
         auto* command(&actionCommands[commandList]);
         auto& render(ctx.getRender());
@@ -265,15 +278,27 @@ namespace webui {
                 ++command;
                 break;
             case CommandRoundedRect:
-                render.roundedRect(10, 10, 100, 100, 5);
+                render.roundedRect(getCoord(command[1]), getCoord(command[2]), getCoord(command[3]), getCoord(command[4]), getCoord(command[5]));
                 command += 6;
                 break;
             case CommandFillColor:
                 render.fillColor(RGBA(*++command));
                 ++command;
                 break;
+            case CommandFillVertGrad:
+                render.fillVertGrad(getCoord(command[1]), getCoord(command[2]), RGBA(command[3]), RGBA(command[4]));
+                command += 5;
+                break;
+            case CommandStrokeWidth:
+                render.strokeWidth(*(float*)++command);
+                ++command;
+                break;
             case CommandStrokeColor:
                 render.strokeColor(RGBA(*++command));
+                ++command;
+                break;
+            case CommandStroke:
+                render.stroke();
                 ++command;
                 break;
             case CommandLast:

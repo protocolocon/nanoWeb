@@ -54,9 +54,16 @@ namespace webui {
             int onClick;
             int onRender;
         };
+        struct ActionRenderContext {
+            ActionRenderContext(): zero(0) { }
+            V2s pos, size;
+            short zero;
+        };
         bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions); // add action to widget
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
-        inline bool execute(int commandList) { return commandList ? executeInner(commandList) : false; } // true if commands executed
+        inline ActionRenderContext& getActionRenderContext() { return actionRenderContext; }
+        inline bool execute(int commandList) { return commandList ? executeNoCheck(commandList) : false; } // true if commands executed
+        bool executeNoCheck(int commandList);
 
         // debug
         void dump() const;
@@ -77,11 +84,15 @@ namespace webui {
             CommandBeginPath,
             CommandRoundedRect,
             CommandFillColor,
+            CommandFillVertGrad,
+            CommandStrokeWidth,
             CommandStrokeColor,
+            CommandStroke,
             CommandLast
         };
         std::vector<ActionTable> actionTables;
         std::vector<int> actionCommands;
+        ActionRenderContext actionRenderContext;
 
         // widget tree and registration
         Widget* root;
@@ -97,14 +108,14 @@ namespace webui {
         bool registerWidget(Widget* widget);
 
         // actions
+        enum class ParamType: int { StrId, Coord, Float, Color };
         bool addActionCommands(int iEntry, int fEntry, int& tableEntry);
-        bool addCommandGenericStrId(Identifier name, CommandId command, int iEntry, int fEntry);
-        bool addCommandGenericVoid(Identifier name, CommandId command, int iEntry, int fEntry);
-        bool addCommandGenericCoord(Identifier name, CommandId command, int iEntry, int fEntry, int nCoord);
-        bool addCommandGenericColor(Identifier name, CommandId command, int iEntry, int fEntry);
+        bool addCommandGeneric(Identifier name, CommandId command, int iEntry, int fEntry, const std::vector<ParamType>& params);
         bool addCommandToggle(int iEntry);
-        bool executeInner(int commandList);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
+
+        int parseCoord(int iEntry) const;
+        inline float getCoord(int c) const { return float((((short*)&actionRenderContext)[c >> 16] << 2) + short(c & 0xffff)) * 0.25f; }
     };
 
 }

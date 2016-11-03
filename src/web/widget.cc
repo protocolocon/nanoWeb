@@ -21,7 +21,13 @@ namespace webui {
         alphaMult = render.multAlpha(alphaMult, alpha);
 
         auto& app(ctx.getApplication());
-        app.execute(app.getActionTable(actions).onRender);
+        const auto& actionTable(app.getActionTable(actions));
+        if (actionTable.onRender) {
+            auto& renderCtx(app.getActionRenderContext());
+            renderCtx.pos = curPos;
+            renderCtx.size = curSize;
+            app.executeNoCheck(actionTable.onRender);
+        }
 
         if (alphaMult)
             for (auto* child: children) child->render(ctx, alphaMult);

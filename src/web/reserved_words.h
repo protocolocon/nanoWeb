@@ -47,8 +47,11 @@ namespace webui {
         beginPath        = OffsetEnum(toggleVisible),
         roundedRect      = OffsetEnum(beginPath),
         fillColor        = OffsetEnum(roundedRect),
-        strokeColor      = OffsetEnum(fillColor),
-        CLast            = OffsetEnum(strokeColor),
+        fillVertGrad     = OffsetEnum(fillColor),
+        strokeWidth      = OffsetEnum(fillVertGrad),
+        strokeColor      = OffsetEnum(strokeWidth),
+        stroke           = OffsetEnum(strokeColor),
+        CLast            = OffsetEnum(stroke),
     };
 
 }

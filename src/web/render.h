@@ -30,9 +30,16 @@ namespace webui {
         void endFrame();
         inline int multAlpha(int m, int a) { return alpha = (m * a) >> 8; }
         inline void beginPath() const { nvgBeginPath(vg); }
-        inline void roundedRect(int x, int y, int w, int h, int r) const { nvgRoundedRect(vg, x, y, w, h, r); }
+        inline void roundedRect(float x, float y, float w, float h, float r) const { nvgRoundedRect(vg, x, y, w, h, r); }
         inline void fillColor(RGBA color) const { nvgFillColor(vg, color.toVGColor(alpha)); nvgFill(vg); }
-        inline void strokeColor(RGBA color) const { nvgStrokeColor(vg, color.toVGColor(alpha)); nvgStroke(vg); }
+        inline void fillVertGrad(float y, float h, RGBA top, RGBA bottom) const {
+            NVGpaint bg(nvgLinearGradient(vg, 0, y, 0, y + h, top.toVGColor(alpha), bottom.toVGColor(alpha)));
+            nvgFillPaint(vg, bg);
+            nvgFill(vg);
+        }
+        inline void strokeWidth(float width) const { nvgStrokeWidth(vg, width); }
+        inline void strokeColor(RGBA color) const { nvgStrokeColor(vg, color.toVGColor(alpha)); }
+        inline void stroke() const { nvgStroke(vg); }
 
         // getters
         inline int getWidth() const { return windowSize[0]; }

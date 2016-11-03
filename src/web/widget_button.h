@@ -19,7 +19,6 @@ namespace webui {
     public:
         inline WidgetButton(Widget* parent = nullptr): Widget(parent) { }
 
-        virtual void render(Context& ctx, int alphaMult) override;
         virtual bool set(Application& app, Identifier id, int iEntryValue, int fEntryValue) override; // returns true if set
 
     protected:
