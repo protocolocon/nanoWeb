@@ -17,23 +17,9 @@ namespace webui {
 
     void WidgetApplication::render(Context& ctx, int alphaMult) {
         assert(visible);
-        glClearColor(color.rf(), color.gf(), color.bf(), color.af());
+        glClearColor(background.rf(), background.gf(), background.bf(), background.af());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         for (auto* child: children) child->render(ctx, alphaMult);
-    }
-
-    bool WidgetApplication::set(Application& app, Identifier id, int iEntry, int fEntry) {
-        if (!Widget::set(app, id, iEntry, fEntry)) {
-            switch (id) {
-            case Identifier::color:
-                if (fEntry > iEntry + 1) { LOG("color expects a simple value"); return false; }
-                color = app.entry(iEntry).pos;
-                return true;
-            default:
-                return false;
-            }
-        }
-        return true;
     }
 
 }

@@ -137,9 +137,9 @@ add_executable(${TARGET_NAME}
   src/web/widget.cc
   src/web/render.cc
   src/web/ml_parser.cc
+  src/web/properties.cc
   src/web/application.cc
   src/web/compatibility.cc
-  src/web/widget_button.cc
   src/web/string_manager.cc
   src/web/reserved_words.cc
   src/web/widget_layout_hor.cc

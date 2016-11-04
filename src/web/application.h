@@ -21,6 +21,7 @@ namespace webui {
     class Widget;
     class Context;
     class MLParser;
+    class Properties;
 
     class Application {
     public:
@@ -45,6 +46,9 @@ namespace webui {
         inline std::pair<const char*, int> entryAsStrSize(int idx) const { return parser[idx].asStrSize(parser); }
         inline Identifier entryId(int idx) const { return parser[idx].asId(parser, strMng); }
         inline StringId entryAsStrId(int idx) { return parser[idx].asStrId(parser, strMng); }
+
+        // set generic properties
+        bool setProp(const Properties& props, Identifier id, void* data, int iEntry, int fEntry);
 
         // actions
         struct ActionTable {

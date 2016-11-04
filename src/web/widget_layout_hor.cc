@@ -25,13 +25,13 @@ namespace webui {
             la.init(posAvail.x, children.size());
             for (auto child: children)
                 if (child->isVisible())
-                    la.add(child->getWidth(), child->getWidthTarget(sizeAvail.x), child->isWidthRelative());
+                    la.add(child->curSize[0], child->size[0].get(sizeAvail.x), child->size[0].relative);
                 else
-                    la.add(child->getWidth(), 0, true);
+                    la.add(child->curSize[0], 0, true);
             stable = la.calculate(ctx, sizeAvail.x);
             for (size_t idx = 0; idx < children.size(); idx++) {
                 auto* child(children[idx]);
-                stable &= child->layout(ctx, V2s(la.get(idx), posAvail.y), V2s(la.get(idx + 1) - la.get(idx), child->getHeightTarget(curSize.y)));
+                stable &= child->layout(ctx, V2s(la.get(idx), posAvail.y), V2s(la.get(idx + 1) - la.get(idx), child->size[1].get(curSize.y)));
             }
         }
         return stable;

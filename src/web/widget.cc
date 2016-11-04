@@ -10,9 +10,33 @@
 #include "main.h"
 #include "input.h"
 #include "nanovg.h"
+#include "properties.h"
 #include <cstdlib>
+#include <cstddef>
 
 using namespace std;
+using namespace webui;
+
+namespace {
+
+    Properties widgetProperties = {
+        { Identifier::x,         PROP(Widget, curPos.x,  Int16,        2, 0, 0) },
+        { Identifier::y,         PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
+        { Identifier::w,         PROP(Widget, curSize.x, Int16,        2, 0, 0) },
+        { Identifier::h,         PROP(Widget, curSize.y, Int16,        2, 0, 0) },
+        { Identifier::id,        PROP(Widget, id,        StrId,        4, 0, 0) },
+        { Identifier::width,     PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
+        { Identifier::height,    PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
+        { Identifier::background,PROP(Widget, background,Color,        4, 0, 0) },
+        { Identifier::foreground,PROP(Widget, foreground,Color,        4, 0, 0) },
+        { Identifier::all,       PROP(Widget, all,       Int32,        4, 0, 0) },
+        { Identifier::onEnter,   PROP(Widget, actions,   Action,       4, 0, 0) },
+        { Identifier::onLeave,   PROP(Widget, actions,   Action,       4, 0, 0) },
+        { Identifier::onClick,   PROP(Widget, actions,   Action,       4, 0, 0) },
+        { Identifier::onRender,  PROP(Widget, actions,   Action,       4, 0, 0) },
+    };
+
+}
 
 namespace webui {
 
@@ -65,31 +89,8 @@ namespace webui {
         return true;
     }
 
-    bool Widget::set(Application& app, Identifier id, int iEntry, int fEntry) {
-        pair<const char*, int> ss;
-        switch (id) {
-        case Identifier::id:
-            if (fEntry > iEntry + 1) { LOG("id expects a simple value"); return false; }
-            this->id = app.entryAsStrId(iEntry);
-            return true;
-        case Identifier::width:
-            if (fEntry > iEntry + 1) { LOG("width expects a simple value"); return false; }
-            ss = app.entryAsStrSize(iEntry);
-            if ((wRelative = ss.first[ss.second - 1] == '%')) size.x = int(atof(ss.first) * 2.56f + 0.5f); else size.x = atoi(ss.first);
-            return true;
-        case Identifier::height:
-            if (fEntry > iEntry + 1) { LOG("height expects a simple value"); return false; }
-            ss = app.entryAsStrSize(iEntry);
-            if ((hRelative = ss.first[ss.second - 1] == '%')) size.y = int(atof(ss.first) * 2.56f + 0.5f); else size.y = atoi(ss.first);
-            return true;
-        case Identifier::onEnter:
-        case Identifier::onLeave:
-        case Identifier::onClick:
-        case Identifier::onRender:
-            return app.addAction(id, iEntry, fEntry, actions);
-        default:
-            return false;
-        }
+    const Properties& Widget::getProps() const {
+        return widgetProperties;
     }
 
     bool Widget::update(Application& app) {
@@ -122,7 +123,7 @@ namespace webui {
 
     void Widget::dump(const StringManager& strMng, int level) const {
         LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c) actions: %d", level * 2, "", strMng.get(id),
-            curPos.x, curPos.y, curSize.x, curSize.y, size.x, wRelative ? '%' : ' ', size.y, hRelative ? '%' : ' ', actions);
+            curPos.x, curPos.y, curSize.x, curSize.y, size[0].size, size[0].relative ? '%' : ' ', size[1].size, size[1].relative ? '%' : ' ', actions);
         for (const auto* child: children) child->dump(strMng, level + 1);
     }
 

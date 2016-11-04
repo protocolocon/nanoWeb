@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "types.h"
 #include "vector.h"
 #include "compatibility.h"
 #include "string_manager.h"
@@ -18,11 +19,13 @@
 namespace webui {
 
     class Context;
+    class Properties;
     class Application;
 
     class Widget {
     public:
-        inline Widget(Widget* parent = nullptr): parent(parent), size(0x100, 0x100), all(0x00ff4007), actions(0) { }
+        inline Widget(Widget* parent = nullptr): parent(parent), size { SizeRelative(100.0f, true), SizeRelative(100.0f, true) },
+                                                 all(0x00ff4001), actions(0) { }
         virtual ~Widget() { }
 
         // hierarchy
@@ -34,7 +37,7 @@ namespace webui {
         virtual void render(Context& ctx, int alphaMult);
         virtual bool input(Application& app); // returns true if actions were executed (affecting application)
         virtual bool layout(Context& ctx, V2s pos, V2s size); // returns true if stable
-        virtual bool set(Application& app, Identifier id, int iEntryValue, int fEntryValue); // returns true if set
+        virtual const Properties& getProps() const;
 
         // update widget status
         bool update(Application& app); // returns true if actions were executed (affecting application)
@@ -44,25 +47,17 @@ namespace webui {
 
         // getters
         inline const StringId getId() const { return id; }
-        inline int getWidth()  const { return curSize.x; }
-        inline int getHeight() const { return curSize.y; }
-        inline int getWidthTarget(int width)   const { return wRelative ? (width  * int(size.x)) >> 8 : size.x; }
-        inline int getHeightTarget(int height) const { return hRelative ? (height * int(size.y)) >> 8 : size.y; }
-        inline V2s getSizeTarget(V2s size)     const { return V2s(getWidthTarget(size.x), getHeightTarget(size.y)); }
-        inline bool isWidthRelative()  const { return wRelative; }
-        inline bool isHeightRelative() const { return hRelative; }
+        inline V2s getSizeTarget(V2s s) const { return V2s(size[0].get(s.x), size[1].get(s.y)); }
         inline bool isVisible() const { return visible; }
 
         // setters
         inline void setId(StringId id_) { id = id_; }
-        inline void setWidth(int w) { size[0] = w; }
-        inline void setHeight(int h) { size[1] = h; }
         inline void toggleVisible() { visible ^= 1; }
 
         // debug
         void dump(const StringManager& strMng, int level = 0) const;
 
-    protected:
+    public:
         // dynamic part
         V2s curPos;         // absolute position
         V2s curSize;
@@ -71,15 +66,14 @@ namespace webui {
         StringId id;
         Widget* parent;
         std::vector<Widget*> children;
-        V2s size;
+        SizeRelative size[2];
+        RGBA background, foreground;
         union {
             uint32_t all;
             struct {
-                uint8_t wRelative:1;      // widget width is relative to container
-                uint8_t hRelative:1;      // widget height is relative to container
                 uint8_t visible:1;        // if the widget and its children are visible
                 uint8_t inside:1;         // cursor is inside widget
-                uint8_t reserved:4;
+                uint8_t reserved:6;
                 uint8_t zoom;
                 uint8_t alpha;
                 uint8_t reserved2;

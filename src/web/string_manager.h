@@ -9,6 +9,7 @@
 #pragma once
 
 #include <vector>
+#include "reserved_words.h"
 
 namespace webui {
 
@@ -51,6 +52,7 @@ namespace webui {
 
         // returns the string by doc index or NULL if index==-1
         inline const char* get(StringId id) const { return id.getId() < 0 ? nullptr : &doc[id.getId()]; }
+        inline const char* get(Identifier id) const { return get(StringId(int(id))); }
 
         // debug
         void dump() const;

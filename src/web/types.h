@@ -46,4 +46,19 @@ namespace webui {
         inline static float u2f(uint8_t v) { return float(v) * (1.0f / 255.0f); }
     };
 
+
+    class SizeRelative {
+    public:
+        inline SizeRelative(float x, bool rel) { assign(x, rel); }
+        inline void assign(float x, bool rel) { size = relative ? x * 2.56f + 0.5f : x; relative = rel; }
+        inline void operator=(const std::pair<const char*, int>& ss) {
+            if ((relative = ss.first[ss.second - 1] == '%')) size = int(atof(ss.first) * 2.56f + 0.5f); else size = atoi(ss.first);
+        }
+        inline int get(int absolute) const { return relative ? (absolute * int(size)) >> 8 : size; }
+
+    public:
+        int16_t size:15;
+        uint16_t relative:1;
+    };
+
 }

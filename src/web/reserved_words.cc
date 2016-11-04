@@ -20,13 +20,22 @@ namespace webui {
 
     void addReservedWords(StringManager& strMng) {
         add(Application);
+        add(Widget);
         add(LayoutHor);
-        add(Button);
         add(WLast);
 
         add(id);
+        add(x);
+        add(y);
+        add(w);
+        add(h);
         add(width);
         add(height);
+        add(background);
+        add(foreground);
+        add(all);
+        add(visible);
+        add(inside);
         add(color);
         add(onEnter);
         add(onLeave);

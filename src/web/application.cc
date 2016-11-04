@@ -10,7 +10,7 @@
 #include "main.h"
 #include "input.h"
 #include "widget.h"
-#include "widget_button.h"
+#include "properties.h"
 #include "reserved_words.h"
 #include "widget_layout_hor.h"
 #include "widget_application.h"
@@ -123,7 +123,7 @@ namespace webui {
                     }
                     widget->addChild(widgetChild);
                 } else {
-                    if (!widget->set(*this, key, iEntry + 1, next)) {
+                    if (!setProp(widget->getProps(), key, widget, iEntry + 1, next)) {
                         auto ss(entryVal.asStrSize(parser));
                         LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
                     }
@@ -137,7 +137,7 @@ namespace webui {
     Widget* Application::createWidget(Identifier id, Widget* parent) {
         switch (id) {
         case Identifier::Application: return new WidgetApplication(parent);
-        case Identifier::Button:      return new WidgetButton(parent);
+        case Identifier::Widget:      return new Widget(parent);
         case Identifier::LayoutHor:   return new WidgetLayoutHor(parent);
         default:                      return nullptr;
         }
@@ -158,6 +158,33 @@ namespace webui {
         }
         widgets[id] = widget;
         return true;
+    }
+
+    bool Application::setProp(const Properties& props, Identifier id, void* data, int iEntry, int fEntry) {
+        auto it(props.find(id));
+        if (it == props.end()) return false;
+        pair<const char*, int> ss;
+        const auto& prop(it->second);
+        switch (prop.type) {
+        case Type::StrId:
+            if (fEntry > iEntry + 1) { LOG("%s expects a single string / identifier", strMng.get(id)); return false; }
+            reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry);
+            return true;
+        case Type::Color:
+            if (fEntry > iEntry + 1) { LOG("%s expects a single color spec (like #rrggbb or #rrggbbaa)", strMng.get(id)); return false; }
+            reinterpret_cast<RGBA*>(data)[prop.pos] = entry(iEntry).pos;
+            return true;
+        case Type::SizeRelative:
+            if (fEntry > iEntry + 1) { LOG("%s expects a sigle size (integer or float%%)", strMng.get(id)); return false; }
+            ss = entryAsStrSize(iEntry);
+            reinterpret_cast<SizeRelative*>(data)[prop.pos] = ss;
+            return true;
+        case Type::Action:
+            return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos]);
+        default:
+            LOG("internal error, unhandled property type!");
+            return false;
+        }
     }
 
     bool Application::addAction(Identifier actionId, int iEntry, int fEntry, int& actions) {

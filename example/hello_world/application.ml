@@ -1,13 +1,12 @@
 // Example application description
 Application {
-    color: "#4d4d4d"
+    background: "#4d4d4d"
 
     LayoutHor {
-        Button {
+        Widget {
             id: buttonTest
             width: 100
             height: 32
-            color: "#ffc000"
             onEnter: [
                 log("enter"),
                 toggleVisible(buttonTest2)
@@ -20,11 +19,10 @@ Application {
                 beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor("#28201d"), stroke()
             ]
         }
-        Button {
+        Widget {
             id: buttonTest2
             width: 200%
             height: 40
-            color: "#00c080"
             onEnter: log("enter 2")
             onClick: toggleVisible(buttonTest3)
             onRender: [
@@ -34,11 +32,10 @@ Application {
                 beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor("#1d2028"), stroke()
             ]
         }
-        Button {
+        Widget {
             id: buttonTest3
             width: 200%
             height: 80
-            color: "#00c0ff"
             onClick: toggleVisible(buttonTest)
             onRender: [
                 strokeWidth(1),
