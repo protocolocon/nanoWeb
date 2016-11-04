@@ -30,10 +30,10 @@ namespace {
         { Identifier::background,PROP(Widget, background,Color,        4, 0, 0) },
         { Identifier::foreground,PROP(Widget, foreground,Color,        4, 0, 0) },
         { Identifier::all,       PROP(Widget, all,       Int32,        4, 0, 0) },
-        { Identifier::onEnter,   PROP(Widget, actions,   Action,       4, 0, 0) },
-        { Identifier::onLeave,   PROP(Widget, actions,   Action,       4, 0, 0) },
-        { Identifier::onClick,   PROP(Widget, actions,   Action,       4, 0, 0) },
-        { Identifier::onRender,  PROP(Widget, actions,   Action,       4, 0, 0) },
+        { Identifier::onEnter,   PROP(Widget, actions,   ActionTable,  4, 0, 0) },
+        { Identifier::onLeave,   PROP(Widget, actions,   ActionTable,  4, 0, 0) },
+        { Identifier::onClick,   PROP(Widget, actions,   ActionTable,  4, 0, 0) },
+        { Identifier::onRender,  PROP(Widget, actions,   ActionTable,  4, 0, 0) },
     };
 
 }

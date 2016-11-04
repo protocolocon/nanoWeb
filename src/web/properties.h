@@ -27,7 +27,8 @@ namespace webui {
         Float,
         Color,
         SizeRelative,
-        Action,
+        ActionTable,
+        ActionEntry,
     };
 
     struct Property {

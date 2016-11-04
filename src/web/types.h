@@ -50,7 +50,7 @@ namespace webui {
     class SizeRelative {
     public:
         inline SizeRelative(float x, bool rel) { assign(x, rel); }
-        inline void assign(float x, bool rel) { size = relative ? x * 2.56f + 0.5f : x; relative = rel; }
+        inline void assign(float x, bool rel) { size = rel ? x * 2.56f + 0.5f : x; relative = rel; }
         inline void operator=(const std::pair<const char*, int>& ss) {
             if ((relative = ss.first[ss.second - 1] == '%')) size = int(atof(ss.first) * 2.56f + 0.5f); else size = atoi(ss.first);
         }

@@ -24,8 +24,8 @@ namespace webui {
 
     class Widget {
     public:
-        inline Widget(Widget* parent = nullptr): parent(parent), size { SizeRelative(100.0f, true), SizeRelative(100.0f, true) },
-                                                 all(0x00ff4001), actions(0) { }
+        inline Widget(Widget* parent): parent(parent), size { SizeRelative(100.0f, true), SizeRelative(100.0f, true) },
+                                       all(0x00ff4001), actions(0) { }
         virtual ~Widget() { }
 
         // hierarchy

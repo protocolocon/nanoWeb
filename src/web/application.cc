@@ -19,6 +19,18 @@
 #include <algorithm>
 
 using namespace std;
+using namespace webui;
+
+namespace {
+
+    Properties actionTableProperties = {
+        { Identifier::onEnter,   PROP(Application::ActionTable, onEnter,   ActionEntry,  4, 0, 0) },
+        { Identifier::onLeave,   PROP(Application::ActionTable, onLeave,   ActionEntry,  4, 0, 0) },
+        { Identifier::onClick,   PROP(Application::ActionTable, onClick,   ActionEntry,  4, 0, 0) },
+        { Identifier::onRender,  PROP(Application::ActionTable, onRender,  ActionEntry,  4, 0, 0) },
+    };
+
+}
 
 namespace webui {
 
@@ -179,8 +191,10 @@ namespace webui {
             ss = entryAsStrSize(iEntry);
             reinterpret_cast<SizeRelative*>(data)[prop.pos] = ss;
             return true;
-        case Type::Action:
+        case Type::ActionTable:
             return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos]);
+        case Type::ActionEntry:
+            return addActionCommands(iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos]);
         default:
             LOG("internal error, unhandled property type!");
             return false;
@@ -193,15 +207,11 @@ namespace webui {
             actionTables.resize(actionTables.size() + 1);
         }
         auto& table(actionTables[actions]);
-        int* tableEntry;
-        switch (actionId) { // get the table entry to add commands to
-        case Identifier::onEnter:  tableEntry = &table.onEnter;  break;
-        case Identifier::onLeave:  tableEntry = &table.onLeave;  break;
-        case Identifier::onClick:  tableEntry = &table.onClick;  break;
-        case Identifier::onRender: tableEntry = &table.onRender; break;
-        default: LOG("unknown action"); return false;
+        if (!setProp(actionTableProperties, actionId, &table, iEntry, fEntry)) {
+            LOG("unknown action %s or invalid parameters", strMng.get(actionId));
+            return false;
         }
-        return addActionCommands(iEntry, fEntry, *tableEntry);
+        return true;
     }
 
     bool Application::addActionCommands(int iEntry, int fEntry, int& tableEntry) {
