@@ -30,11 +30,32 @@ namespace {
         { Identifier::onRender,  PROP(Application::ActionTable, onRender,  ActionEntry,  4, 0, 0) },
     };
 
+    const Type logParams[] =           { Type::StrId, Type::LastType };
+    const Type toggleVisibleParams[] = { Type::StrId, Type::LastType };
+    const Type beginPathParams[] =     { Type::LastType };
+    const Type roundedRectParams[] =   { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
+    const Type fillColorParams[] =     { Type::Color, Type::LastType };
+    const Type fillVertGradParams[] =  { Type::Coord, Type::Coord, Type::Color, Type::Color, Type::LastType };
+    const Type strokeWidthParams[] =   { Type::Float, Type::LastType };
+    const Type strokeColorParams[] =   { Type::Color, Type::LastType };
+    const Type strokeParams[] =        { Type::LastType };
+    Properties commandParameterProperties = {
+        { Identifier::log,           PROPDIFF(logParams,           logParams) },
+        { Identifier::toggleVisible, PROPDIFF(toggleVisibleParams, logParams) },
+        { Identifier::beginPath,     PROPDIFF(beginPathParams,     logParams) },
+        { Identifier::roundedRect,   PROPDIFF(roundedRectParams,   logParams) },
+        { Identifier::fillColor,     PROPDIFF(fillColorParams,     logParams) },
+        { Identifier::fillVertGrad,  PROPDIFF(fillVertGradParams,  logParams) },
+        { Identifier::strokeWidth,   PROPDIFF(strokeWidthParams,   logParams) },
+        { Identifier::strokeColor,   PROPDIFF(strokeColorParams,   logParams) },
+        { Identifier::stroke,        PROPDIFF(strokeParams,        logParams) },
+    };
+
 }
 
 namespace webui {
 
-    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, CommandLast), root(nullptr) {
+    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, int(Identifier::CLast)), root(nullptr) {
         addReservedWords(strMng);
         initialize();
     }
@@ -175,21 +196,38 @@ namespace webui {
     bool Application::setProp(const Properties& props, Identifier id, void* data, int iEntry, int fEntry) {
         auto it(props.find(id));
         if (it == props.end()) return false;
+        if (!setProp(it->second, id, data, iEntry, fEntry)) {
+            auto ss(entryAsStrSize(iEntry));
+            LOG("%s was expecting the type %s, received %.*s (%d parameters) and failed",
+                strMng.get(id), toString(it->second.type), ss.second, ss.first, fEntry - iEntry);
+            return false;
+        }
+        return true;
+    }
+
+    bool Application::setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry) {
         pair<const char*, int> ss;
-        const auto& prop(it->second);
         switch (prop.type) {
         case Type::StrId:
-            if (fEntry > iEntry + 1) { LOG("%s expects a single string / identifier", strMng.get(id)); return false; }
+            if (fEntry > iEntry + 1) return false;
             reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry);
             return true;
+        case Type::Float:
+            if (fEntry > iEntry + 1) return false;
+            reinterpret_cast<float*>(data)[prop.pos] = strtof(parser[iEntry].pos, nullptr);
+            return true;
         case Type::Color:
-            if (fEntry > iEntry + 1) { LOG("%s expects a single color spec (like #rrggbb or #rrggbbaa)", strMng.get(id)); return false; }
+            if (fEntry > iEntry + 1) return false;
             reinterpret_cast<RGBA*>(data)[prop.pos] = entry(iEntry).pos;
             return true;
         case Type::SizeRelative:
-            if (fEntry > iEntry + 1) { LOG("%s expects a sigle size (integer or float%%)", strMng.get(id)); return false; }
+            if (fEntry > iEntry + 1) return false;
             ss = entryAsStrSize(iEntry);
             reinterpret_cast<SizeRelative*>(data)[prop.pos] = ss;
+            return true;
+        case Type::Coord:
+            if (fEntry > iEntry + 1) return false;
+            reinterpret_cast<int*>(data)[prop.pos] = parseCoord(iEntry);
             return true;
         case Type::ActionTable:
             return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos]);
@@ -217,50 +255,45 @@ namespace webui {
     bool Application::addActionCommands(int iEntry, int fEntry, int& tableEntry) {
         if (*parser[iEntry].pos == '[') iEntry++;
         bool ok(true);
-        pair<const char*, int> ss;
         tableEntry = int(actionCommands.size());
         while (iEntry < fEntry) {
-            using P = ParamType;
-            const auto& entry(parser[iEntry]);
+            const auto& entry(parser[iEntry++]);
             auto command(entry.asId(parser, strMng));
             int next(entry.next ? entry.next : fEntry);
-            switch (command) {
-            case Identifier::log:           ok &= addCommandGeneric(command, CommandLog,           iEntry + 1, next, {P::StrId}); break;
-            case Identifier::toggleVisible: ok &= addCommandGeneric(command, CommandToggleVisible, iEntry + 1, next, {P::StrId}); break;
-            case Identifier::beginPath:     ok &= addCommandGeneric(command, CommandBeginPath,     iEntry + 1, next, {}); break;
-            case Identifier::roundedRect:   ok &= addCommandGeneric(command, CommandRoundedRect,   iEntry + 1, next, {P::Coord, P::Coord, P::Coord, P::Coord, P::Coord}); break;
-            case Identifier::fillColor:     ok &= addCommandGeneric(command, CommandFillColor,     iEntry + 1, next, {P::Color}); break;
-            case Identifier::fillVertGrad:  ok &= addCommandGeneric(command, CommandFillVertGrad,  iEntry + 1, next, {P::Coord, P::Coord, P::Color, P::Color}); break;
-            case Identifier::strokeWidth:   ok &= addCommandGeneric(command, CommandStrokeWidth,   iEntry + 1, next, {P::Float}); break;
-            case Identifier::strokeColor:   ok &= addCommandGeneric(command, CommandStrokeColor,   iEntry + 1, next, {P::Color}); break;
-            case Identifier::stroke:        ok &= addCommandGeneric(command, CommandStroke,        iEntry + 1, next, {}); break;
-            default:
-                ss = entry.asStrSize(parser);
+
+            auto it(commandParameterProperties.find(command));
+            if (it == commandParameterProperties.end()) {
+                auto ss(entry.asStrSize(parser));
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
                 return false;
+            } else {
+                auto* params(logParams + it->second.pos);
+
+                auto ss(entry.asStrSize(parser));
+                LOG("command: {%.*s} %d", ss.second, ss.first, it->second.pos);
+
+                ok &= addCommandGeneric(command, iEntry, next, params);
             }
             iEntry = next;
         }
-        actionCommands.push_back(CommandLast);
+        actionCommands.push_back(int(Identifier::CLast));
         return ok;
     }
 
-    bool Application::addCommandGeneric(Identifier name, CommandId command, int iEntry, int fEntry, const vector<ParamType>& params) {
-        if (fEntry - iEntry != int(params.size())) {
-            LOG("%s command requires %zu parameters but %d were provided", strMng.get(StringId(int(name))), params.size(), fEntry - iEntry);
+    bool Application::addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params) {
+        if (params[fEntry - iEntry] != Type::LastType) {
+            LOG("%s command got %d parameters", strMng.get(name), fEntry - iEntry);
             return false;
         }
-        actionCommands.push_back(command);
-        for (auto param: params) {
+        actionCommands.push_back(int(name));
+        Property prop;
+        prop.all = 0;
+        prop.size = 4;
+        while (*params != Type::LastType) {
             int value;
-            float f;
-            switch (param) {
-            case ParamType::StrId: value = entryAsStrId(iEntry++).getId(); break;
-            case ParamType::Coord: value = parseCoord(iEntry++); break;
-            case ParamType::Float: f = strtof(parser[iEntry++].pos, nullptr); value = *(int*)&f; break;
-            case ParamType::Color: value = RGBA(entry(iEntry++).pos).rgba(); break;
-            default: assert(false && "internal");
-            }
+            prop.type = *params++;
+            if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1)) LOG("error in command argument");
+            iEntry++;
             actionCommands.push_back(value);
         }
         return true;
@@ -301,44 +334,44 @@ namespace webui {
         auto* command(&actionCommands[commandList]);
         auto& render(ctx.getRender());
         while (cont) {
-            switch (*command) {
-            case CommandLog:
+            switch (Identifier(*command)) {
+            case Identifier::log:
                 LOG("%s", strMng.get(StringId(*++command)));
                 ++command;
                 break;
-            case CommandToggleVisible:
+            case Identifier::toggleVisible:
                 executed |= executeToggleVisible(StringId(*++command));
                 ++command;
                 break;
-            case CommandBeginPath:
+            case Identifier::beginPath:
                 render.beginPath();
                 ++command;
                 break;
-            case CommandRoundedRect:
+            case Identifier::roundedRect:
                 render.roundedRect(getCoord(command[1]), getCoord(command[2]), getCoord(command[3]), getCoord(command[4]), getCoord(command[5]));
                 command += 6;
                 break;
-            case CommandFillColor:
+            case Identifier::fillColor:
                 render.fillColor(RGBA(*++command));
                 ++command;
                 break;
-            case CommandFillVertGrad:
+            case Identifier::fillVertGrad:
                 render.fillVertGrad(getCoord(command[1]), getCoord(command[2]), RGBA(command[3]), RGBA(command[4]));
                 command += 5;
                 break;
-            case CommandStrokeWidth:
+            case Identifier::strokeWidth:
                 render.strokeWidth(*(float*)++command);
                 ++command;
                 break;
-            case CommandStrokeColor:
+            case Identifier::strokeColor:
                 render.strokeColor(RGBA(*++command));
                 ++command;
                 break;
-            case CommandStroke:
+            case Identifier::stroke:
                 render.stroke();
                 ++command;
                 break;
-            case CommandLast:
+            case Identifier::CLast:
                 cont = false;
                 break;
             default:

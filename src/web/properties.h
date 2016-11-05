@@ -15,6 +15,9 @@
 #define PROP(class, member, type, size, bit, redundant) \
     { { uint32_t(int(Type::type) | size << 8 | bit << 12 | redundant << 15 | uint16_t(long(&((class*)nullptr)->member) / size) << 16) } }
 
+#define PROPDIFF(ptr1, ptr0) \
+    { { uint32_t(int(Type::Int32) | 4 << 8 | 0 << 12 | 0 << 15 | uint16_t((ptr1) - (ptr0)) << 16) } }
+
 namespace webui {
 
     class Application;
@@ -27,9 +30,13 @@ namespace webui {
         Float,
         Color,
         SizeRelative,
+        Coord,        // with ref
         ActionTable,
         ActionEntry,
+        LastType
     };
+
+    const char* toString(Type t);
 
     struct Property {
         union {

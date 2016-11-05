@@ -11,6 +11,21 @@
 
 namespace webui {
 
+    const char* toString(Type t) {
+        const char* strs[int(Type::LastType)] = {
+            "Uint8",
+            "Int16",
+            "Int32",
+            "StrId",
+            "Float",
+            "Color",
+            "SizeRelative",
+            "ActionTable",
+            "ActionEntry",
+        };
+        return strs[int(t)];
+    }
+
     int Properties::get(Identifier id, const void* data) const {
         auto it(find(id));
         if (it == end()) {

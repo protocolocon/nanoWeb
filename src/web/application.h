@@ -10,6 +10,7 @@
 
 #include "vector.h"
 #include "ml_parser.h"
+#include "properties.h"
 #include "compatibility.h"
 #include "string_manager.h"
 #include "reserved_words.h"
@@ -21,6 +22,7 @@ namespace webui {
     class Widget;
     class Context;
     class MLParser;
+    struct Property;
     class Properties;
 
     class Application {
@@ -49,6 +51,7 @@ namespace webui {
 
         // set generic properties
         bool setProp(const Properties& props, Identifier id, void* data, int iEntry, int fEntry);
+        bool setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry);
 
         // actions
         struct ActionTable {
@@ -81,19 +84,6 @@ namespace webui {
         // layout
         bool layoutStable;
 
-        // commands
-        enum CommandId {
-            CommandLog,
-            CommandToggleVisible,
-            CommandBeginPath,
-            CommandRoundedRect,
-            CommandFillColor,
-            CommandFillVertGrad,
-            CommandStrokeWidth,
-            CommandStrokeColor,
-            CommandStroke,
-            CommandLast
-        };
         std::vector<ActionTable> actionTables;
         std::vector<int> actionCommands;
         ActionRenderContext actionRenderContext;
@@ -112,9 +102,8 @@ namespace webui {
         bool registerWidget(Widget* widget);
 
         // actions
-        enum class ParamType: int { StrId, Coord, Float, Color };
         bool addActionCommands(int iEntry, int fEntry, int& tableEntry);
-        bool addCommandGeneric(Identifier name, CommandId command, int iEntry, int fEntry, const std::vector<ParamType>& params);
+        bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params);
         bool addCommandToggle(int iEntry);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
 
