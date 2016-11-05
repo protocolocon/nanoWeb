@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "types.h"
 #include "vector.h"
 #include "ml_parser.h"
 #include "properties.h"
@@ -45,9 +46,9 @@ namespace webui {
 
         // get parsed entry
         inline const MLParser::Entry& entry(int idx) const { return parser[idx]; }
-        inline std::pair<const char*, int> entryAsStrSize(int idx) const { return parser[idx].asStrSize(parser); }
+        inline std::pair<const char*, int> entryAsStrSize(int idx, bool quotes) const { return parser[idx].asStrSize(parser, quotes); }
         inline Identifier entryId(int idx) const { return parser[idx].asId(parser, strMng); }
-        inline StringId entryAsStrId(int idx) { return parser[idx].asStrId(parser, strMng); }
+        inline StringId entryAsStrId(int idx, bool quotes) { return parser[idx].asStrId(parser, strMng, quotes); }
 
         // set generic properties
         bool setProp(Identifier id, Widget* widget, int iEntry, int fEntry);
@@ -102,7 +103,9 @@ namespace webui {
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
         bool executeSet(StringId widgetId, Identifier prop, StringId value);
 
+        bool parseId(Widget* widget, const char*& str, const Property*& prop) const;
         int parseCoord(int iEntry, Widget* widget) const;
+        RGBAref parseColorModif(int iEntry, Widget* widget) const;
         static inline float getCoord(int c, Widget* widget) {
             int x(short(c & 0xffff));
             if (c >= 0) x += ((short*)widget)[c >> 16] << 2;

@@ -133,6 +133,7 @@ include_directories(
 add_executable(${TARGET_NAME}
   src/web/main.cc
   src/web/util.cc
+  src/web/types.cc
   src/web/input.cc
   src/web/widget.cc
   src/web/render.cc

@@ -27,12 +27,12 @@ namespace {
     const Type toggleVisibleParams[] = { Type::StrId, Type::LastType };
     const Type beginPathParams[] =     { Type::LastType };
     const Type roundedRectParams[] =   { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
-    const Type fillColorParams[] =     { Type::Color, Type::LastType };
-    const Type fillVertGradParams[] =  { Type::Coord, Type::Coord, Type::Color, Type::Color, Type::LastType };
+    const Type fillColorParams[] =     { Type::ColorModif, Type::LastType };
+    const Type fillVertGradParams[] =  { Type::Coord, Type::Coord, Type::ColorModif, Type::ColorModif, Type::LastType };
     const Type strokeWidthParams[] =   { Type::Float, Type::LastType };
-    const Type strokeColorParams[] =   { Type::Color, Type::LastType };
+    const Type strokeColorParams[] =   { Type::ColorModif, Type::LastType };
     const Type strokeParams[] =        { Type::LastType };
-    const Type setParams[] =           { Type::StrId, Type::Id, Type::StrId, Type::LastType };
+    const Type setParams[] =           { Type::StrId, Type::Id, Type::Str, Type::LastType };
 
 }
 
@@ -128,7 +128,7 @@ namespace webui {
             auto key(entryKey.asId(parser, strMng));
             int next(entryVal.next ? entryVal.next : fEntry);
             if (key == Identifier::InvalidId) {
-                auto ss(entryKey.asStrSize(parser));
+                auto ss(entryKey.asStrSize(parser, true));
                 LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
             } else {
                 if (key < Identifier::WLast && (widgetChild = createWidget(key, widget/*parent*/))) {
@@ -140,7 +140,7 @@ namespace webui {
                     widget->addChild(widgetChild);
                 } else {
                     if (!setProp(key, widget, iEntry + 1, next)) {
-                        auto ss(entryVal.asStrSize(parser));
+                        auto ss(entryVal.asStrSize(parser, true));
                         LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
                     }
                 }
@@ -180,7 +180,7 @@ namespace webui {
         const auto* prop(widget->getProp(id));
         if (!prop) return false;
         if (!setProp(*prop, id, widget, iEntry, fEntry, widget)) {
-            auto ss(entryAsStrSize(iEntry));
+            auto ss(entryAsStrSize(iEntry, true));
             LOG("%s was expecting the type %s, received %.*s (%d parameters) and failed",
                 strMng.get(id), toString(prop->type), ss.second, ss.first, fEntry - iEntry);
             return false;
@@ -195,9 +195,13 @@ namespace webui {
             if (fEntry > iEntry + 1) return false;
             reinterpret_cast<Identifier*>(data)[prop.pos] = entryId(iEntry);
             return true;
+        case Type::Str:
+            if (fEntry > iEntry + 1) return false;
+            reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry, true);
+            return true;
         case Type::StrId:
             if (fEntry > iEntry + 1) return false;
-            reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry);
+            reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry, false);
             return true;
         case Type::Float:
             if (fEntry > iEntry + 1) return false;
@@ -207,9 +211,13 @@ namespace webui {
             if (fEntry > iEntry + 1) return false;
             reinterpret_cast<RGBA*>(data)[prop.pos] = entry(iEntry).pos;
             return true;
+        case Type::ColorModif:
+            if (fEntry > iEntry + 1) return false;
+            reinterpret_cast<RGBAref*>(data)[prop.pos] = parseColorModif(iEntry, widget);
+            return true;
         case Type::SizeRelative:
             if (fEntry > iEntry + 1) return false;
-            ss = entryAsStrSize(iEntry);
+            ss = entryAsStrSize(iEntry, false);
             reinterpret_cast<SizeRelative*>(data)[prop.pos] = ss;
             return true;
         case Type::Coord:
@@ -263,7 +271,7 @@ namespace webui {
             case Identifier::stroke:        params = strokeParams; break;
             case Identifier::set:           params = setParams; break;
             default:
-                auto ss(entry.asStrSize(parser));
+                auto ss(entry.asStrSize(parser, true));
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
             }
             if (params) ok &= addCommandGeneric(command, iEntry, next, params, widget);
@@ -292,40 +300,55 @@ namespace webui {
         return true;
     }
 
+    bool Application::parseId(Widget* widget, const char*& str, const Property*& prop) const {
+        if (isalpha(*str)) {
+            const auto* start(str++);
+            while (isalnum(*str)) ++str;
+            auto id(strMng.search(start, str - start));
+            if (id.valid()) return (prop = widget->getProp(Identifier(id.getId())));
+            return false; // error
+        }
+        prop = nullptr;
+        return true; // ok
+    }
+
     int Application::parseCoord(int iEntry, Widget* widget) const {
         bool bad(false);
         int out(0);
-        auto param(entryAsStrSize(iEntry));
-        const auto* end(param.first + param.second);
-        if (isalpha(*param.first)) {
-            // identifier
-            auto* idEnd(param.first + 1);
-            while (idEnd < end && isalnum(*idEnd)) ++idEnd;
-            auto id(strMng.search(param.first, idEnd - param.first));
-            if (id.valid()) {
-                const auto* prop(widget->getProp(Identifier(id.getId())));
-                if (prop && prop->size == 2 && prop->type == Type::Int16) {
-                    out |= prop->pos << 16;
-                    param.first = idEnd;
-                } else
-                    bad = true;
-            } else
-                bad = true;
+        auto param(entry(iEntry).pos);
+        const Property* prop;
+        if (!parseId(widget, param, prop)) bad = true;
+        if (prop) {
+            if (prop->size == 2 && prop->type == Type::Int16) out |= prop->pos << 16;
+            else bad = true;
         } else
             out |= 0xffff0000;
-        bool neg(false);
-        if (*param.first == '+' || (neg = (*param.first == '-'))) param.first++;
-        while (param.first < end && isspace(*param.first)) param.first++;
-        if (param.first < end) {
-            float num(strtof(param.first, nullptr));
-            if (neg) num = -num;
+        if (*param == '+' || *param == '-') {
+            float num(strtof(param, nullptr));
             out |= int(num*4) & 0xffff;
         }
         if (bad) {
-            param = entryAsStrSize(iEntry);
-            LOG("unrecognized coord string: %.*s", param.second, param.first);
+            auto ss(entryAsStrSize(iEntry, true));
+            LOG("unrecognized coord string: %.*s", ss.second, ss.first);
         }
         return out;
+    }
+
+    RGBAref Application::parseColorModif(int iEntry, Widget* widget) const {
+        auto param(entry(iEntry).pos);
+        if (*param == '"') return RGBAref(param); // normal color, no reference
+        // referenced color
+        const Property* prop;
+        if (!parseId(widget, param, prop) || !prop || prop->size != 4 || prop->type != Type::Color) {
+            auto ss(entryAsStrSize(iEntry, true));
+            LOG("unrecognized color string: %.*s", ss.second, ss.first);
+            return RGBAref();
+        } else {
+            auto ref(prop->pos);
+            float value(0);
+            if (*param == '%') value = strtof(param + 1, nullptr);
+            return RGBAref(ref, value);
+        }
     }
 
     bool Application::executeNoCheck(int commandList, Widget* w) {
@@ -352,11 +375,11 @@ namespace webui {
                 command += 6;
                 break;
             case Identifier::fillColor:
-                render.fillColor(RGBA(*++command));
+                render.fillColor(RGBAref(*++command).get(w));
                 ++command;
                 break;
             case Identifier::fillVertGrad:
-                render.fillVertGrad(getCoord(command[1], w), getCoord(command[2], w), RGBA(command[3]), RGBA(command[4]));
+                render.fillVertGrad(getCoord(command[1], w), getCoord(command[2], w), RGBAref(command[3]).get(w), RGBAref(command[4]).get(w));
                 command += 5;
                 break;
             case Identifier::strokeWidth:
@@ -364,7 +387,7 @@ namespace webui {
                 ++command;
                 break;
             case Identifier::strokeColor:
-                render.strokeColor(RGBA(*++command));
+                render.strokeColor(RGBAref(*++command).get(w));
                 ++command;
                 break;
             case Identifier::stroke:

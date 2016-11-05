@@ -15,6 +15,8 @@
 
 namespace webui {
 
+    class Widget;
+
     class RGBA {
     public:
         RGBA(): c(0) { }
@@ -40,10 +42,31 @@ namespace webui {
         inline NVGcolor toVGColor() const { return NVGcolor {{{ rf(), gf(), bf(), af() }}}; }
         inline NVGcolor toVGColor(int alpha) const { return NVGcolor {{{ rf(), gf(), bf(), float(a() * alpha) * (1.0f / 65535.0f) }}}; }
 
-    private:
-        uint32_t c;
+        void multRGB(int x) { rr = mult(rr, x); gg = mult(gg, x); bb = mult(bb, x); }
+        static inline uint8_t mult(uint8_t v, int mult) { return clamp((uint32_t(v) * mult) >> 8); }
+        static inline uint8_t clamp(int v) { return v > 255 ? 255 : v; }
+
+    protected:
+        union {
+            uint32_t c;
+            struct {
+                uint8_t aa, bb, gg, rr;
+            };
+        };
 
         inline static float u2f(uint8_t v) { return float(v) * (1.0f / 255.0f); }
+    };
+
+
+    class RGBAref: public RGBA {
+    public:
+        RGBAref(): RGBA() { }
+        RGBAref(uint32_t c): RGBA(c) { }
+        RGBAref(RGBA rgba): RGBA(rgba.rgba() & -2) { }
+        RGBAref(const char* str): RGBA(str) { c &= -2; }
+        RGBAref(int ref, float value) { assign(ref, value); }
+        void assign(int ref, float value);
+        RGBA get(const Widget* widget) const;
     };
 
 

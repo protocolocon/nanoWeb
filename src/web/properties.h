@@ -27,9 +27,11 @@ namespace webui {
         Int16,
         Int32,
         Id,
-        StrId,
+        Str,
+        StrId,        // removes quotes if any
         Float,
         Color,
+        ColorModif,   // color modificaiton or color
         SizeRelative,
         Coord,        // with ref
         ActionTable,

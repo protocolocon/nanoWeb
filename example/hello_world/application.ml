@@ -15,10 +15,11 @@ Application {
             onLeave: log("leave")
             onRender: [
                 strokeWidth(1),
-                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, "#605040", "#3c3630"),
-                beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor("#806c5c"), stroke(),
-                beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor("#28201d"), stroke()
+                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, background%100, background%60),
+                beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor(background%120), stroke(),
+                beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor(background%30), stroke()
             ]
+            background: "#806050"
         }
         Widget {
             id: buttonTest2
@@ -32,6 +33,8 @@ Application {
                 beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor("#5c6c80"), stroke(),
                 beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor("#1d2028"), stroke()
             ]
+            onEnter: set(buttonTest, background, "#506080")
+            onLeave: set(buttonTest, background, "#806050")
         }
         Widget {
             id: buttonTest3

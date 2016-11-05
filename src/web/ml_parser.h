@@ -21,9 +21,9 @@ namespace webui {
 
         struct Entry {
             Entry(const char* pos = nullptr): pos(pos), next(0) { }
-            std::pair<const char*, int> asStrSize(const MLParser& parser) const;           // string, id or number
-            Identifier asId(const MLParser& parser, const StringManager& strMng) const;    // string, id or number
-            StringId asStrId(const MLParser& parser, StringManager& strMng) const;         // string, id or number
+            std::pair<const char*, int> asStrSize(const MLParser& parser, bool quotes) const;   // string, id or number
+            Identifier asId(const MLParser& parser, const StringManager& strMng) const;                 // string, id or number
+            StringId asStrId(const MLParser& parser, StringManager& strMng, bool quotes) const; // string, id or number
             const char* pos;
             int next;
         };
