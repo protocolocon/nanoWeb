@@ -50,8 +50,8 @@ namespace webui {
         inline StringId entryAsStrId(int idx) { return parser[idx].asStrId(parser, strMng); }
 
         // set generic properties
-        bool setProp(const Properties& props, Identifier id, void* data, int iEntry, int fEntry);
-        bool setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry);
+        bool setProp(Identifier id, Widget* widget, int iEntry, int fEntry);
+        bool setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry, Widget* widget);
 
         // actions
         struct ActionTable {
@@ -61,16 +61,10 @@ namespace webui {
             int onClick;
             int onRender;
         };
-        struct ActionRenderContext {
-            ActionRenderContext(): zero(0) { }
-            V2s pos, size;
-            short zero;
-        };
-        bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions); // add action to widget
+        bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget); // add action to widget
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
-        inline ActionRenderContext& getActionRenderContext() { return actionRenderContext; }
-        inline bool execute(int commandList) { return commandList ? executeNoCheck(commandList) : false; } // true if commands executed
-        bool executeNoCheck(int commandList);
+        inline bool execute(int commandList, Widget* widget) { return commandList ? executeNoCheck(commandList, widget) : false; } // true if commands executed
+        bool executeNoCheck(int commandList, Widget* widget);
 
         // debug
         void dump() const;
@@ -86,7 +80,6 @@ namespace webui {
 
         std::vector<ActionTable> actionTables;
         std::vector<int> actionCommands;
-        ActionRenderContext actionRenderContext;
 
         // widget tree and registration
         Widget* root;
@@ -102,13 +95,17 @@ namespace webui {
         bool registerWidget(Widget* widget);
 
         // actions
-        bool addActionCommands(int iEntry, int fEntry, int& tableEntry);
-        bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params);
+        bool addActionCommands(int iEntry, int fEntry, int& tableEntry, Widget* widget);
+        bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
         bool addCommandToggle(int iEntry);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
 
-        int parseCoord(int iEntry) const;
-        inline float getCoord(int c) const { return float((((short*)&actionRenderContext)[c >> 16] << 2) + short(c & 0xffff)) * 0.25f; }
+        int parseCoord(int iEntry, Widget* widget) const;
+        static inline float getCoord(int c, Widget* widget) {
+            int x(short(c & 0xffff));
+            if (c >= 0) x += ((short*)widget)[c >> 16] << 2;
+            return float(x) * 0.25f;
+        }
     };
 
 }

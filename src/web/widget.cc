@@ -46,12 +46,7 @@ namespace webui {
 
         auto& app(ctx.getApplication());
         const auto& actionTable(app.getActionTable(actions));
-        if (actionTable.onRender) {
-            auto& renderCtx(app.getActionRenderContext());
-            renderCtx.pos = curPos;
-            renderCtx.size = curSize;
-            app.executeNoCheck(actionTable.onRender);
-        }
+        if (actionTable.onRender) app.executeNoCheck(actionTable.onRender, this);
 
         if (alphaMult)
             for (auto* child: children) child->render(ctx, alphaMult);
@@ -67,7 +62,7 @@ namespace webui {
                 else if (Input::mouseAction == GLFW_RELEASE) {
                     // it's a click only if the widget of press is the widget of release
                     if (Input::mouseButtonPress == this)
-                        return app.execute(app.getActionTable(actions).onClick);
+                        return app.execute(app.getActionTable(actions).onClick, this);
                 }
             }
         }
@@ -81,6 +76,19 @@ namespace webui {
         if (visible)
             for (auto* child: children) stable &= child->layout(ctx, curPos, child->getSizeTarget(curSize));
         return animeAlpha(ctx) && stable;
+    }
+
+    const Property* Widget::getProp(Identifier id) const {
+        const auto& props = getProps();
+        auto it(props.find(id));
+        if (it == props.end()) {
+            // try with widget if required
+            const auto& propsWidget = Widget::getProps();
+            if (&propsWidget == &props) return nullptr;
+            it = propsWidget.find(id);
+            if (it == propsWidget.end()) return nullptr;
+        }
+        return &it->second;
     }
 
     bool Widget::animeAlpha(Context& ctx) {
@@ -100,14 +108,14 @@ namespace webui {
             // inside
             if (!inside) {
                 inside = 1;
-                executed = app.execute(app.getActionTable(actions).onEnter);
+                executed = app.execute(app.getActionTable(actions).onEnter, this);
             }
             recurse = true;
         } else {
             // outside
             if (inside) {
                 inside = 0;
-                executed = app.execute(app.getActionTable(actions).onLeave);
+                executed = app.execute(app.getActionTable(actions).onLeave, this);
                 recurse = true;
             }
         }

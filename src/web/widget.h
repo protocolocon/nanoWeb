@@ -19,6 +19,7 @@
 namespace webui {
 
     class Context;
+    struct Property;
     class Properties;
     class Application;
 
@@ -38,6 +39,9 @@ namespace webui {
         virtual bool input(Application& app); // returns true if actions were executed (affecting application)
         virtual bool layout(Context& ctx, V2s pos, V2s size); // returns true if stable
         virtual const Properties& getProps() const;
+
+        // get a property in this widget (polymorphism) or in Widget or null
+        const Property* getProp(Identifier id) const;
 
         // update widget status
         bool update(Application& app); // returns true if actions were executed (affecting application)

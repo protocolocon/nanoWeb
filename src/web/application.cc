@@ -138,7 +138,7 @@ namespace webui {
                     }
                     widget->addChild(widgetChild);
                 } else {
-                    if (!setProp(widget->getProps(), key, widget, iEntry + 1, next)) {
+                    if (!setProp(key, widget, iEntry + 1, next)) {
                         auto ss(entryVal.asStrSize(parser));
                         LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
                     }
@@ -175,19 +175,19 @@ namespace webui {
         return true;
     }
 
-    bool Application::setProp(const Properties& props, Identifier id, void* data, int iEntry, int fEntry) {
-        auto it(props.find(id));
-        if (it == props.end()) return false;
-        if (!setProp(it->second, id, data, iEntry, fEntry)) {
+    bool Application::setProp(Identifier id, Widget* widget, int iEntry, int fEntry) {
+        const auto* prop(widget->getProp(id));
+        if (!prop) return false;
+        if (!setProp(*prop, id, widget, iEntry, fEntry, widget)) {
             auto ss(entryAsStrSize(iEntry));
             LOG("%s was expecting the type %s, received %.*s (%d parameters) and failed",
-                strMng.get(id), toString(it->second.type), ss.second, ss.first, fEntry - iEntry);
+                strMng.get(id), toString(prop->type), ss.second, ss.first, fEntry - iEntry);
             return false;
         }
         return true;
     }
 
-    bool Application::setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry) {
+    bool Application::setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry, Widget* widget) {
         pair<const char*, int> ss;
         switch (prop.type) {
         case Type::StrId:
@@ -209,19 +209,17 @@ namespace webui {
             return true;
         case Type::Coord:
             if (fEntry > iEntry + 1) return false;
-            reinterpret_cast<int*>(data)[prop.pos] = parseCoord(iEntry);
+            reinterpret_cast<int*>(data)[prop.pos] = parseCoord(iEntry, widget);
             return true;
         case Type::ActionTable:
-            return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos]);
-        case Type::ActionEntry:
-            return addActionCommands(iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos]);
+            return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos], widget);
         default:
             LOG("internal error, unhandled property type!");
             return false;
         }
     }
 
-    bool Application::addAction(Identifier actionId, int iEntry, int fEntry, int& actions) {
+    bool Application::addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget) {
         if (!actions) {
             actions = int(actionTables.size());
             actionTables.resize(actionTables.size() + 1);
@@ -235,10 +233,10 @@ namespace webui {
         case Identifier::onRender: tableEntry = &table.onRender; break;
         default: LOG("unknown action"); return false;
         }
-        return addActionCommands(iEntry, fEntry, *tableEntry);
+        return addActionCommands(iEntry, fEntry, *tableEntry, widget);
     }
 
-    bool Application::addActionCommands(int iEntry, int fEntry, int& tableEntry) {
+    bool Application::addActionCommands(int iEntry, int fEntry, int& tableEntry, Widget* widget) {
         if (*parser[iEntry].pos == '[') iEntry++;
         bool ok(true);
         tableEntry = int(actionCommands.size());
@@ -262,14 +260,14 @@ namespace webui {
                 auto ss(entry.asStrSize(parser));
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
             }
-            if (params) ok &= addCommandGeneric(command, iEntry, next, params);
+            if (params) ok &= addCommandGeneric(command, iEntry, next, params, widget);
             iEntry = next;
         }
         actionCommands.push_back(int(Identifier::CLast));
         return ok;
     }
 
-    bool Application::addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params) {
+    bool Application::addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget) {
         if (params[fEntry - iEntry] != Type::LastType) {
             LOG("%s command got %d parameters", strMng.get(name), fEntry - iEntry);
             return false;
@@ -281,28 +279,34 @@ namespace webui {
         while (*params != Type::LastType) {
             int value;
             prop.type = *params++;
-            if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1)) LOG("error in command argument");
+            if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1, widget)) LOG("error in command argument");
             iEntry++;
             actionCommands.push_back(value);
         }
         return true;
     }
 
-    int Application::parseCoord(int iEntry) const {
+    int Application::parseCoord(int iEntry, Widget* widget) const {
         bool bad(false);
         int out(0);
         auto param(entryAsStrSize(iEntry));
         const auto* end(param.first + param.second);
         if (isalpha(*param.first)) {
             // identifier
-            /**/ if (*param.first == 'x') { out |= 0 << 16; param.first++; }
-            else if (*param.first == 'y') { out |= 1 << 16; param.first++; }
-            else if (*param.first == 'w') { out |= 2 << 16; param.first++; }
-            else if (*param.first == 'h') { out |= 3 << 16; param.first++; }
-            else bad = true;
-            if (isalnum(*param.first)) bad = true;
+            auto* idEnd(param.first + 1);
+            while (idEnd < end && isalnum(*idEnd)) ++idEnd;
+            auto id(strMng.search(param.first, idEnd - param.first));
+            if (id.valid()) {
+                const auto* prop(widget->getProp(Identifier(id.getId())));
+                if (prop && prop->size == 2 && prop->type == Type::Int16) {
+                    out |= prop->pos << 16;
+                    param.first = idEnd;
+                } else
+                    bad = true;
+            } else
+                bad = true;
         } else
-            out |= 4 << 16;
+            out |= 0xffff0000;
         bool neg(false);
         if (*param.first == '+' || (neg = (*param.first == '-'))) param.first++;
         while (param.first < end && isspace(*param.first)) param.first++;
@@ -318,7 +322,7 @@ namespace webui {
         return out;
     }
 
-    bool Application::executeNoCheck(int commandList) {
+    bool Application::executeNoCheck(int commandList, Widget* w) {
         bool cont(true), executed(false);
         auto* command(&actionCommands[commandList]);
         auto& render(ctx.getRender());
@@ -337,7 +341,8 @@ namespace webui {
                 ++command;
                 break;
             case Identifier::roundedRect:
-                render.roundedRect(getCoord(command[1]), getCoord(command[2]), getCoord(command[3]), getCoord(command[4]), getCoord(command[5]));
+                render.roundedRect(getCoord(command[1], w), getCoord(command[2], w), getCoord(command[3], w),
+                                   getCoord(command[4], w), getCoord(command[5], w));
                 command += 6;
                 break;
             case Identifier::fillColor:
@@ -345,7 +350,7 @@ namespace webui {
                 ++command;
                 break;
             case Identifier::fillVertGrad:
-                render.fillVertGrad(getCoord(command[1]), getCoord(command[2]), RGBA(command[3]), RGBA(command[4]));
+                render.fillVertGrad(getCoord(command[1], w), getCoord(command[2], w), RGBA(command[3]), RGBA(command[4]));
                 command += 5;
                 break;
             case Identifier::strokeWidth:

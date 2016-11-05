@@ -32,7 +32,6 @@ namespace webui {
         SizeRelative,
         Coord,        // with ref
         ActionTable,
-        ActionEntry,
         LastType
     };
 
