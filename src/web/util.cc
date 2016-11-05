@@ -28,6 +28,8 @@ namespace webui {
             for (size_t i = 1; i < elems.size() - 1; i++)
                 if (elems[i].resizable)
                     elems[i].posTarget = elems[i-1].posTarget + int(float(elems[i].posTarget) * ratio + 0.5f); // convert to pos
+                else
+                    elems[i].posTarget = elems[i-1].posTarget + elems[i].posTarget; // convert to pos
             b.posTarget = sizeAvailable;
         }
         // converge positions

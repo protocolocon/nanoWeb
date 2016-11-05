@@ -88,7 +88,7 @@ namespace webui {
 
         void initialize();
         Widget* initializeConstruct(const MLParser& parser);
-        bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry);
+        bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define);
         void refreshNetwork();
 
         // widget factory and registration

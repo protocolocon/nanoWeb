@@ -24,16 +24,16 @@ namespace {
         { Identifier::y,         PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
         { Identifier::w,         PROP(Widget, curSize.x, Int16,        2, 0, 0) },
         { Identifier::h,         PROP(Widget, curSize.y, Int16,        2, 0, 0) },
-        { Identifier::id,        PROP(Widget, id,        StrId,        4, 0, 0) },
+        { Identifier::id,        PROP(Widget, id,        StrId,        4, 0, 1) },
         { Identifier::width,     PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
         { Identifier::height,    PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
         { Identifier::background,PROP(Widget, background,Color,        4, 0, 0) },
         { Identifier::foreground,PROP(Widget, foreground,Color,        4, 0, 0) },
         { Identifier::all,       PROP(Widget, all,       Int32,        4, 0, 0) },
-        { Identifier::onEnter,   PROP(Widget, actions,   ActionTable,  4, 0, 0) },
-        { Identifier::onLeave,   PROP(Widget, actions,   ActionTable,  4, 0, 0) },
-        { Identifier::onClick,   PROP(Widget, actions,   ActionTable,  4, 0, 0) },
-        { Identifier::onRender,  PROP(Widget, actions,   ActionTable,  4, 0, 0) },
+        { Identifier::onEnter,   PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::onLeave,   PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::onClick,   PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::onRender,  PROP(Widget, actions,   ActionTable,  4, 0, 1) },
     };
 
 }
@@ -89,6 +89,18 @@ namespace webui {
             if (it == propsWidget.end()) return nullptr;
         }
         return &it->second;
+    }
+
+    void Widget::copyFrom(const Widget* widget) {
+        const auto& props = getProps();
+        for (const auto& prop: props)
+            if (!prop.second.redundant)
+                props.set(prop.first, this, props.get(prop.first, widget));
+        if (type() != Identifier::Widget)
+            Widget::copyFrom(widget);
+        else {
+            actions = widget->actions;
+        }
     }
 
     bool Widget::animeAlpha(Context& ctx) {

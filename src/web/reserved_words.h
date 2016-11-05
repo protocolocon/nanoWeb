@@ -48,7 +48,8 @@ namespace webui {
         onLeave          = OffsetEnum(onEnter),
         onClick          = OffsetEnum(onLeave),
         onRender         = OffsetEnum(onClick),
-        ALast            = OffsetEnum(onRender),
+        define           = OffsetEnum(onRender),
+        ALast            = OffsetEnum(define),
 
         // commands
         log              = OffsetEnum(ALast),

@@ -37,7 +37,7 @@ namespace webui {
         case 0: return unsigned((reinterpret_cast<const uint8_t *>(data)[prop.pos] >> prop.bit) & 1);
         case 1: return unsigned( reinterpret_cast<const uint8_t *>(data)[prop.pos]);
         case 2: return           reinterpret_cast<const  int16_t*>(data)[prop.pos];
-        case 4: return           reinterpret_cast<const  int16_t*>(data)[prop.pos];
+        case 4: return           reinterpret_cast<const  int32_t*>(data)[prop.pos];
         default: LOG("internal error"); return 0;
         }
     }
@@ -59,7 +59,7 @@ namespace webui {
             break;
         case 1: reinterpret_cast<uint8_t *>(data)[prop.pos] = uint8_t(value); break;
         case 2: reinterpret_cast< int16_t*>(data)[prop.pos] = int16_t(value); break;
-        case 4: reinterpret_cast< int16_t*>(data)[prop.pos] =         value;  break;
+        case 4: reinterpret_cast< int32_t*>(data)[prop.pos] =         value;  break;
         default: LOG("internal error");
         }
     }

@@ -2,7 +2,35 @@
 Application {
     background: "#4d4d4d"
 
+    // define a widget button to be used later
+    Widget {
+        define: Button
+        width: 100
+        height: 32
+        onRender: [
+            strokeWidth(1),
+            beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, background%100, background%60),
+            beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor(background%120), stroke(),
+            beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor(background%30), stroke()
+        ]
+        background: "#806050"
+    }
+
+
     LayoutHor {
+        Button {
+            background: "#808050"
+        }
+        Button {
+            background: "#808080"
+        }
+        Button {
+            background: "#804050"
+        }
+        Button {
+            background: "#308050"
+        }
+
         Widget {
             id: buttonTest
             width: 100

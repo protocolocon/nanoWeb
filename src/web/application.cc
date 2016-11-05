@@ -109,15 +109,17 @@ namespace webui {
 
     Widget* Application::initializeConstruct(const MLParser& parser) {
         if (parser.size() > 1 && parser[0].next == 1 && parser[1].next == 0 && *parser[1].pos == '{') {
+            bool define;
             auto* widget(createWidget(parser[0].asId(parser, strMng), nullptr));
-            if (widget && initializeConstruct(parser, widget, 2, parser.size()) && registerWidget(widget))
+            if (widget && initializeConstruct(parser, widget, 2, parser.size(), define) && registerWidget(widget))
                 return widget;
             delete widget;
         }
         return nullptr;
     }
 
-    bool Application::initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry) {
+    bool Application::initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define) {
+        define = false;
         Widget* widgetChild;
         while (iEntry < fEntry) {
             // key : value
@@ -131,14 +133,19 @@ namespace webui {
                 auto ss(entryKey.asStrSize(parser, true));
                 LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
             } else {
-                if (key < Identifier::WLast && (widgetChild = createWidget(key, widget/*parent*/))) {
+                if ((widgetChild = createWidget(key, widget/*parent*/))) {
                     // child widget
-                    if (!initializeConstruct(parser, widgetChild, iEntry + 2, next) || !registerWidget(widgetChild)) {
+                    bool defineChild;
+                    if (!initializeConstruct(parser, widgetChild, iEntry + 2, next, defineChild) || !registerWidget(widgetChild)) {
                         delete widgetChild;
                         return false;
                     }
-                    widget->addChild(widgetChild);
+                    if (!defineChild) widget->addChild(widgetChild);
                 } else {
+                    if (key == Identifier::define) {
+                        key = Identifier::id;
+                        define = true;
+                    }
                     if (!setProp(key, widget, iEntry + 1, next)) {
                         auto ss(entryVal.asStrSize(parser, true));
                         LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
@@ -155,8 +162,16 @@ namespace webui {
         case Identifier::Application: return new WidgetApplication(parent);
         case Identifier::Widget:      return new Widget(parent);
         case Identifier::LayoutHor:   return new WidgetLayoutHor(parent);
-        default:                      return nullptr;
+        default:                      break;
         }
+        // copy from other widget by id
+        auto it(widgets.find(int(id)));
+        if (it != widgets.end()) {
+            auto* widget(createWidget(it->second->type(), parent));
+            widget->copyFrom(it->second);
+            return widget;
+        }
+        return nullptr;
     }
 
     bool Application::registerWidget(Widget* widget) {

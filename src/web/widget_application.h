@@ -19,7 +19,8 @@ namespace webui {
     public:
         inline WidgetApplication(Widget* parent = nullptr): Widget(parent) { }
 
-        virtual void render(Context& ctx, int alphaMult) override;
+        virtual Identifier type() const final override { return Identifier::Application; }
+        virtual void render(Context& ctx, int alphaMult) final override;
     };
 
 }
