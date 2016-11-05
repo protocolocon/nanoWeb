@@ -267,11 +267,7 @@ namespace webui {
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
                 return false;
             } else {
-                auto* params(logParams + it->second.pos);
-
-                auto ss(entry.asStrSize(parser));
-                LOG("command: {%.*s} %d", ss.second, ss.first, it->second.pos);
-
+                auto* params(logParams + int(int16_t(it->second.pos)));
                 ok &= addCommandGeneric(command, iEntry, next, params);
             }
             iEntry = next;
