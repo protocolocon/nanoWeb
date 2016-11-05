@@ -26,6 +26,7 @@ namespace webui {
         Uint8,
         Int16,
         Int32,
+        Id,
         StrId,
         Float,
         Color,

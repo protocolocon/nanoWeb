@@ -35,11 +35,14 @@ namespace webui {
         // index to strings in doc (so that strings are sorted)
         std::vector<int> index;
 
-        // private functions
         int searchNearestIndex(const char* str) const;
         int searchNearestIndex(const char* str, int nStr) const;
 
     public:
+        // get closest even if there's no match
+        StringId searchNearest(const char* str) const;
+        StringId searchNearest(const char* str, int nStr) const;
+
         // returns index of string or -1 if string not in pool
         // O(log(N)
         // in the case of prefix string, searched string must start by prefix

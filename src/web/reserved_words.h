@@ -60,7 +60,8 @@ namespace webui {
         strokeWidth      = OffsetEnum(fillVertGrad),
         strokeColor      = OffsetEnum(strokeWidth),
         stroke           = OffsetEnum(strokeColor),
-        CLast            = OffsetEnum(stroke),
+        set              = OffsetEnum(stroke),
+        CLast            = OffsetEnum(set),
     };
 
 }

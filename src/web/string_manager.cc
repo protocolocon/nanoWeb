@@ -50,6 +50,16 @@ namespace webui {
         return ini;
     }
 
+    StringId StringManager::searchNearest(const char* str) const {
+        auto ini(searchNearestIndex(str));
+        return (ini < int(index.size())) ? index[ini] : -1;
+    }
+
+    StringId StringManager::searchNearest(const char* str, int nStr) const {
+        auto ini(searchNearestIndex(str, nStr));
+        return (ini < int(index.size())) ? index[ini] : -1;
+    }
+
     StringId StringManager::search(const char *str) const {
         int ini(searchNearestIndex(str));
         return (ini < int(index.size()) && !strcmp(&doc[index[ini]], str)) ? index[ini] : -1;

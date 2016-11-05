@@ -9,7 +9,8 @@ Application {
             height: 32
             onEnter: [
                 log("enter"),
-                toggleVisible(buttonTest2)
+                toggleVisible(buttonTest2),
+                set(buttonTest*, height, 120)
             ]
             onLeave: log("leave")
             onRender: [

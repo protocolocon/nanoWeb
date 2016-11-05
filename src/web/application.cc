@@ -32,6 +32,7 @@ namespace {
     const Type strokeWidthParams[] =   { Type::Float, Type::LastType };
     const Type strokeColorParams[] =   { Type::Color, Type::LastType };
     const Type strokeParams[] =        { Type::LastType };
+    const Type setParams[] =           { Type::StrId, Type::Id, Type::StrId, Type::LastType };
 
 }
 
@@ -190,6 +191,10 @@ namespace webui {
     bool Application::setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry, Widget* widget) {
         pair<const char*, int> ss;
         switch (prop.type) {
+        case Type::Id:
+            if (fEntry > iEntry + 1) return false;
+            reinterpret_cast<Identifier*>(data)[prop.pos] = entryId(iEntry);
+            return true;
         case Type::StrId:
             if (fEntry > iEntry + 1) return false;
             reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry);
@@ -256,6 +261,7 @@ namespace webui {
             case Identifier::strokeWidth:   params = strokeWidthParams; break;
             case Identifier::strokeColor:   params = strokeColorParams; break;
             case Identifier::stroke:        params = strokeParams; break;
+            case Identifier::set:           params = setParams; break;
             default:
                 auto ss(entry.asStrSize(parser));
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
@@ -365,6 +371,10 @@ namespace webui {
                 render.stroke();
                 ++command;
                 break;
+            case Identifier::set:
+                executed |= executeSet(StringId(command[1]), Identifier(command[2]), StringId(command[3]));
+                command += 4;
+                break;
             case Identifier::CLast:
                 cont = false;
                 break;
@@ -379,28 +389,38 @@ namespace webui {
         return executed;
     }
 
-    bool Application::executeToggleVisible(StringId widgetId_) {
-        const char* widgetId(strMng.get(widgetId_));
-        int len(strlen(widgetId));
+    bool Application::executeToggleVisible(StringId widgetId) {
+        auto len(getWidgetRange(widgetId));
+        const char* idSearch(strMng.get(widgetId));
         bool toggled(false);
-        if (len) {
-            LOG("toggle visibility of %s", widgetId);
-            StringId first, last;
-            if (widgetId[len - 1] == '*') {
-                // match prefix
-                abort(); // TODO
-            } else {
-                // exact match
-                first = last = widgetId_;
-            }
-            for (auto& widget: widgets) {
-                if (widget.first >= first && widget.first <= last) {
-                    widget.second->toggleVisible();
-                    toggled = true;
-                }
+        for (auto& widget: widgets) {
+            if (!memcmp(strMng.get(widget.first), idSearch, len)) {
+                widget.second->toggleVisible();
+                toggled = true;
             }
         }
         return toggled;
+    }
+
+    bool Application::executeSet(StringId widgetId, Identifier prop, StringId value) {
+        auto len(getWidgetRange(widgetId));
+        const char* idSearch(strMng.get(widgetId));
+        bool set(false);
+        for (auto& widget: widgets) {
+            if (!memcmp(strMng.get(widget.first), idSearch, len)) {
+                auto iEntry(parser.getTemporalEntry(strMng.get(value)));
+                setProp(prop, widget.second, iEntry, iEntry + 1);
+                set = true;
+            }
+        }
+        return set;
+    }
+
+    int Application::getWidgetRange(StringId widgetId) const {
+        const char* id(strMng.get(widgetId));
+        int len(strlen(id));
+        if (len && id[len - 1] == '*') return len - 1;
+        return len + 1;
     }
 
     void Application::dump() const {

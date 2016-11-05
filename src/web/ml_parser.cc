@@ -122,7 +122,7 @@ namespace webui {
 
     bool MLParser::skipId(const char*& ml) const {
         while (ml < mlEnd) {
-            if (*ml == ':' || *ml == '{' || *ml == '(' || *ml == ',' || *ml == ']' || *ml == ')' || isspace(*ml)) return false;
+            if (!*ml || *ml == ':' || *ml == '{' || *ml == '(' || *ml == ',' || *ml == ']' || *ml == ')' || isspace(*ml)) return false;
             ++ml;
         }
         return true;
@@ -185,6 +185,15 @@ namespace webui {
             if (entry.next > iEntry) return entry.next;
         }
         return int(entries.size());
+    }
+
+    int MLParser::getTemporalEntry(const char* text) {
+        entries.reserve(entries.size() + 1);
+        auto& entry(entries[entries.size()]);
+        entry.pos = text;
+        entry.next = 0;
+        mlEnd = text + strlen(text) + 1;
+        return entries.size();
     }
 
     void MLParser::dump() const {

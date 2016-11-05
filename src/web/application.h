@@ -93,12 +93,14 @@ namespace webui {
         // widget factory and registration
         Widget* createWidget(Identifier id, Widget* parent);
         bool registerWidget(Widget* widget);
+        int getWidgetRange(StringId widgetId) const;
 
         // actions
         bool addActionCommands(int iEntry, int fEntry, int& tableEntry, Widget* widget);
         bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
         bool addCommandToggle(int iEntry);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
+        bool executeSet(StringId widgetId, Identifier prop, StringId value);
 
         int parseCoord(int iEntry, Widget* widget) const;
         static inline float getCoord(int c, Widget* widget) {

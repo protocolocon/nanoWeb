@@ -52,6 +52,7 @@ namespace webui {
         add(strokeWidth);
         add(strokeColor);
         add(stroke);
+        add(set);
         add(CLast);
     }
 

@@ -33,6 +33,8 @@ namespace webui {
         inline const Entry& operator[](int i) const { return entries[i]; }
         int getLevelEnd(int iEntry) const;
 
+        int getTemporalEntry(const char* text);
+
         void dump() const;
         void dumpTree() const;
 
