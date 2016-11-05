@@ -23,13 +23,6 @@ using namespace webui;
 
 namespace {
 
-    Properties actionTableProperties = {
-        { Identifier::onEnter,   PROP(Application::ActionTable, onEnter,   ActionEntry,  4, 0, 0) },
-        { Identifier::onLeave,   PROP(Application::ActionTable, onLeave,   ActionEntry,  4, 0, 0) },
-        { Identifier::onClick,   PROP(Application::ActionTable, onClick,   ActionEntry,  4, 0, 0) },
-        { Identifier::onRender,  PROP(Application::ActionTable, onRender,  ActionEntry,  4, 0, 0) },
-    };
-
     const Type logParams[] =           { Type::StrId, Type::LastType };
     const Type toggleVisibleParams[] = { Type::StrId, Type::LastType };
     const Type beginPathParams[] =     { Type::LastType };
@@ -39,17 +32,6 @@ namespace {
     const Type strokeWidthParams[] =   { Type::Float, Type::LastType };
     const Type strokeColorParams[] =   { Type::Color, Type::LastType };
     const Type strokeParams[] =        { Type::LastType };
-    Properties commandParameterProperties = {
-        { Identifier::log,           PROPDIFF(logParams,           logParams) },
-        { Identifier::toggleVisible, PROPDIFF(toggleVisibleParams, logParams) },
-        { Identifier::beginPath,     PROPDIFF(beginPathParams,     logParams) },
-        { Identifier::roundedRect,   PROPDIFF(roundedRectParams,   logParams) },
-        { Identifier::fillColor,     PROPDIFF(fillColorParams,     logParams) },
-        { Identifier::fillVertGrad,  PROPDIFF(fillVertGradParams,  logParams) },
-        { Identifier::strokeWidth,   PROPDIFF(strokeWidthParams,   logParams) },
-        { Identifier::strokeColor,   PROPDIFF(strokeColorParams,   logParams) },
-        { Identifier::stroke,        PROPDIFF(strokeParams,        logParams) },
-    };
 
 }
 
@@ -245,11 +227,15 @@ namespace webui {
             actionTables.resize(actionTables.size() + 1);
         }
         auto& table(actionTables[actions]);
-        if (!setProp(actionTableProperties, actionId, &table, iEntry, fEntry)) {
-            LOG("unknown action %s or invalid parameters", strMng.get(actionId));
-            return false;
+        int* tableEntry;
+        switch (actionId) { // get the table entry to add commands to
+        case Identifier::onEnter:  tableEntry = &table.onEnter;  break;
+        case Identifier::onLeave:  tableEntry = &table.onLeave;  break;
+        case Identifier::onClick:  tableEntry = &table.onClick;  break;
+        case Identifier::onRender: tableEntry = &table.onRender; break;
+        default: LOG("unknown action"); return false;
         }
-        return true;
+        return addActionCommands(iEntry, fEntry, *tableEntry);
     }
 
     bool Application::addActionCommands(int iEntry, int fEntry, int& tableEntry) {
@@ -261,15 +247,22 @@ namespace webui {
             auto command(entry.asId(parser, strMng));
             int next(entry.next ? entry.next : fEntry);
 
-            auto it(commandParameterProperties.find(command));
-            if (it == commandParameterProperties.end()) {
+            const Type* params(nullptr);
+            switch (command) {
+            case Identifier::log:           params = logParams; break;
+            case Identifier::toggleVisible: params = toggleVisibleParams; break;
+            case Identifier::beginPath:     params = beginPathParams; break;
+            case Identifier::roundedRect:   params = roundedRectParams; break;
+            case Identifier::fillColor:     params = fillColorParams; break;
+            case Identifier::fillVertGrad:  params = fillVertGradParams; break;
+            case Identifier::strokeWidth:   params = strokeWidthParams; break;
+            case Identifier::strokeColor:   params = strokeColorParams; break;
+            case Identifier::stroke:        params = strokeParams; break;
+            default:
                 auto ss(entry.asStrSize(parser));
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
-                return false;
-            } else {
-                auto* params(logParams + int(int16_t(it->second.pos)));
-                ok &= addCommandGeneric(command, iEntry, next, params);
             }
+            if (params) ok &= addCommandGeneric(command, iEntry, next, params);
             iEntry = next;
         }
         actionCommands.push_back(int(Identifier::CLast));
