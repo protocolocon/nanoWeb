@@ -31,15 +31,19 @@ namespace webui {
         inline int multAlpha(int m, int a) { int alpha((m * a) >> 8); nvgGlobalAlpha(vg, float(alpha) * (1.0f / 256.0f)); return alpha; }
         inline void beginPath() const { nvgBeginPath(vg); }
         inline void roundedRect(float x, float y, float w, float h, float r) const { nvgRoundedRect(vg, x, y, w, h, r); }
-        inline void fillColor(RGBA color) const { nvgFillColor(vg, color.toVGColor()); nvgFill(vg); }
+        inline void fillColor(RGBA color) const { nvgFillColor(vg, color.toVGColor()); }
         inline void fillVertGrad(float y, float h, RGBA top, RGBA bottom) const {
-            NVGpaint bg(nvgLinearGradient(vg, 0, y, 0, y + h, top.toVGColor(), bottom.toVGColor()));
-            nvgFillPaint(vg, bg);
-            nvgFill(vg);
+            nvgFillPaint(vg, nvgLinearGradient(vg, 0, y, 0, y + h, top.toVGColor(), bottom.toVGColor()));
         }
+        inline void fill() const { nvgFill(vg); }
         inline void strokeWidth(float width) const { nvgStrokeWidth(vg, width); }
         inline void strokeColor(RGBA color) const { nvgStrokeColor(vg, color.toVGColor()); }
         inline void stroke() const { nvgStroke(vg); }
+        void font(int iFont, float size);
+        void textAlign(int align);
+        void text(int x, int y, const char* str);
+
+        int loadFont(const char* name, char* data, int nData) { return nvgCreateFontMem(vg, name, (uint8_t*)data, nData, false); }
 
         // getters
         inline int getWidth() const { return windowSize[0]; }

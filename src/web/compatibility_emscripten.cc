@@ -34,11 +34,8 @@ namespace webui {
 
 
     // class RequestXHR
-    void RequestXHR::query(const char* req, const char* param) {
-        assert(status != Pending && "internal: XHR query in a pending request");
-        clear();
-        status = Pending;
-        emscripten_async_wget2_data(req, "GET", param, this, false, onLoadStatic, onErrorStatic, onProgressStatic);
+    void RequestXHR::query(const char* req) {
+        emscripten_async_wget_data(req, this, onLoadStatic, onErrorStatic);
     }
 
 }

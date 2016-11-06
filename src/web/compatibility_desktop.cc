@@ -59,10 +59,7 @@ namespace webui {
 
 
     // class RequestXHR
-    void RequestXHR::query(const char* req, const char* param) {
-        assert(status != Pending && "internal: XHR query in a pending request");
-        clear();
-        status = Error;
+    void RequestXHR::query(const char* req) {
         // perform the request synchronously
         CURL *conn(curl_easy_init());
         if (!conn) {
@@ -96,10 +93,16 @@ namespace webui {
         }
         code = curl_easy_perform(conn);
         curl_easy_cleanup(conn);
-        if (CURLE_OK != code)
-            onError(0, curlErrorBuffer);
+
+        long status;
+        curl_easy_getinfo(conn, CURLINFO_RESPONSE_CODE, &status);
+        if (CURLE_OK != code || status != 200)
+            onError();
         else
             onLoad(data, nData);
+        free(data);
+        data = nullptr;
+        nData = 0;
     }
 
     size_t RequestXHR::onAddData(char* newData, size_t size, size_t nmemb) {

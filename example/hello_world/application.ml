@@ -9,10 +9,12 @@ Application {
         height: 32
         onRender: [
             strokeWidth(1),
-            beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, background%100, background%60),
+            beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, background, background%60), fill(),
             beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor(background%120), stroke(),
-            beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor(background%30), stroke()
+            beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor(background%30), stroke(),
+            fillColor(foreground), font("Roboto-Regular.ttf", 22), text("hello world!")
         ]
+        foreground: "#d0d0d0"
         background: "#806050"
     }
 
@@ -26,6 +28,7 @@ Application {
         }
         Button {
             background: "#804050"
+            foreground: "#d04040"
         }
         Button {
             background: "#308050"
@@ -43,7 +46,7 @@ Application {
             onLeave: log("leave")
             onRender: [
                 strokeWidth(1),
-                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, background%100, background%60),
+                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, background%100, background%60), fill(),
                 beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor(background%120), stroke(),
                 beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor(background%30), stroke()
             ]
@@ -57,7 +60,7 @@ Application {
             onClick: toggleVisible(buttonTest3)
             onRender: [
                 strokeWidth(1),
-                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, "#405060", "#30363c"),
+                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, "#405060", "#30363c"), fill(),
                 beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor("#5c6c80"), stroke(),
                 beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor("#1d2028"), stroke()
             ]
@@ -71,7 +74,7 @@ Application {
             onClick: toggleVisible(buttonTest)
             onRender: [
                 strokeWidth(1),
-                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, "#506040", "#363c30"),
+                beginPath(), roundedRect(x+2,   y+2,   w-4, h-4, 1), fillVertGrad(y, h, "#506040", "#363c30"), fill(),
                 beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor("#6c805c"), stroke(),
                 beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor("#20281d"), stroke()
             ]

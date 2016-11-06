@@ -7,6 +7,7 @@
 */
 
 #include "compatibility.h"
+#include "application.h"
 #include <stdlib.h>
 
 #ifdef __EMSCRIPTEN__
@@ -18,30 +19,17 @@
 namespace webui {
 
     // class RequestXHR common part
-    RequestXHR::RequestXHR(): status(Empty), data(nullptr), nData(0) {
+    RequestXHR::RequestXHR(Application& app, Type type, StringId id, const char* req):
+        app(app), type(type), id(id), data(nullptr), nData(0) {
+        query(req);
     }
 
-    RequestXHR::~RequestXHR() {
-        clear();
-    }
-
-    void RequestXHR::clear() {
-        status = Empty;
-        free(data);
-        data = nullptr;
-        nData = 0;
-    }
-
-    void RequestXHR::onLoadStatic(unsigned, void* ctx, void* buffer, unsigned nBuffer) {
+    void RequestXHR::onLoadStatic(void* ctx, void* buffer, int nBuffer) {
         reinterpret_cast<RequestXHR*>(ctx)->onLoad(reinterpret_cast<char*>(buffer), nBuffer);
     }
 
-    void RequestXHR::onErrorStatic(unsigned, void* ctx, int bytes, const char* msg) {
-        reinterpret_cast<RequestXHR*>(ctx)->onError(bytes, msg);
-    }
-
-    void RequestXHR::onProgressStatic(unsigned, void* ctx, int bytes, int total) {
-        reinterpret_cast<RequestXHR*>(ctx)->onProgress(bytes, total);
+    void RequestXHR::onErrorStatic(void* ctx) {
+        reinterpret_cast<RequestXHR*>(ctx)->onError();
     }
 
     size_t RequestXHR::onAddDataStatic(char* data, size_t size, size_t nmemb, RequestXHR* xhr) {
@@ -51,24 +39,19 @@ namespace webui {
     void RequestXHR::onLoad(char* buffer, int nBuffer) {
         data = buffer;
         nData = nBuffer;
-        status = Ready;
         LOG("XHR load %d bytes", nData);
+        app.onLoad(this);
     }
 
-    void RequestXHR::onError(int bytes, const char* msg) {
-        status = Error;
-        LOG("XHR error %d bytes: %s", bytes, msg);
-    }
-
-    void RequestXHR::onProgress(int bytes, int total) {
+    void RequestXHR::onError() {
+        LOG("XHR error");
+        app.onError(this);
     }
 
     void RequestXHR::makeCString() {
-        if (status == Ready && data && nData) {
-            // add zero at the end (required by JSON)
-            data = (char*)realloc(data, nData + 1);
-            data[nData] = 0;
-        }
+        // add zero at the end (required by JSON)
+        data = (char*)realloc(data, nData + 1);
+        data[nData] = 0;
     }
 
 }

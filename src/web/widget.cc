@@ -19,7 +19,7 @@ using namespace webui;
 
 namespace {
 
-    Properties widgetProperties = {
+    const Properties widgetProperties = {
         { Identifier::x,         PROP(Widget, curPos.x,  Int16,        2, 0, 0) },
         { Identifier::y,         PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
         { Identifier::w,         PROP(Widget, curSize.x, Int16,        2, 0, 0) },

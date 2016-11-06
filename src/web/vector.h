@@ -84,6 +84,10 @@ namespace webui {
             return Vector(x / s, y / s);
         }
 
+        inline Vector operator>>(int r) const {
+            return Vector(x >> r, y >> r);
+        }
+
         inline Vector operator-() const {
             return Vector(-x, -y);
         }

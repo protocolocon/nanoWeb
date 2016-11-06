@@ -50,9 +50,12 @@ namespace webui {
         add(roundedRect);
         add(fillColor);
         add(fillVertGrad);
+        add(fill);
         add(strokeWidth);
         add(strokeColor);
         add(stroke);
+        add(font);
+        add(text);
         add(set);
         add(CLast);
     }

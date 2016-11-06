@@ -88,4 +88,17 @@ namespace webui {
         return true;
     }
 
+    void Render::font(int iFont, float size) {
+        nvgFontFaceId(vg, iFont);
+        nvgFontSize(vg, size);
+    }
+
+    void Render::textAlign(int align) {
+        nvgTextAlign(vg, align);
+    }
+
+    void Render::text(int x, int y, const char* str) {
+        nvgText(vg, x, y, str, nullptr);
+    }
+
 }

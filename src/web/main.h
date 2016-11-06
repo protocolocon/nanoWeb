@@ -18,6 +18,8 @@ namespace webui {
     public:
         Context();
 
+        void initialize() { app.initialize(); }
+
         void mainIteration();
 
         void resize(int width, int height);

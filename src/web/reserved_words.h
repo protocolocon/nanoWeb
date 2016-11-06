@@ -58,10 +58,13 @@ namespace webui {
         roundedRect      = OffsetEnum(beginPath),
         fillColor        = OffsetEnum(roundedRect),
         fillVertGrad     = OffsetEnum(fillColor),
-        strokeWidth      = OffsetEnum(fillVertGrad),
+        fill             = OffsetEnum(fillVertGrad),
+        strokeWidth      = OffsetEnum(fill),
         strokeColor      = OffsetEnum(strokeWidth),
         stroke           = OffsetEnum(strokeColor),
-        set              = OffsetEnum(stroke),
+        font             = OffsetEnum(stroke),
+        text             = OffsetEnum(font),
+        set              = OffsetEnum(text),
         CLast            = OffsetEnum(set),
     };
 

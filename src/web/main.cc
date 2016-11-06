@@ -71,6 +71,7 @@ namespace webui {
 
 int main(int argc, char* argv[]) {
     // main loop
+    webui::ctx.initialize();
     webui::setMainLoop(argc, argv, webui::mainIteration);
     return 0;
 }

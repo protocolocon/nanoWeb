@@ -29,26 +29,32 @@ namespace {
     const Type roundedRectParams[] =   { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
     const Type fillColorParams[] =     { Type::ColorModif, Type::LastType };
     const Type fillVertGradParams[] =  { Type::Coord, Type::Coord, Type::ColorModif, Type::ColorModif, Type::LastType };
+    const Type fillParams[] =          { Type::LastType };
     const Type strokeWidthParams[] =   { Type::Float, Type::LastType };
     const Type strokeColorParams[] =   { Type::ColorModif, Type::LastType };
     const Type strokeParams[] =        { Type::LastType };
     const Type setParams[] =           { Type::StrId, Type::Id, Type::Str, Type::LastType };
+    const Type fontParams[] =          { Type::FontIdx, Type::Float, Type::LastType };
+    const Type textParams[] =          { Type::StrId, Type::LastType };
 
 }
 
 namespace webui {
 
     Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, int(Identifier::CLast)), root(nullptr) {
-        addReservedWords(strMng);
-        initialize();
     }
 
     Application::~Application() {
         clear();
     }
 
+    void Application::initialize() {
+        addReservedWords(strMng);
+        auto id(strMng.add("application.ml"));
+        new RequestXHR(*this, RequestXHR::TypeApplication, id, strMng.get(id));
+    }
+
     void Application::refresh() {
-        refreshNetwork();
         if (root && (Input::refresh(ctx.getRender().getWin()) || !layoutStable)) {
             layoutStable = root->layout(ctx, V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()));
             ctx.forceRender();
@@ -83,28 +89,43 @@ namespace webui {
         }
     }
 
-    void Application::initialize() {
-        assert(xhr.getStatus() == RequestXHR::Empty);
-        xhr.query("application.ml");
-    }
-
-    void Application::refreshNetwork() {
-        if (xhr.getStatus() == RequestXHR::Ready) {
-            // TODO: different queries
+    void Application::onLoad(RequestXHR* xhr) {
+        if (xhr->getType() == RequestXHR::TypeApplication) {
             assert(!root);
-            if (!parser.parse(xhr.getData(), xhr.getNData()) || !(root = initializeConstruct(parser))) {
-                xhr.makeCString();
-                LOG("cannot parse: %s", xhr.getData());
+            if (!parser.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct(parser))) {
+                xhr->makeCString();
+                LOG("cannot parse: %s", xhr->getData());
                 clear();
             } else
                 resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
 
             parser.dumpTree();
             parser.clear();
-            xhr.clear();
             ctx.forceRender();
             dump();
+        } else if (xhr->getType() == RequestXHR::TypeFont) {
+            StringId id(xhr->getId());
+            int vgId(ctx.getRender().loadFont(strMng.get(id), xhr->getData(), xhr->getNData()));
+            // check that font id matches in font list
+            bool ok(false);
+            for (auto& font: fonts)
+                if (font == id && vgId == &font - fonts.data()) {
+                    ok = true;
+                    break;
+                }
+            if (!ok)
+                LOG("internal error with font indices: %d %s", vgId, strMng.get(id));
+            ctx.forceRender();
+        } else {
+            xhr->makeCString();
+            LOG("unknown query: %s %s", strMng.get(xhr->getId()), xhr->getData());
         }
+        delete xhr;
+    }
+
+    void Application::onError(RequestXHR* xhr) {
+        LOG("lost query: %s", strMng.get(xhr->getId()));
+        delete xhr;
     }
 
     Widget* Application::initializeConstruct(const MLParser& parser) {
@@ -239,6 +260,9 @@ namespace webui {
             if (fEntry > iEntry + 1) return false;
             reinterpret_cast<int*>(data)[prop.pos] = parseCoord(iEntry, widget);
             return true;
+        case Type::FontIdx:
+            reinterpret_cast<int*>(data)[prop.pos] = getFont(entryAsStrId(iEntry, false));
+            return true;
         case Type::ActionTable:
             return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos], widget);
         default:
@@ -281,10 +305,13 @@ namespace webui {
             case Identifier::roundedRect:   params = roundedRectParams; break;
             case Identifier::fillColor:     params = fillColorParams; break;
             case Identifier::fillVertGrad:  params = fillVertGradParams; break;
+            case Identifier::fill:          params = fillParams; break;
             case Identifier::strokeWidth:   params = strokeWidthParams; break;
             case Identifier::strokeColor:   params = strokeColorParams; break;
             case Identifier::stroke:        params = strokeParams; break;
             case Identifier::set:           params = setParams; break;
+            case Identifier::font:          params = fontParams; break;
+            case Identifier::text:          params = textParams; break;
             default:
                 auto ss(entry.asStrSize(parser, true));
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
@@ -360,14 +387,24 @@ namespace webui {
             return RGBAref();
         } else {
             auto ref(prop->pos);
-            float value(0);
+            float value(100);
             if (*param == '%') value = strtof(param + 1, nullptr);
             return RGBAref(ref, value);
         }
     }
 
+    int Application::getFont(StringId str) {
+        for (auto& font: fonts)
+            if (font == str) return &font - fonts.data();
+        // add font
+        fonts.push_back(str);
+        new RequestXHR(*this, RequestXHR::TypeFont, str, strMng.get(str));
+        return fonts.size() - 1;
+    }
+
     bool Application::executeNoCheck(int commandList, Widget* w) {
         bool cont(true), executed(false);
+        V2s pos;
         auto* command(&actionCommands[commandList]);
         auto& render(ctx.getRender());
         while (cont) {
@@ -397,6 +434,10 @@ namespace webui {
                 render.fillVertGrad(getCoord(command[1], w), getCoord(command[2], w), RGBAref(command[3]).get(w), RGBAref(command[4]).get(w));
                 command += 5;
                 break;
+            case Identifier::fill:
+                render.fill();
+                ++command;
+                break;
             case Identifier::strokeWidth:
                 render.strokeWidth(*(float*)++command);
                 ++command;
@@ -407,6 +448,16 @@ namespace webui {
                 break;
             case Identifier::stroke:
                 render.stroke();
+                ++command;
+                break;
+            case Identifier::font:
+                render.font(command[1], *(float*)&command[2]);
+                command += 3;
+                break;
+            case Identifier::text:
+                render.textAlign(NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+                pos = w->curPos + (w->curSize >> 1);
+                render.text(pos.x, pos.y, strMng.get(StringId(*++command)));
                 ++command;
                 break;
             case Identifier::set:

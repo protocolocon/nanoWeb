@@ -24,7 +24,11 @@
 #define GLFW_INCLUDE_ES2
 #include <GLFW/glfw3.h>
 
+#include "string_manager.h"
+
 namespace webui {
+
+    class Application;
 
     void setMainLoop(int argc, char** argv, void (*loop)(void));
     int defaultWidth();
@@ -34,33 +38,31 @@ namespace webui {
     // XHR
     class RequestXHR {
     public:
-        RequestXHR();
-        ~RequestXHR();
-        void query(const char* req, const char* param = "");
-        void makeCString();
-        void clear();
+        enum Type { TypeApplication, TypeFont, TypeLast };
 
-        // status
-        enum Status { Empty, Pending, Ready, Error };
+        RequestXHR(Application& app, Type type, StringId id, const char* req);
+        void query(const char* req);
+        void makeCString();
 
         // getters
-        inline Status getStatus() const { return status; }
         inline char* getData() { return data; }
         inline const char* getData() const { return data; }
         inline const int getNData() const { return nData; }
         inline char operator[](int i) const { return data[i]; }
+        inline Type getType() const { return type; }
+        inline StringId getId() const { return id; }
 
     private:
-        static void onLoadStatic(unsigned, void* ctx, void* buffer, unsigned nBuffer);
-        static void onErrorStatic(unsigned, void* ctx, int bytes, const char* msg);
-        static void onProgressStatic(unsigned, void* ctx, int bytes, int total);
+        static void onLoadStatic(void* ctx, void* buffer, int nBuffer);
+        static void onErrorStatic(void* ctx);
         static size_t onAddDataStatic(char* data, size_t size, size_t nmemb, RequestXHR* xhr);
         void onLoad(char* buffer, int nBuffer);
-        void onError(int bytes, const char* msg);
-        void onProgress(int bytes, int total);
+        void onError();
         size_t onAddData(char* data, size_t size, size_t nmemb);
 
-        Status status;
+        Application& app;
+        Type type;
+        StringId id;
         char* data;
         int nData;
     };

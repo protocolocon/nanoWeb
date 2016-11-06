@@ -34,6 +34,7 @@ namespace webui {
         ColorModif,   // color modificaiton or color
         SizeRelative,
         Coord,        // with ref
+        FontIdx,
         ActionTable,
         LastType
     };

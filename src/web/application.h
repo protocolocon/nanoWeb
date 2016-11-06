@@ -30,6 +30,7 @@ namespace webui {
     public:
         Application(Context& ctx);
         ~Application();
+        void initialize();
 
         // wipes-out application definition
         void clear();
@@ -67,12 +68,15 @@ namespace webui {
         inline bool execute(int commandList, Widget* widget) { return commandList ? executeNoCheck(commandList, widget) : false; } // true if commands executed
         bool executeNoCheck(int commandList, Widget* widget);
 
+        // XHR
+        void onLoad(RequestXHR* xhr);
+        void onError(RequestXHR* xhr);
+
         // debug
         void dump() const;
 
     private:
         Context& ctx;
-        RequestXHR xhr;
         MLParser parser;
         StringManager strMng;
 
@@ -86,15 +90,19 @@ namespace webui {
         Widget* root;
         std::unordered_map<StringId, Widget*, StringId> widgets;
 
-        void initialize();
+        // fonts
+        std::vector<StringId> fonts;
+
         Widget* initializeConstruct(const MLParser& parser);
         bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define);
-        void refreshNetwork();
 
         // widget factory and registration
         Widget* createWidget(Identifier id, Widget* parent);
         bool registerWidget(Widget* widget);
         int getWidgetRange(StringId widgetId) const;
+
+        // fonts
+        int getFont(StringId str);
 
         // actions
         bool addActionCommands(int iEntry, int fEntry, int& tableEntry, Widget* widget);
