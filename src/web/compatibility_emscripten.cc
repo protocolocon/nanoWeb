@@ -34,6 +34,9 @@ namespace webui {
 
 
     // class RequestXHR
+    RequestXHR::~RequestXHR() {
+    }
+
     void RequestXHR::query(const char* req) {
         emscripten_async_wget_data(req, this, onLoadStatic, onErrorStatic);
     }

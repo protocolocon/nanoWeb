@@ -57,11 +57,12 @@ namespace webui {
 
         // actions
         struct ActionTable {
-            inline ActionTable(): onEnter(0), onLeave(0), onClick(0), onRender(0) { }
+            inline ActionTable(): onEnter(0), onLeave(0), onClick(0), onRender(0), onRenderActive(0) { }
             int onEnter;
             int onLeave;
             int onClick;
             int onRender;
+            int onRenderActive;
         };
         bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget); // add action to widget
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
@@ -91,7 +92,8 @@ namespace webui {
         std::unordered_map<StringId, Widget*, StringId> widgets;
 
         // fonts
-        std::vector<StringId> fonts;
+        std::vector<std::pair<StringId, char*>> fonts;
+        bool fontValid;
 
         Widget* initializeConstruct(const MLParser& parser);
         bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define);

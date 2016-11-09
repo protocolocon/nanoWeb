@@ -41,6 +41,7 @@ namespace webui {
         add(onLeave);
         add(onClick);
         add(onRender);
+        add(onRenderActive);
         add(define);
         add(ALast);
 

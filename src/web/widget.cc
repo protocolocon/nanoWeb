@@ -20,20 +20,21 @@ using namespace webui;
 namespace {
 
     const Properties widgetProperties = {
-        { Identifier::x,         PROP(Widget, curPos.x,  Int16,        2, 0, 0) },
-        { Identifier::y,         PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
-        { Identifier::w,         PROP(Widget, curSize.x, Int16,        2, 0, 0) },
-        { Identifier::h,         PROP(Widget, curSize.y, Int16,        2, 0, 0) },
-        { Identifier::id,        PROP(Widget, id,        StrId,        4, 0, 1) },
-        { Identifier::width,     PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
-        { Identifier::height,    PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
-        { Identifier::background,PROP(Widget, background,Color,        4, 0, 0) },
-        { Identifier::foreground,PROP(Widget, foreground,Color,        4, 0, 0) },
-        { Identifier::all,       PROP(Widget, all,       Int32,        4, 0, 0) },
-        { Identifier::onEnter,   PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::onLeave,   PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::onClick,   PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::onRender,  PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::x,              PROP(Widget, curPos.x,  Int16,        2, 0, 0) },
+        { Identifier::y,              PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
+        { Identifier::w,              PROP(Widget, curSize.x, Int16,        2, 0, 0) },
+        { Identifier::h,              PROP(Widget, curSize.y, Int16,        2, 0, 0) },
+        { Identifier::id,             PROP(Widget, id,        StrId,        4, 0, 1) },
+        { Identifier::width,          PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
+        { Identifier::height,         PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
+        { Identifier::background,     PROP(Widget, background,Color,        4, 0, 0) },
+        { Identifier::foreground,     PROP(Widget, foreground,Color,        4, 0, 0) },
+        { Identifier::all,            PROP(Widget, all,       Int32,        4, 0, 0) },
+        { Identifier::onEnter,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::onLeave,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::onClick,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::onRender,       PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::onRenderActive, PROP(Widget, actions,   ActionTable,  4, 0, 1) },
     };
 
 }
@@ -46,7 +47,10 @@ namespace webui {
 
         auto& app(ctx.getApplication());
         const auto& actionTable(app.getActionTable(actions));
-        if (actionTable.onRender) app.executeNoCheck(actionTable.onRender, this);
+        if (actionTable.onRenderActive && Input::mouseButtonPress == this && inside)
+            app.executeNoCheck(actionTable.onRenderActive, this);
+        else if (actionTable.onRender)
+            app.executeNoCheck(actionTable.onRender, this);
 
         if (alphaMult)
             for (auto* child: children) child->render(ctx, alphaMult);
@@ -62,8 +66,9 @@ namespace webui {
                 else if (Input::mouseAction == GLFW_RELEASE) {
                     // it's a click only if the widget of press is the widget of release
                     if (Input::mouseButtonPress == this)
-                        return app.execute(app.getActionTable(actions).onClick, this);
+                        app.execute(app.getActionTable(actions).onClick, this);
                 }
+                return true;
             }
         }
         return false;
@@ -100,6 +105,7 @@ namespace webui {
             Widget::copyFrom(widget);
         else {
             actions = widget->actions;
+            sharedActions = 1;
         }
     }
 

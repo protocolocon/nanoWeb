@@ -39,7 +39,8 @@ namespace webui {
         inline void strokeWidth(float width) const { nvgStrokeWidth(vg, width); }
         inline void strokeColor(RGBA color) const { nvgStrokeColor(vg, color.toVGColor()); }
         inline void stroke() const { nvgStroke(vg); }
-        void font(int iFont, float size);
+        inline void font(int iFont) const { nvgFontFaceId(vg, iFont); }
+        inline void fontSize(float size) const { nvgFontSize(vg, size); }
         void textAlign(int align);
         void text(int x, int y, const char* str);
 

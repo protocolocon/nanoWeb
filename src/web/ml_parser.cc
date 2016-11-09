@@ -85,7 +85,7 @@ namespace webui {
         int prev(-1);
         while (ml < mlEnd) {
             prev = newEntry(ml, prev);
-            if (parseValue(ml) || errorFlag) return error(ml, "expecting value");
+            if (parseValue(ml) || errorFlag) return error(ml, "EOF expecting value");
             if (skipSpace(ml)) return error(ml, "unfinished list");
             if (*ml == expectedEndChar) { ++ml; break; }
             if (*ml != ',') return error(ml, "expecting ',' to separate values");
@@ -105,7 +105,7 @@ namespace webui {
         if (*ml == '[') { ++ml; return parseList(ml, ']'); }
         else if (*ml == '{') { ++ml; return parseObject(ml); }
         else if (*ml == '"') return skipString(ml);
-        else if (isalnum(*ml)) {
+        else if (isalnum(*ml) || *ml == '-') {
             if (skipId(ml)) return error(ml, "EOF parsing id");
             if (skipSpace(ml)) return error(ml, "EOF skipping space");
             if (*ml == '(') { ++ml; return parseList(ml, ')'); } // function parameters

@@ -57,6 +57,10 @@ namespace webui {
         inline const StringId getId() const { return id; }
         inline V2s getSizeTarget(V2s s) const { return V2s(size[0].get(s.x), size[1].get(s.y)); }
         inline bool isVisible() const { return visible; }
+        inline RGBA getBackground() const { return background; }
+        inline RGBA getForeground() const { return foreground; }
+        inline bool isSharingActions() const { return sharedActions; }
+        inline void resetSharingActions() { sharedActions = 0; }
 
         // setters
         inline void setId(StringId id_) { id = id_; }
@@ -81,7 +85,8 @@ namespace webui {
             struct {
                 uint8_t visible:1;        // if the widget and its children are visible
                 uint8_t inside:1;         // cursor is inside widget
-                uint8_t reserved:6;
+                uint8_t sharedActions:1;  // indicates that is sharing the action table
+                uint8_t reserved:5;
                 uint8_t zoom;
                 uint8_t alpha;
                 uint8_t reserved2;

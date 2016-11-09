@@ -33,6 +33,8 @@ namespace webui {
                 updateCalled = true;
                 updateModifications |= app->update();
                 mouseButtonAction = false;
+                if (action == GLFW_RELEASE)
+                    mouseButtonPress = nullptr;
             });
     }
 

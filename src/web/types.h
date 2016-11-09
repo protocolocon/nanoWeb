@@ -23,7 +23,7 @@ namespace webui {
         RGBA(uint32_t c): c(c) { }
         RGBA(const char* str) {
             char* end;
-            c = strtol(str + 2/*skip '"#' */, &end, 16);
+            c = strtoul(str + 2/*skip '"#' */, &end, 16);
             if (end - str - 2 == 6) c = c << 8 | 0xff; // alpha
         }
 

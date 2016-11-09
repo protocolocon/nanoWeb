@@ -59,6 +59,10 @@ namespace webui {
 
 
     // class RequestXHR
+    RequestXHR::~RequestXHR() {
+        free(data);
+    }
+
     void RequestXHR::query(const char* req) {
         // perform the request synchronously
         CURL *conn(curl_easy_init());
@@ -91,18 +95,16 @@ namespace webui {
             LOG("libcurl: error setting writer data %d: %s", code, curlErrorBuffer);
             return;
         }
-        code = curl_easy_perform(conn);
-        curl_easy_cleanup(conn);
 
         long status;
+        code = curl_easy_perform(conn);
         curl_easy_getinfo(conn, CURLINFO_RESPONSE_CODE, &status);
+        curl_easy_cleanup(conn);
+
         if (CURLE_OK != code || status != 200)
             onError();
         else
             onLoad(data, nData);
-        free(data);
-        data = nullptr;
-        nData = 0;
     }
 
     size_t RequestXHR::onAddData(char* newData, size_t size, size_t nmemb) {

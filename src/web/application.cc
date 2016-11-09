@@ -16,6 +16,7 @@
 #include "widget_application.h"
 #include <cstdlib>
 #include <cassert>
+#include <cstring>
 #include <algorithm>
 
 using namespace std;
@@ -35,17 +36,20 @@ namespace {
     const Type strokeParams[] =        { Type::LastType };
     const Type setParams[] =           { Type::StrId, Type::Id, Type::Str, Type::LastType };
     const Type fontParams[] =          { Type::FontIdx, Type::Float, Type::LastType };
-    const Type textParams[] =          { Type::StrId, Type::LastType };
+    const Type textParams[] =          { Type::Coord, Type::Coord, Type::StrId, Type::LastType };
 
 }
 
 namespace webui {
 
-    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, int(Identifier::CLast)), root(nullptr) {
+    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, int(Identifier::CLast)), root(nullptr),
+                                            fontValid(false) {
     }
 
     Application::~Application() {
         clear();
+        for (auto& font: fonts)
+            free(font.second);
     }
 
     void Application::initialize() {
@@ -99,22 +103,27 @@ namespace webui {
             } else
                 resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
 
-            parser.dumpTree();
+            //parser.dumpTree();
             parser.clear();
             ctx.forceRender();
             dump();
         } else if (xhr->getType() == RequestXHR::TypeFont) {
-            StringId id(xhr->getId());
-            int vgId(ctx.getRender().loadFont(strMng.get(id), xhr->getData(), xhr->getNData()));
             // check that font id matches in font list
             bool ok(false);
+            StringId id(xhr->getId());
             for (auto& font: fonts)
-                if (font == id && vgId == &font - fonts.data()) {
-                    ok = true;
+                if (font.first == id) {
+                    assert(!font.second);
+                    // need to copy the font buffer
+                    font.second = (char*)malloc(xhr->getNData());
+                    memcpy(font.second, xhr->getData(), xhr->getNData());
+                    int vgId(ctx.getRender().loadFont(strMng.get(id), font.second, xhr->getNData()));
+                    if (vgId == &font - fonts.data())
+                        ok = true;
                     break;
                 }
             if (!ok)
-                LOG("internal error with font indices: %d %s", vgId, strMng.get(id));
+                LOG("internal error with font indices: %s", strMng.get(id));
             ctx.forceRender();
         } else {
             xhr->makeCString();
@@ -272,17 +281,22 @@ namespace webui {
     }
 
     bool Application::addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget) {
-        if (!actions) {
+        if (!actions || widget->isSharingActions()) {
+            auto actionsPrev(actions);
             actions = int(actionTables.size());
             actionTables.resize(actionTables.size() + 1);
+            widget->resetSharingActions();
+            if (actionsPrev)
+                actionTables[actions] = actionTables[actionsPrev];
         }
         auto& table(actionTables[actions]);
         int* tableEntry;
         switch (actionId) { // get the table entry to add commands to
-        case Identifier::onEnter:  tableEntry = &table.onEnter;  break;
-        case Identifier::onLeave:  tableEntry = &table.onLeave;  break;
-        case Identifier::onClick:  tableEntry = &table.onClick;  break;
-        case Identifier::onRender: tableEntry = &table.onRender; break;
+        case Identifier::onEnter:        tableEntry = &table.onEnter;        break;
+        case Identifier::onLeave:        tableEntry = &table.onLeave;        break;
+        case Identifier::onClick:        tableEntry = &table.onClick;        break;
+        case Identifier::onRender:       tableEntry = &table.onRender;       break;
+        case Identifier::onRenderActive: tableEntry = &table.onRenderActive; break;
         default: LOG("unknown action"); return false;
         }
         return addActionCommands(iEntry, fEntry, *tableEntry, widget);
@@ -365,7 +379,7 @@ namespace webui {
             else bad = true;
         } else
             out |= 0xffff0000;
-        if (*param == '+' || *param == '-') {
+        if (*param == '+' || *param == '-' || isdigit(*param)) {
             float num(strtof(param, nullptr));
             out |= int(num*4) & 0xffff;
         }
@@ -395,9 +409,9 @@ namespace webui {
 
     int Application::getFont(StringId str) {
         for (auto& font: fonts)
-            if (font == str) return &font - fonts.data();
+            if (font.first == str) return &font - fonts.data();
         // add font
-        fonts.push_back(str);
+        fonts.push_back(make_pair(str, nullptr));
         new RequestXHR(*this, RequestXHR::TypeFont, str, strMng.get(str));
         return fonts.size() - 1;
     }
@@ -451,14 +465,20 @@ namespace webui {
                 ++command;
                 break;
             case Identifier::font:
-                render.font(command[1], *(float*)&command[2]);
+                if (command[1] < int(fonts.size()) && fonts[command[1]].second) {
+                    render.font(command[1]);
+                    fontValid = true;
+                }
+                render.fontSize(*(float*)&command[2]);
                 command += 3;
                 break;
             case Identifier::text:
-                render.textAlign(NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-                pos = w->curPos + (w->curSize >> 1);
-                render.text(pos.x, pos.y, strMng.get(StringId(*++command)));
-                ++command;
+                if (fontValid) {
+                    render.textAlign(NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+                    pos = w->curPos + (w->curSize >> 1);
+                    render.text(pos.x + getCoord(command[1], w), pos.y + getCoord(command[2], w), strMng.get(StringId(command[3])));
+                }
+                command += 4;
                 break;
             case Identifier::set:
                 executed |= executeSet(StringId(command[1]), Identifier(command[2]), StringId(command[3]));
