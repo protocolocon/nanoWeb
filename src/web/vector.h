@@ -9,6 +9,7 @@
 #pragma once
 
 #include <limits>
+#include <cstdlib>
 #include <algorithm>
 
 namespace webui {
@@ -131,6 +132,10 @@ namespace webui {
 
         inline bool close(const Vector& o, C eps = std::numeric_limits<C>::epsilon()) const {
             return close(x, o.x, eps) && close(y, o.y, eps);
+        }
+
+        inline C manhatan(const Vector& v) const {
+            return abs(x - v.x) + abs(y - v.y);
         }
 
     };

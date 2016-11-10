@@ -47,7 +47,7 @@ namespace webui {
 
         auto& app(ctx.getApplication());
         const auto& actionTable(app.getActionTable(actions));
-        if (actionTable.onRenderActive && Input::mouseButtonPress == this && inside)
+        if (actionTable.onRenderActive && Input::mouseButtonWidget == this && inside)
             app.executeNoCheck(actionTable.onRenderActive, this);
         else if (actionTable.onRender)
             app.executeNoCheck(actionTable.onRender, this);
@@ -62,10 +62,10 @@ namespace webui {
             Input::mouseButtonAction = false;
             if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT) {
                 if (Input::mouseAction == GLFW_PRESS)
-                    Input::mouseButtonPress = this;
+                    Input::mouseButtonWidget = this;
                 else if (Input::mouseAction == GLFW_RELEASE) {
                     // it's a click only if the widget of press is the widget of release
-                    if (Input::mouseButtonPress == this)
+                    if (Input::mouseButtonWidget == this)
                         app.execute(app.getActionTable(actions).onClick, this);
                 }
                 return true;

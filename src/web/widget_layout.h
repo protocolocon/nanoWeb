@@ -17,14 +17,17 @@ namespace webui {
 
     class WidgetLayout: public Widget {
     public:
-        inline WidgetLayout(int coord, Widget* parent = nullptr): Widget(parent), coord(coord) { }
+        inline WidgetLayout(int coord, Widget* parent = nullptr): Widget(parent), coord(coord), dragDrop(nullptr) { }
 
         // polymorphic interface
         virtual Identifier type() const final override { return Identifier::LayoutHor; }
+        virtual void render(Context& ctx, int alphaMult) final override;
+        virtual bool input(Application& app) final override; // returns true if actions were executed (affecting application)
         virtual bool layout(Context& ctx, V2s pos, V2s size) final override; // returns true if stable
 
     private:
         int coord;
+        Widget* dragDrop;
     };
 
 }
