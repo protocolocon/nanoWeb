@@ -56,7 +56,7 @@ Application {
     }
 
 
-    LayoutHor {
+    LayoutVer {
         Button {
             id: test
             background: "#909090"

@@ -15,13 +15,16 @@ namespace webui {
 
     class Context;
 
-    class WidgetLayoutHor: public Widget {
+    class WidgetLayout: public Widget {
     public:
-        inline WidgetLayoutHor(Widget* parent = nullptr): Widget(parent) { }
+        inline WidgetLayout(int coord, Widget* parent = nullptr): Widget(parent), coord(coord) { }
 
         // polymorphic interface
         virtual Identifier type() const final override { return Identifier::LayoutHor; }
         virtual bool layout(Context& ctx, V2s pos, V2s size) final override; // returns true if stable
+
+    private:
+        int coord;
     };
 
 }

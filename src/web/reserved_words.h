@@ -28,7 +28,8 @@ namespace webui {
         Application      = 0,
         Widget           = OffsetEnum(Application),
         LayoutHor        = OffsetEnum(Widget),
-        WLast            = OffsetEnum(LayoutHor),
+        LayoutVer        = OffsetEnum(LayoutHor),
+        WLast            = OffsetEnum(LayoutVer),
 
         // attributes
         id               = OffsetEnum(WLast),

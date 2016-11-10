@@ -141,8 +141,8 @@ add_executable(${TARGET_NAME}
   src/web/properties.cc
   src/web/application.cc
   src/web/compatibility.cc
+  src/web/widget_layout.cc
   src/web/string_manager.cc
   src/web/reserved_words.cc
-  src/web/widget_layout_hor.cc
   src/web/widget_application.cc
   submodules/nanovg/src/nanovg.c)

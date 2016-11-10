@@ -22,6 +22,7 @@ namespace webui {
         add(Application);
         add(Widget);
         add(LayoutHor);
+        add(LayoutVer);
         add(WLast);
 
         add(id);

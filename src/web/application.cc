@@ -12,7 +12,7 @@
 #include "widget.h"
 #include "properties.h"
 #include "reserved_words.h"
-#include "widget_layout_hor.h"
+#include "widget_layout.h"
 #include "widget_application.h"
 #include <cstdlib>
 #include <cassert>
@@ -191,7 +191,8 @@ namespace webui {
         switch (id) {
         case Identifier::Application: return new WidgetApplication(parent);
         case Identifier::Widget:      return new Widget(parent);
-        case Identifier::LayoutHor:   return new WidgetLayoutHor(parent);
+        case Identifier::LayoutHor:   return new WidgetLayout(0, parent);
+        case Identifier::LayoutVer:   return new WidgetLayout(1, parent);
         default:                      break;
         }
         // copy from other widget by id
