@@ -20,26 +20,27 @@ namespace webui {
         if (dragDrop) {
             auto& render(ctx.getRender());
             alphaMult = render.multAlpha(alphaMult, alpha);
-            dragDrop->render(ctx, alphaMult);
+            dragDrop->translate(Input::cursor - Input::cursorLeftPress);
+            dragDrop->render(ctx, alphaMult >> 1);
+            dragDrop->translate(Input::cursorLeftPress - Input::cursor);
         }
     }
 
     bool WidgetLayout::input(Application& app) {
-        if (Input::cursorLeftPress.manhatan(Input::cursor) > 16) {
+        if (Input::mouseButtonWidget && Input::cursorLeftPress.manhatan(Input::cursor) > 16) {
             // drag & drop
             if (!dragDrop) {
+                // check if clicked in one of layout widgets
                 for (size_t idx = 0; idx < children.size(); idx++)
                     if (children[idx] == Input::mouseButtonWidget) {
-                        children.erase(children.begin() + idx);
+                        //children.erase(children.begin() + idx);
                         dragDrop = Input::mouseButtonWidget;
                         break;
                     }
             }
             if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT &&
                 Input::mouseAction == GLFW_RELEASE && dragDrop) {
-                LOG("push back");
-                children.push_back(dragDrop);
-                dragDrop = nullptr;
+                dragDrop = Input::mouseButtonWidget = nullptr;
                 return true;
             }
             return true;
@@ -52,6 +53,31 @@ namespace webui {
         if (visible) {
             curPos = posAvail;
             curSize = sizeAvail;
+
+            // drag & drop
+            short prevCoord(0);
+            if (dragDrop) {
+                // remove from list
+                for (size_t idx = 0; idx < children.size(); idx++)
+                    if (children[idx] == dragDrop)
+                        children.erase(children.begin() + idx);
+                // find position
+                short midCoord(dragDrop->curPos[coord] + (dragDrop->curSize[coord] >> 1) + Input::cursor[coord] - Input::cursorLeftPress[coord]);
+                short last(numeric_limits<short>::min());
+                size_t pos(children.size());
+                for (size_t idx = 0; idx < children.size(); idx++) {
+                    auto* child(children[idx]);
+                    short mid(child->curPos[coord] + (child->curSize[coord] >> 1));
+                    if (midCoord >= last && midCoord < mid) {
+                        pos = idx;
+                        break;
+                    }
+                    last = mid;
+                }
+                // add it in correct position
+                children.insert(children.begin() + pos, dragDrop);
+                prevCoord = dragDrop->curPos[coord];
+            }
 
             // use linear arrangement util
             auto& la(ctx.getLinearArrangement());
@@ -74,9 +100,8 @@ namespace webui {
                 }
 
             // drag & drop
-            if (dragDrop) {
-                stable &= dragDrop->layout(ctx, Input::cursor, V2s(dragDrop->size[0].get(curSize.x), dragDrop->size[1].get(curSize.y)));
-            }
+            if (dragDrop)
+                Input::cursorLeftPress[coord] += dragDrop->curPos[coord] - prevCoord;
         }
         return stable;
     }

@@ -66,6 +66,9 @@ namespace webui {
         inline void setId(StringId id_) { id = id_; }
         inline void toggleVisible() { visible ^= 1; }
 
+        // utils
+        void translate(V2s t);
+
         // debug
         void dump(const StringManager& strMng, int level = 0) const;
 

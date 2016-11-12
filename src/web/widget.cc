@@ -147,6 +147,11 @@ namespace webui {
         return executed;
     }
 
+    void Widget::translate(V2s t) {
+        curPos += t;
+        for (auto* child: children) child->translate(t);
+    }
+
     void Widget::dump(const StringManager& strMng, int level) const {
         LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c) actions: %d", level * 2, "", strMng.get(id),
             curPos.x, curPos.y, curSize.x, curSize.y, size[0].size, size[0].relative ? '%' : ' ', size[1].size, size[1].relative ? '%' : ' ', actions);

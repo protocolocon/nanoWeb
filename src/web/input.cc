@@ -49,19 +49,24 @@ namespace webui {
     }
 
     bool Input::refresh(GLFWwindow* win) {
+        // poll events
+        glfwPollEvents(); // in the browser this does nothing, as events are processed asynchronously
+
+        bool ret(updateModifications);
+
         // get cursor position
         double mx, my;
         glfwGetCursorPos(win, &mx, &my);
-        cursor = V2s(short(mx), short(my));
-        // poll events
-        glfwPollEvents(); // in the browser this does nothing, as events are processed asynchronously
-        // drag & drop
-        if (mouseButtonWidget) updateModifications |= refreshStack(mouseButtonWidget);
-        // call update if required
-        if (!updateCalled && (cursor.x || cursor.y)) // in the browser, when cursor is outside, cursor is (0, 0)
-            updateModifications |= app->update();
-        bool ret(updateModifications);
-        updateCalled = updateModifications = false;
+        V2s newCursor = V2s(short(mx), short(my));
+        if (newCursor != cursor) { // do nothing if mouse is not moved
+            cursor = newCursor;
+            // drag & drop
+            if (mouseButtonWidget) ret |= refreshStack(mouseButtonWidget);
+            // call update if required
+            if (!updateCalled && (cursor.x || cursor.y)) // in the browser, when cursor is outside, cursor is (0, 0)
+                ret |= app->update();
+            updateCalled = updateModifications = false;
+        }
         return ret;
     }
 

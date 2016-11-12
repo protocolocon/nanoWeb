@@ -98,7 +98,7 @@ namespace webui {
         }
 
         inline bool operator!=(const Vector& o) const {
-            return !operator==(o);
+            return x != o.x || y != o.y;
         }
 
         inline bool operator>=(const Vector& o) const {
@@ -127,7 +127,7 @@ namespace webui {
         }
 
         static inline bool close(C a, C b, C epsilon = std::numeric_limits<C>::epsilon()) {
-            return a-b < epsilon && b-a < epsilon;
+            return a-b <= epsilon && b-a <= epsilon;
         }
 
         inline bool close(const Vector& o, C eps = std::numeric_limits<C>::epsilon()) const {
