@@ -17,6 +17,7 @@ namespace webui {
     class Context {
     public:
         Context();
+        ~Context();
 
         void initialize() { app.initialize(); }
 

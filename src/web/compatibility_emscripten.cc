@@ -17,6 +17,10 @@ namespace webui {
         emscripten_set_main_loop(loop, 0 /* fps */, true /* infinite loop*/);
     }
 
+    void cancelMainLoop() {
+        emscripten_cancel_main_loop();
+    }
+
     int defaultWidth() {
         return EM_ASM_INT_V(return canvas.width);
     }

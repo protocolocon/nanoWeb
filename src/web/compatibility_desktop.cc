@@ -19,6 +19,8 @@ namespace {
     char curlErrorBuffer[CURL_ERROR_SIZE];
     const char* curlServerAddr("127.0.0.1:9999");
 
+
+    bool mainLoopRunning(true);
 }
 
 namespace webui {
@@ -37,10 +39,14 @@ namespace webui {
         }
 
         // synchronous main loop
-        while (true) {
+        while (mainLoopRunning) {
             loop();
             this_thread::sleep_for(chrono::milliseconds(10));
         };
+    }
+
+    void cancelMainLoop() {
+        mainLoopRunning = false;
     }
 
     int defaultWidth() {

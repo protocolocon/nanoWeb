@@ -42,6 +42,10 @@ namespace webui {
                 }
                 mouseButtonAction = false;
             });
+        glfwSetKeyCallback(win, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+                if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE && mods == GLFW_MOD_CONTROL)
+                    cancelMainLoop();
+            });
     }
 
     bool Input::refresh(GLFWwindow* win) {

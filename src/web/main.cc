@@ -25,6 +25,10 @@ namespace webui {
         updateTime();
     }
 
+    Context::~Context() {
+        render.finish();
+    }
+
     void Context::mainIteration() {
         // calculate time / and frame offset
         updateTime();

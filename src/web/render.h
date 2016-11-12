@@ -19,6 +19,7 @@ namespace webui {
 
     class Render {
     public:
+        Render(): win(nullptr), vg(nullptr) { }
         bool init();
         void finish();
         void setWindowSize(int width, int height);

@@ -31,6 +31,7 @@ namespace webui {
     class Application;
 
     void setMainLoop(int argc, char** argv, void (*loop)(void));
+    void cancelMainLoop();
     int defaultWidth();
     int defaultHeight();
     int getTimeNowMs();
