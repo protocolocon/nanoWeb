@@ -27,6 +27,7 @@ namespace {
 
 namespace webui {
 
+    // class RGBAref
     void RGBAref::assign(int ref, float value) {
         Modified& m(*reinterpret_cast<Modified*>(&c));
         m.c = 0;
@@ -44,6 +45,31 @@ namespace webui {
             return rgba;
         } else
             return RGBA(c);
+    }
+
+    // class SizeRelative
+    void SizeRelative::assign(float x, bool rel) {
+        size = rel ? x * 2.56f + 0.5f : x;
+        if (size) {
+            relative = rel;
+            adapt = false;
+        } else {
+            relative = false;
+            adapt = true;
+        }
+    }
+
+    float SizeRelative::dumpValue() const {
+        if (relative)
+            return float(size) * (100.0f / 256.0f);
+        else
+            return float(size);
+    }
+
+    char SizeRelative::dumpFlags() const {
+        if (relative) return '%';
+        if (adapt) return '+';
+        return ' ';
     }
 
 }

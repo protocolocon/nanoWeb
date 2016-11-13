@@ -16,33 +16,35 @@ namespace webui {
 
     class LinearArrangement {
     public:
-        inline void init(int initialPos, int nElements);
+        struct Elem {
+            bool resizable;
+            short pos, posTarget;
+        };
+
+    public:
+        inline LinearArrangement(Elem* elems, int initialPos);
         inline void add(int sizeCurrent, int sizeTarget, bool resizable);
         bool calculate(Context& ctx, int sizeAvailable); // returns true if stable
         inline int get(int idx) const { return elems[idx].pos; }
+        void dump() const;
 
     private:
-        struct Elem {
-            Elem() { }
-            Elem(bool r, int p, int t): resizable(r), pos(p), posTarget(t) { }
-
-            bool resizable;
-            int pos, posTarget;
-        };
-
-        std::vector<Elem> elems;
+        Elem* elems;
+        int nElems;
     };
 
 
-    void LinearArrangement::init(int initialPos, int nElements) {
-        elems.clear();
-        elems.reserve(nElements + 1);
-        elems.push_back(Elem(false, initialPos, initialPos));
+    LinearArrangement::LinearArrangement(Elem* elems, int initialPos): elems(elems), nElems(1) {
+        elems[0].resizable = false;
+        elems[0].pos = elems[0].posTarget = initialPos;
     }
 
     void LinearArrangement::add(int sizeCurrent, int sizeTarget, bool resizable) {
-        auto& b(elems.back());
-        elems.push_back(Elem(resizable, b.pos + sizeCurrent, b.posTarget + sizeTarget));
+        auto& b(elems[nElems - 1]);
+        auto& e(elems[nElems++]);
+        e.resizable = resizable;
+        e.pos = b.pos + sizeCurrent;
+        e.posTarget = b.posTarget + sizeTarget;
     }
 
 }

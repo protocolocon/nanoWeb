@@ -33,7 +33,6 @@ namespace webui {
                 // check if clicked in one of layout widgets
                 for (size_t idx = 0; idx < children.size(); idx++)
                     if (children[idx] == Input::mouseButtonWidget) {
-                        //children.erase(children.begin() + idx);
                         dragDrop = Input::mouseButtonWidget;
                         break;
                     }
@@ -50,10 +49,9 @@ namespace webui {
 
     bool WidgetLayout::layout(Context& ctx, V2s posAvail, V2s sizeAvail) {
         bool stable(true);
+        curPos = posAvail;
+        curSize = sizeAvail;
         if (visible) {
-            curPos = posAvail;
-            curSize = sizeAvail;
-
             // drag & drop
             short prevCoord(0);
             if (dragDrop) {
@@ -80,8 +78,8 @@ namespace webui {
             }
 
             // use linear arrangement util
-            auto& la(ctx.getLinearArrangement());
-            la.init(posAvail[coord], children.size());
+            LinearArrangement::Elem elems[children.size() + 1];
+            LinearArrangement la(elems, posAvail[coord]);
             for (auto child: children)
                 if (child->isVisible())
                     la.add(child->curSize[coord], child->size[coord].get(sizeAvail[coord]), child->size[coord].relative);
@@ -99,11 +97,17 @@ namespace webui {
                     stable &= child->layout(ctx, V2s(posAvail.x, la.get(idx)), V2s(child->size[0].get(curSize.x), la.get(idx + 1) - la.get(idx)));
                 }
 
+            // adaptative size
+            if (size[coord].adapt) {
+                size[coord].size = elems[children.size()].posTarget - elems[0].posTarget;
+                if (size[coord].size != curSize[coord]) stable = false;
+            }
+
             // drag & drop
             if (dragDrop)
                 Input::cursorLeftPress[coord] += dragDrop->curPos[coord] - prevCoord;
         }
-        return stable;
+        return animeAlpha(ctx) && stable;
     }
 
 }

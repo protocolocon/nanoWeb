@@ -73,15 +73,16 @@ namespace webui {
     class SizeRelative {
     public:
         inline SizeRelative(float x, bool rel) { assign(x, rel); }
-        inline void assign(float x, bool rel) { size = rel ? x * 2.56f + 0.5f : x; relative = rel; }
-        inline void operator=(const std::pair<const char*, int>& ss) {
-            if ((relative = ss.first[ss.second - 1] == '%')) size = int(atof(ss.first) * 2.56f + 0.5f); else size = atoi(ss.first);
-        }
+        void assign(float x, bool rel);
+        inline void operator=(const std::pair<const char*, int>& ss) { assign(atof(ss.first), ss.first[ss.second - 1] == '%'); }
         inline int get(int absolute) const { return relative ? (absolute * int(size)) >> 8 : size; }
+        float dumpValue() const;
+        char dumpFlags() const;
 
     public:
-        int16_t size:15;
+        uint16_t size:14;
         uint16_t relative:1;
+        uint16_t adapt:1;
     };
 
 }

@@ -65,8 +65,8 @@ namespace webui {
             // call update if required
             if (!updateCalled && (cursor.x || cursor.y)) // in the browser, when cursor is outside, cursor is (0, 0)
                 ret |= app->update();
-            updateCalled = updateModifications = false;
         }
+        updateCalled = updateModifications = false;
         return ret;
     }
 

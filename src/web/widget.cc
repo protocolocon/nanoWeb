@@ -153,8 +153,11 @@ namespace webui {
     }
 
     void Widget::dump(const StringManager& strMng, int level) const {
-        LOG("%*s%s: %4d %4d - %4d %4d (%4d%c %4d%c) actions: %d", level * 2, "", strMng.get(id),
-            curPos.x, curPos.y, curSize.x, curSize.y, size[0].size, size[0].relative ? '%' : ' ', size[1].size, size[1].relative ? '%' : ' ', actions);
+        LOG("%*s%-*s: %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %d  flags: %08x", level * 2, "", 24 - level*2, strMng.get(id),
+            curPos.x, curPos.y, curSize.x, curSize.y,
+            size[0].dumpValue(), size[0].dumpFlags(),
+            size[1].dumpValue(), size[1].dumpFlags(),
+            actions, all);
         for (const auto* child: children) child->dump(strMng, level + 1);
     }
 

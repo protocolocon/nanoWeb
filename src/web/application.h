@@ -75,6 +75,7 @@ namespace webui {
 
         // debug
         void dump() const;
+        inline auto& getStrMng() { return strMng; }
 
     private:
         Context& ctx;

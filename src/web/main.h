@@ -42,7 +42,6 @@ namespace webui {
             x = xx;
             return xx == target;
         }
-        inline LinearArrangement& getLinearArrangement() { return linearArrangement; }
 
     private:
         Render render;
@@ -52,8 +51,6 @@ namespace webui {
         int timeDiffMs;
         int timeRatio;
         int time1MRatio;
-
-        LinearArrangement linearArrangement;
 
         void updateTime();
     };
