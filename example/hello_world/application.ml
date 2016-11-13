@@ -25,8 +25,8 @@ Application {
             fillColor(foreground%0),   text(0,  0, "Hello world!"),
             fillColor(foreground%160), text(0, -2, "Hello world!")
         ]
-        onEnter: set(test2, background, "#888898c0")
-        onLeave: set(test2, background, "#909090c0")
+        onEnter: set(self, background, "#888898c0")
+        onLeave: set(self, background, "#909090c0")
         foreground: "#808080a0"
         background: "#808080c0"
     }

@@ -44,6 +44,7 @@ namespace webui {
         add(onRender);
         add(onRenderActive);
         add(define);
+        add(self);
         add(ALast);
 
         add(log);

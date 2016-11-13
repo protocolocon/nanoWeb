@@ -51,7 +51,8 @@ namespace webui {
         onRender         = OffsetEnum(onClick),
         onRenderActive   = OffsetEnum(onRender),
         define           = OffsetEnum(onRenderActive),
-        ALast            = OffsetEnum(define),
+        self             = OffsetEnum(define),
+        ALast            = OffsetEnum(self),
 
         // commands
         log              = OffsetEnum(ALast),

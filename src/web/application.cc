@@ -482,7 +482,7 @@ namespace webui {
                 command += 4;
                 break;
             case Identifier::set:
-                executed |= executeSet(StringId(command[1]), Identifier(command[2]), StringId(command[3]));
+                executed |= executeSet(StringId(command[1]), Identifier(command[2]), StringId(command[3]), w);
                 command += 4;
                 break;
             case Identifier::CLast:
@@ -512,15 +512,22 @@ namespace webui {
         return toggled;
     }
 
-    bool Application::executeSet(StringId widgetId, Identifier prop, StringId value) {
-        auto len(getWidgetRange(widgetId));
-        const char* idSearch(strMng.get(widgetId));
+    bool Application::executeSet(StringId widgetId, Identifier prop, StringId value, Widget* w) {
         bool set(false);
-        for (auto& widget: widgets) {
-            if (!memcmp(strMng.get(widget.first), idSearch, len)) {
-                auto iEntry(parser.getTemporalEntry(strMng.get(value)));
-                setProp(prop, widget.second, iEntry, iEntry + 1);
-                set = true;
+        auto iEntry(parser.getTemporalEntry(strMng.get(value)));
+        if (widgetId.getId() == int(Identifier::self)) {
+            // change own property
+            setProp(prop, w, iEntry, iEntry + 1);
+            set = true;
+        } else {
+            // change in the tree
+            auto len(getWidgetRange(widgetId));
+            const char* idSearch(strMng.get(widgetId));
+            for (auto& widget: widgets) {
+                if (!memcmp(strMng.get(widget.first), idSearch, len)) {
+                    setProp(prop, widget.second, iEntry, iEntry + 1);
+                    set = true;
+                }
             }
         }
         return set;

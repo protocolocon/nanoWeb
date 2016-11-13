@@ -112,7 +112,7 @@ namespace webui {
         bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
         bool addCommandToggle(int iEntry);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
-        bool executeSet(StringId widgetId, Identifier prop, StringId value);
+        bool executeSet(StringId widgetId, Identifier prop, StringId value, Widget* widget);
 
         bool parseId(Widget* widget, const char*& str, const Property*& prop) const;
         int parseCoord(int iEntry, Widget* widget) const;
