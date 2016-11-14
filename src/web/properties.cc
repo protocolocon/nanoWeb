@@ -16,17 +16,23 @@ namespace webui {
             "Uint8",
             "Int16",
             "Int32",
+            "Id",
+            "Str",
             "StrId",
             "Float",
             "Color",
+            "ColorModif",
             "SizeRelative",
+            "Coord",
+            "FontIdx",
             "ActionTable",
-            "ActionEntry",
+            "Text",
+            "TextPropOrStrId",
         };
         return strs[int(t)];
     }
 
-    int Properties::get(Identifier id, const void* data) const {
+    long Properties::get(Identifier id, const void* data) const {
         auto it(find(id));
         if (it == end()) {
             LOG("unknown property in get");
@@ -38,29 +44,35 @@ namespace webui {
         case 1: return unsigned( reinterpret_cast<const uint8_t *>(data)[prop.pos]);
         case 2: return           reinterpret_cast<const  int16_t*>(data)[prop.pos];
         case 4: return           reinterpret_cast<const  int32_t*>(data)[prop.pos];
+        case 8: return           reinterpret_cast<const  int64_t*>(data)[prop.pos];
         default: LOG("internal error"); return 0;
         }
     }
 
-    void Properties::set(Identifier id, void* data, int value) const {
+    void Properties::set(Identifier id, void* data, long value) const {
         auto it(find(id));
         if (it == end()) {
             LOG("unknown property in set");
             return;
         }
         const auto& prop(it->second);
-        switch (prop.size) {
-        case 0: {
+        if (prop.type == Type::Text) {
+            reinterpret_cast<char**>(data)[prop.pos] = value ? strdup(*reinterpret_cast<char**>(&value)) : nullptr;
+        } else {
+            switch (prop.size) {
+            case 0: {
                 uint8_t& v(reinterpret_cast<uint8_t *>(data)[prop.pos]);
                 uint8_t mask(1 << prop.bit);
                 v &= ~mask;
                 v |= (value << prop.bit) & mask;
             }
             break;
-        case 1: reinterpret_cast<uint8_t *>(data)[prop.pos] = uint8_t(value); break;
-        case 2: reinterpret_cast< int16_t*>(data)[prop.pos] = int16_t(value); break;
-        case 4: reinterpret_cast< int32_t*>(data)[prop.pos] =         value;  break;
-        default: LOG("internal error");
+            case 1: reinterpret_cast<uint8_t *>(data)[prop.pos] = uint8_t(value); break;
+            case 2: reinterpret_cast< int16_t*>(data)[prop.pos] = int16_t(value); break;
+            case 4: reinterpret_cast< int32_t*>(data)[prop.pos] = int32_t(value); break;
+            case 8: reinterpret_cast< int64_t*>(data)[prop.pos] =         value;  break;
+            default: LOG("internal error");
+            }
         }
     }
 

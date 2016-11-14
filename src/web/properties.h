@@ -28,14 +28,16 @@ namespace webui {
         Int32,
         Id,
         Str,
-        StrId,        // removes quotes if any
+        StrId,           // removes quotes if any
         Float,
         Color,
-        ColorModif,   // color modificaiton or color
+        ColorModif,      // color modificaiton or color
         SizeRelative,
-        Coord,        // with ref
+        Coord,           // with ref
         FontIdx,
         ActionTable,
+        Text,            // char*
+        TextPropOrStrId, // TextPropOrStrId type
         LastType
     };
 
@@ -59,8 +61,8 @@ namespace webui {
         using std::unordered_map<Identifier, Property>::unordered_map;
 
         // generic interface
-        int get(Identifier id, const void* data) const;
-        void set(Identifier id, void* data, int value) const;
+        long get(Identifier id, const void* data) const;
+        void set(Identifier id, void* data, long value) const;
     };
 
 }

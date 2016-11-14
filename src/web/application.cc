@@ -36,7 +36,7 @@ namespace {
     const Type strokeParams[] =        { Type::LastType };
     const Type setParams[] =           { Type::StrId, Type::Id, Type::Str, Type::LastType };
     const Type fontParams[] =          { Type::FontIdx, Type::Float, Type::LastType };
-    const Type textParams[] =          { Type::Coord, Type::Coord, Type::StrId, Type::LastType };
+    const Type textParams[] =          { Type::Coord, Type::Coord, Type::TextPropOrStrId, Type::LastType };
 
 }
 
@@ -275,6 +275,23 @@ namespace webui {
             return true;
         case Type::ActionTable:
             return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos], widget);
+        case Type::Text:
+            if (fEntry > iEntry + 1) return false;
+            ss = entryAsStrSize(iEntry, false);
+            free(reinterpret_cast<char**>(data)[prop.pos]);
+            reinterpret_cast<char**>(data)[prop.pos] = strndup(ss.first, ss.second);
+            return true;
+        case Type::TextPropOrStrId:
+            if (fEntry > iEntry + 1) return false;
+            ss = entryAsStrSize(iEntry, true);
+            if (*ss.first == '"')
+                reinterpret_cast<TextPropOrStrId*>(data)[prop.pos] = strMng.add(ss.first + 1, ss.second - 2);
+            else {
+                const auto* propWidget(widget->getProp(entryId(iEntry)));
+                if (!propWidget) return false;
+                reinterpret_cast<TextPropOrStrId*>(data)[prop.pos] = propWidget->pos;
+            }
+            return true;
         default:
             LOG("internal error, unhandled property type!");
             return false;
@@ -373,7 +390,7 @@ namespace webui {
         bool bad(false);
         int out(0);
         auto param(entry(iEntry).pos);
-        const Property* prop;
+        const Property* prop(nullptr);
         if (!parseId(widget, param, prop)) bad = true;
         if (prop) {
             if (prop->size == 2 && prop->type == Type::Int16) out |= prop->pos << 16;
@@ -477,7 +494,8 @@ namespace webui {
                 if (fontValid) {
                     render.textAlign(NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
                     pos = w->curPos + (w->curSize >> 1);
-                    render.text(pos.x + getCoord(command[1], w), pos.y + getCoord(command[2], w), strMng.get(StringId(command[3])));
+                    render.text(pos.x + getCoord(command[1], w), pos.y + getCoord(command[2], w),
+                                reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, strMng));
                 }
                 command += 4;
                 break;

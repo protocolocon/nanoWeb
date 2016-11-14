@@ -85,4 +85,22 @@ namespace webui {
         uint16_t adapt:1;
     };
 
+
+    class TextPropOrStrId {
+    public:
+        TextPropOrStrId(StringId id): off(id.getId()), prop(false) { }
+        TextPropOrStrId(int propPos): off(propPos), prop(true) { }
+        const char* get(Widget* w, StringManager& strMng) {
+            if (prop) {
+                const char* str(reinterpret_cast<const char**>(w)[off]);
+                return str ? str : "";
+            } else
+                return strMng.get(StringId(off));
+        }
+
+    private:
+        uint32_t off:31;
+        uint32_t prop:1;  // 0: strId   1: Text property
+    };
+
 }

@@ -35,11 +35,21 @@ namespace {
         { Identifier::onClick,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
         { Identifier::onRender,       PROP(Widget, actions,   ActionTable,  4, 0, 1) },
         { Identifier::onRenderActive, PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+        { Identifier::text,           PROP(Widget, text,      Text,         sizeof(void*), 0, 0) },
     };
 
 }
 
 namespace webui {
+
+    Widget::Widget(Widget* parent): parent(parent), text(nullptr),
+                                    size { SizeRelative(100.0f, true), SizeRelative(100.0f, true) },
+                                    all(0x00ff4001), actions(0) {
+    }
+
+    Widget::~Widget() {
+        free(text);
+    }
 
     void Widget::render(Context& ctx, int alphaMult) {
         auto& render(ctx.getRender());
@@ -153,11 +163,11 @@ namespace webui {
     }
 
     void Widget::dump(const StringManager& strMng, int level) const {
-        LOG("%*s%-*s: %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %d  flags: %08x", level * 2, "", 24 - level*2, strMng.get(id),
+        LOG("%*s%-*s: %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %3d  flags: %08x %s", level * 2, "", 24 - level*2, strMng.get(id),
             curPos.x, curPos.y, curSize.x, curSize.y,
             size[0].dumpValue(), size[0].dumpFlags(),
             size[1].dumpValue(), size[1].dumpFlags(),
-            actions, all);
+            actions, all, text ? text : "");
         for (const auto* child: children) child->dump(strMng, level + 1);
     }
 

@@ -13,8 +13,8 @@ Application {
             beginPath(), roundedRect(x+3,   y+5,   w-6, h-8, 4), strokeColor(background%72), stroke(),
             beginPath(), roundedRect(x+3,   y+3,   w-6, h-8, 4), strokeColor(background%22), stroke(),
             font("Roboto-Bold.ttf", 40),
-            fillColor(foreground%0),   text(0, 2, "Hello world!"),
-            fillColor(foreground%200), text(0, 0, "Hello world!")
+            fillColor(foreground%0),   text(0, 2, text),
+            fillColor(foreground%200), text(0, 0, text)
         ]
         onRenderActive: [
             strokeWidth(2),
@@ -22,8 +22,8 @@ Application {
             beginPath(), roundedRect(x+3,   y+3,   w-6, h-6, 4), strokeColor(background%72), stroke(),
             beginPath(), roundedRect(x+3,   y+3,   w-6, h-8, 4), strokeColor(background%22), stroke(),
             font("Roboto-Bold.ttf", 40),
-            fillColor(foreground%0),   text(0,  0, "Hello world!"),
-            fillColor(foreground%160), text(0, -2, "Hello world!")
+            fillColor(foreground%0),   text(0,  0, text),
+            fillColor(foreground%160), text(0, -2, text)
         ]
         onEnter: set(self, background, "#888898c0")
         onLeave: set(self, background, "#909090c0")
@@ -33,7 +33,7 @@ Application {
 
     Widget {
         define: ButtonLevel2
-        width: 100
+        width: 120
         height: 32
         onRender: [
             strokeWidth(1),
@@ -41,8 +41,8 @@ Application {
             beginPath(), roundedRect(x+1.5, y+2.5, w-3, h-4, 2), strokeColor(background%72), stroke(),
             beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor(background%22), stroke(),
             font("Roboto-Regular.ttf", 20),
-            fillColor(foreground%0),   text(0, 1, "Hello world!"),
-            fillColor(foreground%200), text(0, 0, "Hello world!")
+            fillColor(foreground%0),   text(0, 1, text),
+            fillColor(foreground%200), text(0, 0, text)
         ]
         onRenderActive: [
             strokeWidth(1),
@@ -50,8 +50,8 @@ Application {
             beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-3, 2), strokeColor(background%72), stroke(),
             beginPath(), roundedRect(x+1.5, y+1.5, w-3, h-4, 2), strokeColor(background%22), stroke(),
             font("Roboto-Regular.ttf", 20),
-            fillColor(foreground%0),   text(0,  0, "Hello world!"),
-            fillColor(foreground%160), text(0, -1, "Hello world!")
+            fillColor(foreground%0),   text(0,  0, text),
+            fillColor(foreground%160), text(0, -1, text)
         ]
         foreground: "#808080a0"
         background: "#808080c0"
@@ -59,7 +59,10 @@ Application {
 
     ButtonLevel2 {
         define: ButtonLevel3
+        width: 80
+        height: 24
         background: "#a08080c0"
+        text: "more"
     }
 
     // tree definition
@@ -68,6 +71,7 @@ Application {
 
         ButtonLevel1 {
             id: but1
+            text: "level 1 first"
             onClick: toggleVisible(lay1)
         }
         LayoutVer {
@@ -75,6 +79,7 @@ Application {
             height: 0%
             ButtonLevel2 {
                 id: but1_1
+                text: "level 2 first"
                 onClick: toggleVisible(lay1_1)
             }
             LayoutVer {
@@ -86,6 +91,7 @@ Application {
             }
             ButtonLevel2 {
                 id: but1_2
+                text: "level 2 second"
                 onClick: toggleVisible(lay1_2)
             }
             LayoutVer {
@@ -97,6 +103,7 @@ Application {
             }
             ButtonLevel2 {
                 id: but1_3
+                text: "level 2 third"
                 onClick: toggleVisible(lay1_3)
             }
             LayoutVer {
@@ -109,6 +116,7 @@ Application {
         }
         ButtonLevel1 {
             id: but2
+            text: "level 1 second"
             onClick: toggleVisible(lay2)
         }
         LayoutVer {
@@ -116,6 +124,7 @@ Application {
             height: 0%
             ButtonLevel2 {
                 id: but2_1
+                text: "level 2 first"
                 onClick: toggleVisible(lay2_1)
             }
             LayoutVer {
@@ -128,6 +137,7 @@ Application {
         }
         ButtonLevel1 {
             id: but3
+            text: "level 1 third"
             onClick: toggleVisible(lay3)
         }
         LayoutVer {
@@ -135,6 +145,7 @@ Application {
             height: 0%
             ButtonLevel2 {
                 id: but3_1
+                text: "level 2 first"
                 onClick: toggleVisible(lay3_1)
             }
             LayoutVer {
@@ -146,6 +157,7 @@ Application {
             }
             ButtonLevel2 {
                 id: but3_2
+                text: "level 2 second"
                 onClick: toggleVisible(lay3_2)
             }
             LayoutVer {
@@ -157,6 +169,7 @@ Application {
             }
             ButtonLevel2 {
                 id: but3_3
+                text: "level 2 third"
                 onClick: toggleVisible(lay3_3)
             }
             LayoutVer {

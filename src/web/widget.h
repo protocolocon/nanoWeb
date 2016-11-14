@@ -25,9 +25,8 @@ namespace webui {
 
     class Widget {
     public:
-        inline Widget(Widget* parent): parent(parent), size { SizeRelative(100.0f, true), SizeRelative(100.0f, true) },
-                                       all(0x00ff4001), actions(0) { }
-        virtual ~Widget() { }
+        Widget(Widget* parent);
+        virtual ~Widget();
 
         // hierarchy
         inline void addChild(Widget* child) { children.push_back(child); }
@@ -78,8 +77,9 @@ namespace webui {
         V2s curSize;
 
         // static part
-        StringId id;
         Widget* parent;
+        char* text;
+        StringId id;
         std::vector<Widget*> children;
         SizeRelative size[2];
         RGBA background, foreground;
