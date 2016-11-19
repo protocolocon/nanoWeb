@@ -6,6 +6,8 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
+#pragma once
+
 #include "compatibility.h"
 #include "string_manager.h"
 #include "reserved_words.h"
@@ -16,6 +18,9 @@ namespace webui {
 
     class MLParser {
     public:
+        MLParser(): ownOrig(false) { }
+        ~MLParser();
+
         // returns false on error
         bool parse(const char* ml, int n);
 
@@ -35,6 +40,8 @@ namespace webui {
 
         int getTemporalEntry(const char* text);
 
+        void copyTo(MLParser& dst, int iEntry, int jEntry) const;
+
         void dump() const;
         void dumpTree() const;
 
@@ -43,6 +50,7 @@ namespace webui {
         const char* mlEnd;
         mutable int line;
         bool errorFlag;
+        bool ownOrig;
         std::vector<Entry> entries;
 
         int newEntry(const char* pos, int prev = -1);

@@ -23,6 +23,8 @@ namespace webui {
         add(Widget);
         add(LayoutHor);
         add(LayoutVer);
+        add(Template);
+        add(Timer);
         add(WLast);
 
         add(id);
@@ -43,8 +45,11 @@ namespace webui {
         add(onClick);
         add(onRender);
         add(onRenderActive);
+        add(onTimeout);
         add(define);
         add(self);
+        add(repeat);
+        add(delay);
         add(ALast);
 
         add(log);
@@ -60,6 +65,7 @@ namespace webui {
         add(font);
         add(text);
         add(set);
+        add(query);
         add(CLast);
     }
 

@@ -97,7 +97,7 @@ namespace webui {
         bool fontValid;
 
         Widget* initializeConstruct(const MLParser& parser);
-        bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define);
+        bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
 
         // widget factory and registration
         Widget* createWidget(Identifier id, Widget* parent);
@@ -113,6 +113,7 @@ namespace webui {
         bool addCommandToggle(int iEntry);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
         bool executeSet(StringId widgetId, Identifier prop, StringId value, Widget* widget);
+        bool executeQuery(StringId query, StringId widgetId);
 
         bool parseId(Widget* widget, const char*& str, const Property*& prop) const;
         int parseCoord(int iEntry, Widget* widget) const;

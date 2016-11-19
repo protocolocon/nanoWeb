@@ -13,8 +13,6 @@
 
 namespace webui {
 
-    class Context;
-
     class WidgetLayout: public Widget {
     public:
         inline WidgetLayout(int coord, Widget* parent = nullptr): Widget(parent), coord(coord), dragDrop(nullptr) { }

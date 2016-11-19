@@ -11,8 +11,10 @@
 #include "input.h"
 #include "widget.h"
 #include "properties.h"
+#include "widget_timer.h"
 #include "reserved_words.h"
 #include "widget_layout.h"
+#include "widget_template.h"
 #include "widget_application.h"
 #include <cstdlib>
 #include <cassert>
@@ -37,6 +39,7 @@ namespace {
     const Type setParams[] =           { Type::StrId, Type::Id, Type::Str, Type::LastType };
     const Type fontParams[] =          { Type::FontIdx, Type::Float, Type::LastType };
     const Type textParams[] =          { Type::Coord, Type::Coord, Type::TextPropOrStrId, Type::LastType };
+    const Type queryParams[] =         { Type::StrId, Type::StrId, Type::LastType };
 
 }
 
@@ -141,14 +144,14 @@ namespace webui {
         if (parser.size() > 1 && parser[0].next == 1 && parser[1].next == 0 && *parser[1].pos == '{') {
             bool define;
             auto* widget(createWidget(parser[0].asId(parser, strMng), nullptr));
-            if (widget && initializeConstruct(parser, widget, 2, parser.size(), define) && registerWidget(widget))
+            if (widget && initializeConstruct(parser, widget, 2, parser.size(), define, true) && registerWidget(widget))
                 return widget;
             delete widget;
         }
         return nullptr;
     }
 
-    bool Application::initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define) {
+    bool Application::initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define, bool recurse) {
         define = false;
         Widget* widgetChild;
         while (iEntry < fEntry) {
@@ -164,13 +167,21 @@ namespace webui {
                 LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
             } else {
                 if ((widgetChild = createWidget(key, widget/*parent*/))) {
-                    // child widget
-                    bool defineChild;
-                    if (!initializeConstruct(parser, widgetChild, iEntry + 2, next, defineChild) || !registerWidget(widgetChild)) {
+                    if (recurse) {
+                        // child widget
+                        bool defineChild(false);
+                        bool isTemplate(key == Identifier::Template);
+                        if (!initializeConstruct(parser, widgetChild, iEntry + 2, next, defineChild, !isTemplate) || !registerWidget(widgetChild)) {
+                            delete widgetChild;
+                            return false;
+                        }
+                        if (!defineChild) widget->addChild(widgetChild);
+                        if (isTemplate) {
+                            auto* tpl(reinterpret_cast<WidgetTemplate*>(widgetChild));
+                            parser.copyTo(tpl->getParser(), iEntry + 2, next);
+                        }
+                    } else
                         delete widgetChild;
-                        return false;
-                    }
-                    if (!defineChild) widget->addChild(widgetChild);
                 } else {
                     if (key == Identifier::define) {
                         key = Identifier::id;
@@ -193,6 +204,8 @@ namespace webui {
         case Identifier::Widget:      return new Widget(parent);
         case Identifier::LayoutHor:   return new WidgetLayout(0, parent);
         case Identifier::LayoutVer:   return new WidgetLayout(1, parent);
+        case Identifier::Template:    return new WidgetTemplate(parent);
+        case Identifier::Timer:       return new WidgetTimer(parent);
         default:                      break;
         }
         // copy from other widget by id
@@ -237,6 +250,14 @@ namespace webui {
     bool Application::setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry, Widget* widget) {
         pair<const char*, int> ss;
         switch (prop.type) {
+        case Type::Uint8:
+            if (fEntry > iEntry + 1) return false;
+            reinterpret_cast<uint8_t*>(data)[prop.pos] = atoi(parser[iEntry].pos);
+            return true;
+        case Type::Int32:
+            if (fEntry > iEntry + 1) return false;
+            reinterpret_cast<int*>(data)[prop.pos] = atoi(parser[iEntry].pos);
+            return true;
         case Type::Id:
             if (fEntry > iEntry + 1) return false;
             reinterpret_cast<Identifier*>(data)[prop.pos] = entryId(iEntry);
@@ -310,7 +331,8 @@ namespace webui {
         auto& table(actionTables[actions]);
         int* tableEntry;
         switch (actionId) { // get the table entry to add commands to
-        case Identifier::onEnter:        tableEntry = &table.onEnter;        break;
+        case Identifier::onEnter:
+        case Identifier::onTimeout:      tableEntry = &table.onEnter;        break;
         case Identifier::onLeave:        tableEntry = &table.onLeave;        break;
         case Identifier::onClick:        tableEntry = &table.onClick;        break;
         case Identifier::onRender:       tableEntry = &table.onRender;       break;
@@ -344,6 +366,7 @@ namespace webui {
             case Identifier::set:           params = setParams; break;
             case Identifier::font:          params = fontParams; break;
             case Identifier::text:          params = textParams; break;
+            case Identifier::query:         params = queryParams; break;
             default:
                 auto ss(entry.asStrSize(parser, true));
                 LOG("unknown command: {%.*s}", ss.second, ss.first);
@@ -502,6 +525,10 @@ namespace webui {
             case Identifier::set:
                 executed |= executeSet(StringId(command[1]), Identifier(command[2]), StringId(command[3]), w);
                 command += 4;
+                break;
+            case Identifier::query:
+                executed |= executeQuery(StringId(command[1]), StringId(command[2]));
+                command += 3;
                 break;
             case Identifier::CLast:
                 cont = false;

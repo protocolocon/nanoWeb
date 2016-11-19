@@ -39,7 +39,7 @@ namespace webui {
     // XHR
     class RequestXHR {
     public:
-        enum Type { TypeApplication, TypeFont, TypeLast };
+        enum Type { TypeApplication, TypeTemplate, TypeFont, TypeLast };
 
         RequestXHR(Application& app, Type type, StringId id, const char* req);
         ~RequestXHR();

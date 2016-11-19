@@ -8,16 +8,22 @@
 
 #include "ml_parser.h"
 #include <cctype>
+#include <stdlib.h>
 
 using namespace std;
 
 namespace webui {
 
+    MLParser::~MLParser() {
+        if (ownOrig)
+            free(const_cast<char*>(mlOrig));
+    }
+
     bool MLParser::parse(const char* ml, int n) {
         mlOrig = ml;
         mlEnd = ml + n;
         line = 1;
-        errorFlag = false;
+        errorFlag = ownOrig = false;
         clear();
         if (!parseLevel(ml))
             return error(ml, "trailing content");
@@ -101,11 +107,12 @@ namespace webui {
            { ... }
            " ... "
            <id>
+           @
         */
         if (*ml == '[') { ++ml; return parseList(ml, ']'); }
         else if (*ml == '{') { ++ml; return parseObject(ml); }
         else if (*ml == '"') return skipString(ml);
-        else if (isalnum(*ml) || *ml == '-') {
+        else if (isalnum(*ml) || *ml == '-' || *ml == '@') {
             if (skipId(ml)) return error(ml, "EOF parsing id");
             if (skipSpace(ml)) return error(ml, "EOF skipping space");
             if (*ml == '(') { ++ml; return parseList(ml, ')'); } // function parameters
@@ -196,13 +203,22 @@ namespace webui {
         return entries.size();
     }
 
+    void MLParser::copyTo(MLParser& dst, int iEntry, int jEntry) const {
+        int size( (jEntry < int(entries.size()) ? entries[jEntry].pos : mlEnd) - entries[iEntry].pos );
+        dst.mlOrig = strndup(entries[iEntry].pos, size);
+        dst.mlEnd = dst.mlOrig + size;
+        dst.errorFlag = false;
+        dst.ownOrig = true;
+        dst.entries.assign(entries.begin() + iEntry, entries.begin() + jEntry);
+    }
+
     void MLParser::dump() const {
         char buffer[20];
         buffer[sizeof(buffer) - 1] = 0;
         for (const auto& entry: entries) {
             for (int i = 0; i < int(sizeof(buffer)) - 1; i++)
                 buffer[i] = (entry.pos + i < mlEnd && entry.pos[i] >= 32) ? entry.pos[i] : '.';
-            LOG("%4ld |%s| %4d", &entry - entries.data(), buffer, entry.next);
+            LOG("%4d |%s| %4d", int(&entry - entries.data()), buffer, entry.next);
         }
     }
 

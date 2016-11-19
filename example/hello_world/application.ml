@@ -65,6 +65,22 @@ Application {
         text: "more"
     }
 
+    // test template
+    Timer {
+        id: timer
+        repeat: 1
+        delay: 1000 // ms
+        onTimeout: query("tree.ml", treeTemplate)
+    }
+
+    Template {
+        id: treeTemplate
+        ButtonLevel1 {
+            id: @
+            text: @
+        }
+    }
+
     // tree definition
     LayoutVer {
         id: root

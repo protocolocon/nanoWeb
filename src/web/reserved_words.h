@@ -29,7 +29,9 @@ namespace webui {
         Widget           = OffsetEnum(Application),
         LayoutHor        = OffsetEnum(Widget),
         LayoutVer        = OffsetEnum(LayoutHor),
-        WLast            = OffsetEnum(LayoutVer),
+        Template         = OffsetEnum(LayoutVer),
+        Timer            = OffsetEnum(Template),
+        WLast            = OffsetEnum(Timer),
 
         // attributes
         id               = OffsetEnum(WLast),
@@ -50,9 +52,12 @@ namespace webui {
         onClick          = OffsetEnum(onLeave),
         onRender         = OffsetEnum(onClick),
         onRenderActive   = OffsetEnum(onRender),
-        define           = OffsetEnum(onRenderActive),
+        onTimeout        = OffsetEnum(onRenderActive),
+        define           = OffsetEnum(onTimeout),
         self             = OffsetEnum(define),
-        ALast            = OffsetEnum(self),
+        repeat           = OffsetEnum(self),
+        delay            = OffsetEnum(repeat),
+        ALast            = OffsetEnum(delay),
 
         // commands
         log              = OffsetEnum(ALast),
@@ -68,7 +73,8 @@ namespace webui {
         font             = OffsetEnum(stroke),
         text             = OffsetEnum(font),
         set              = OffsetEnum(text),
-        CLast            = OffsetEnum(set),
+        query            = OffsetEnum(set),
+        CLast            = OffsetEnum(query),
     };
 
 }

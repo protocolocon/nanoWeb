@@ -140,9 +140,11 @@ add_executable(${TARGET_NAME}
   src/web/ml_parser.cc
   src/web/properties.cc
   src/web/application.cc
+  src/web/widget_timer.cc
   src/web/compatibility.cc
   src/web/widget_layout.cc
   src/web/string_manager.cc
   src/web/reserved_words.cc
+  src/web/widget_template.cc
   src/web/widget_application.cc
   submodules/nanovg/src/nanovg.c)
