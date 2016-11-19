@@ -16,7 +16,9 @@ namespace webui {
 
     class WidgetTemplate: public Widget {
     public:
-        inline WidgetTemplate(Widget* parent = nullptr): Widget(parent) { }
+        inline WidgetTemplate(Widget* parent = nullptr): Widget(parent) {
+            visible = false;
+        }
 
         // polymorphic interface
         virtual Identifier type() const final override { return Identifier::Template; }

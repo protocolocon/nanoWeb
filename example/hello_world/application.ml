@@ -69,7 +69,7 @@ Application {
     Timer {
         id: timer
         repeat: 1
-        delay: 1000 // ms
+        delay: 5000 // ms
         onTimeout: query("tree.ml", treeTemplate)
     }
 
@@ -84,6 +84,30 @@ Application {
     // tree definition
     LayoutVer {
         id: root
+
+        Template {
+            ButtonLevel1 {
+                id: @
+                text: @
+                onClick: toggleVisible(@)
+            }
+            LayoutVer {
+                id: @
+                height: 0%
+                ButtonLevel2 {
+                    id: @
+                    text: @
+                    onClick: toggleVisible(@)
+                }
+                LayoutVer {
+                    id: @
+                    height: 0%
+                    ButtonLevel3 {
+                        text: @
+                    }
+                }
+            }
+        }
 
         ButtonLevel1 {
             id: but1

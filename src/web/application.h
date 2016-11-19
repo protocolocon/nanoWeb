@@ -115,6 +115,9 @@ namespace webui {
         bool executeSet(StringId widgetId, Identifier prop, StringId value, Widget* widget);
         bool executeQuery(StringId query, StringId widgetId);
 
+        // timers
+        bool refreshTimers(); // returns true on command execution
+
         bool parseId(Widget* widget, const char*& str, const Property*& prop) const;
         int parseCoord(int iEntry, Widget* widget) const;
         RGBAref parseColorModif(int iEntry, Widget* widget) const;

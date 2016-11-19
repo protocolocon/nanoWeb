@@ -62,10 +62,18 @@ namespace webui {
     }
 
     void Application::refresh() {
-        if (root && (Input::refresh(ctx.getRender().getWin()) || !layoutStable)) {
+        if (root && ((Input::refresh(ctx.getRender().getWin()) | refreshTimers()) || !layoutStable)) {
             layoutStable = root->layout(ctx, V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()));
             ctx.forceRender();
         }
+    }
+
+    bool Application::refreshTimers() {
+        bool dev(false);
+        for (auto child: root->getChildren())
+            if (child->type() == Identifier::Timer)
+                dev |= reinterpret_cast<WidgetTimer*>(child)->refreshTimer(ctx);
+        return dev;
     }
 
     bool Application::update() {
@@ -576,6 +584,11 @@ namespace webui {
             }
         }
         return set;
+    }
+
+    bool Application::executeQuery(StringId query, StringId widgetId) {
+        new RequestXHR(*this, RequestXHR::TypeTemplate, widgetId, strMng.get(query));
+        return true;
     }
 
     int Application::getWidgetRange(StringId widgetId) const {
