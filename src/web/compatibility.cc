@@ -39,7 +39,7 @@ namespace webui {
     void RequestXHR::onLoad(char* buffer, int nBuffer) {
         data = buffer;
         nData = nBuffer;
-        LOG("XHR load %d bytes", nData);
+        DIAG(LOG("XHR load %d bytes", nData));
         app.onLoad(this);
     }
 

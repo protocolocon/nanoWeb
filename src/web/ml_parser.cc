@@ -22,11 +22,11 @@ namespace webui {
     bool MLParser::parse(const char* ml, int n) {
         mlOrig = ml;
         mlEnd = ml + n;
-        line = 1;
-        errorFlag = ownOrig = false;
+        DIAG(line = 1);
+        DIAG(errorFlag =) ownOrig = false;
         clear();
         if (!parseLevel(ml))
-            return error(ml, "trailing content");
+            return DIAG(error(ml, "trailing content") &&) false;
         return true;
     }
 
@@ -40,13 +40,13 @@ namespace webui {
         if (isalpha(*ml)) {
             // named object
             int prev(newEntry(ml)); // id
-            if (skipId(ml) || skipSpace(ml)) return error(ml, "id with no object");
-            if (*ml != '{') return error(ml, "expected object defitition");
+            if (skipId(ml) || skipSpace(ml)) return DIAG(error(ml, "id with no object") &&) false;
+            if (*ml != '{') return DIAG(error(ml, "expected object defitition") &&) false;
             newEntry(ml, prev); ++ml; // object
             parseObject(ml);
             return skipSpace(ml);
         } else
-            return error(ml, "expecting object identifier");
+            return DIAG(error(ml, "expecting object identifier") &&) false;
     }
 
     bool MLParser::parseObject(const char*& ml) {
@@ -57,27 +57,27 @@ namespace webui {
         */
         int prev(-1);
         while (ml < mlEnd) {
-            if (skipSpace(ml)) return error(ml, "unsinished object");
+            if (skipSpace(ml)) return DIAG(error(ml, "unsinished object") &&) false;
             if (*ml == '}') { ++ml; break; } // object definition finished
             if (isalpha(*ml)) {
                 prev = newEntry(ml, prev); // id
-                if (skipId(ml) || skipSpace(ml)) return error(ml, "key w/o value or object w/o definition");
+                if (skipId(ml) || skipSpace(ml)) return DIAG(error(ml, "key w/o value or object w/o definition") &&) false;
                 if (*ml == ':') {
                     ++ml;
-                    if (skipSpace(ml)) return error(ml, "EOF expecting value");
+                    if (skipSpace(ml)) return DIAG(error(ml, "EOF expecting value") &&) false;
                     prev = newEntry(ml, prev);
-                    if (parseValue(ml)) return error(ml, "expeting value");
-                    if (skipSpace(ml)) return error(ml, "EOF expecting '}' or ','");
+                    if (parseValue(ml)) return DIAG(error(ml, "expeting value") &&) false;
+                    if (skipSpace(ml)) return DIAG(error(ml, "EOF expecting '}' or ','") &&) false;
                     if (*ml == ',') ++ml;
                 }
                 else if (*ml == '{') {
                     prev = newEntry(ml, prev);
                     ++ml;
-                    if (parseObject(ml)) error(ml, "EOF parsing object");
+                    if (parseObject(ml)) DIAG(error(ml, "EOF parsing object"));
                 }
-                else return error(ml, "expecting ':' or '{' after id");
+                else return DIAG(error(ml, "expecting ':' or '{' after id") &&) false;
             } else
-                return error(ml, "expecting <id> or '}'");
+                return DIAG(error(ml, "expecting <id> or '}'") &&) false;
         }
         return false;
     }
@@ -86,17 +86,17 @@ namespace webui {
         /* expecting:
            <value>[, <value>[, ...]]
         */
-        if (skipSpace(ml)) return error(ml, "unsinished list");
+        if (skipSpace(ml)) return DIAG(error(ml, "unsinished list") &&) false;
         if (*ml == expectedEndChar) { ++ml; return false; }
         int prev(-1);
         while (ml < mlEnd) {
             prev = newEntry(ml, prev);
-            if (parseValue(ml) || errorFlag) return error(ml, "EOF expecting value");
-            if (skipSpace(ml)) return error(ml, "unfinished list");
+            if (parseValue(ml) DIAG(|| errorFlag)) return DIAG(error(ml, "EOF expecting value") &&) false;
+            if (skipSpace(ml)) return DIAG(error(ml, "unfinished list") &&) false;
             if (*ml == expectedEndChar) { ++ml; break; }
-            if (*ml != ',') return error(ml, "expecting ',' to separate values");
+            if (*ml != ',') return DIAG(error(ml, "expecting ',' to separate values") &&) false;
             ++ml;
-            if (skipSpace(ml)) return error(ml, "unfinished list");
+            if (skipSpace(ml)) return DIAG(error(ml, "unfinished list") &&) false;
         }
         return false;
     }
@@ -113,17 +113,17 @@ namespace webui {
         else if (*ml == '{') { ++ml; return parseObject(ml); }
         else if (*ml == '"') return skipString(ml);
         else if (isalnum(*ml) || *ml == '-' || *ml == '@') {
-            if (skipId(ml)) return error(ml, "EOF parsing id");
-            if (skipSpace(ml)) return error(ml, "EOF skipping space");
+            if (skipId(ml)) return DIAG(error(ml, "EOF parsing id") &&) false;
+            if (skipSpace(ml)) return DIAG(error(ml, "EOF skipping space") &&) false;
             if (*ml == '(') { ++ml; return parseList(ml, ')'); } // function parameters
             return false;
         }
-        else return error(ml, "expecting value");
+        else return DIAG(error(ml, "expecting value") &&) false;
     }
 
     int MLParser::newEntry(const char* pos, int prev) {
         if (prev >= 0) entries[prev].next = entries.size();
-        entries.push_back(pos);
+        entries.push_back(Entry(pos DIAG(, line)));
         return entries.size() - 1;
     }
 
@@ -147,7 +147,7 @@ namespace webui {
 
     bool MLParser::skipSpace(const char*& ml) const {
         while (ml < mlEnd) {
-            if (*ml == '\n') { line++; ++ml; }
+            if (*ml == '\n') { DIAG(line++); ++ml; }
             else if (isspace(*ml)) ++ml;
             else if (*ml == '/' && ml[1] == '/') skipLine(ml); // comment
             else return false;
@@ -157,7 +157,7 @@ namespace webui {
 
     bool MLParser::skipLine(const char*& ml) const {
         while (ml < mlEnd) {
-            if (*ml == '\n') { line++; ++ml; return false; }
+            if (*ml == '\n') { DIAG(line++); ++ml; return false; }
             ++ml;
         }
         return true;
@@ -169,21 +169,23 @@ namespace webui {
         return false;
     }
 
-    bool MLParser::error(const char* ml, const char* msg) {
-        errorFlag = true;
-        LOG("error parsing ML: %s at line %d (document position %ld)", msg, line, ml - mlOrig);
-        char buffer[64 + 1];
-        for (int i = -32; i < 32; i++) {
-            if (ml + i >= mlOrig && ml +i < mlEnd && ml[i] >= 32)
-                buffer[i + 32] = ml[i];
-            else
-                buffer[i + 32] = '.';
-        }
-        buffer[64] = 0;
-        LOG("around: |%s|", buffer);
-        LOG("        |%32s^%31s|", "", "");
-        return false;
-    }
+    DIAG(
+        bool MLParser::error(const char* ml, const char* msg, int line_) const {
+            errorFlag = true;
+            if (!line_) line_ = line;
+            LOG("error parsing ML: %s at line %d (document position %ld)", msg, line_, ml - mlOrig);
+            char buffer[64 + 1];
+            for (int i = -32; i < 32; i++) {
+                if (ml + i >= mlOrig && ml +i < mlEnd && ml[i] >= 32)
+                    buffer[i + 32] = ml[i];
+                else
+                    buffer[i + 32] = '.';
+            }
+            buffer[64] = 0;
+            LOG("around: |%s|", buffer);
+            LOG("        |%32s^%31s|", "", "");
+            return false;
+        });
 
     int MLParser::getLevelEnd(int iEntry) const {
         int i(iEntry);
@@ -207,42 +209,45 @@ namespace webui {
         int size( (jEntry < int(entries.size()) ? entries[jEntry].pos : mlEnd) - entries[iEntry].pos );
         dst.mlOrig = strndup(entries[iEntry].pos, size);
         dst.mlEnd = dst.mlOrig + size;
-        dst.errorFlag = false;
+        DIAG(dst.errorFlag = false);
         dst.ownOrig = true;
         dst.entries.assign(entries.begin() + iEntry, entries.begin() + jEntry);
     }
 
-    void MLParser::dump() const {
-        char buffer[20];
-        buffer[sizeof(buffer) - 1] = 0;
-        for (const auto& entry: entries) {
-            for (int i = 0; i < int(sizeof(buffer)) - 1; i++)
-                buffer[i] = (entry.pos + i < mlEnd && entry.pos[i] >= 32) ? entry.pos[i] : '.';
-            LOG("%4d |%s| %4d", int(&entry - entries.data()), buffer, entry.next);
-        }
-    }
+    DIAG(
+        void MLParser::dump() const {
+            char buffer[20];
+            buffer[sizeof(buffer) - 1] = 0;
+            for (const auto& entry: entries) {
+                for (int i = 0; i < int(sizeof(buffer)) - 1; i++)
+                    buffer[i] = (entry.pos + i < mlEnd && entry.pos[i] >= 32) ? entry.pos[i] : '.';
+                LOG("%4d |%s| %4d", int(&entry - entries.data()), buffer, entry.next);
+            }
+        });
 
-    void MLParser::dumpTree() const {
-        dumpTreeRecur(0, entries.size(), 0);
-    }
+    DIAG(
+        void MLParser::dumpTree() const {
+            dumpTreeRecur(0, entries.size(), 0);
+        });
 
-    void MLParser::dumpTreeRecur(int iEntry, int fEntry, int level) const {
-        while (iEntry < fEntry) {
-            const auto& entry(entries[iEntry]);
-            int next(entry.next ? entry.next : fEntry);
-            if (next > iEntry + 1) {// children
-                if (isalnum(*entry.pos)) {
+    DIAG(
+        void MLParser::dumpTreeRecur(int iEntry, int fEntry, int level) const {
+            while (iEntry < fEntry) {
+                const auto& entry(entries[iEntry]);
+                int next(entry.next ? entry.next : fEntry);
+                if (next > iEntry + 1) {// children
+                    if (isalnum(*entry.pos)) {
+                        auto strSize(entry.asStrSize(*this, true));
+                        LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
+                    }
+                    dumpTreeRecur(iEntry + 1, next, level + 1);
+                } else {
                     auto strSize(entry.asStrSize(*this, true));
                     LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
                 }
-                dumpTreeRecur(iEntry + 1, next, level + 1);
-            } else {
-                auto strSize(entry.asStrSize(*this, true));
-                LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
+                iEntry = next;
             }
-            iEntry = next;
-        }
-    }
+        });
 
     // Entry
     pair<const char*, int> MLParser::Entry::asStrSize(const MLParser& parser, bool quotes) const {

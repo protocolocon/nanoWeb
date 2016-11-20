@@ -8,6 +8,13 @@
 
 #pragma once
 
+// diagnostics
+#ifdef DISABLE_DIAGNOSTICS
+#  define DIAG(x, ...)
+#else
+#  define DIAG(x, ...)       x, ##__VA_ARGS__
+#endif
+
 // logging
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>

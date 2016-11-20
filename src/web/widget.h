@@ -69,7 +69,7 @@ namespace webui {
         void translate(V2s t);
 
         // debug
-        void dump(const StringManager& strMng, int level = 0) const;
+        DIAG(void dump(const StringManager& strMng, int level = 0) const);
 
     public:
         // dynamic part

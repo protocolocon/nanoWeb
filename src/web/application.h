@@ -74,7 +74,7 @@ namespace webui {
         void onError(RequestXHR* xhr);
 
         // debug
-        void dump() const;
+        DIAG(void dump() const);
         inline auto& getStrMng() { return strMng; }
 
     private:

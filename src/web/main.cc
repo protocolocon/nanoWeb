@@ -45,7 +45,7 @@ namespace webui {
     }
 
     void Context::resize(int width, int height) {
-        LOG("canvas resize %d x %d", width, height);
+        DIAG(LOG("canvas resize %d x %d", width, height));
         forceRender();
         render.setWindowSize(width, height);
         app.resize(width, height);

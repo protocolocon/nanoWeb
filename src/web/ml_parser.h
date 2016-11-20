@@ -25,12 +25,13 @@ namespace webui {
         bool parse(const char* ml, int n);
 
         struct Entry {
-            Entry(const char* pos = nullptr): pos(pos), next(0) { }
+            Entry(const char* pos = nullptr DIAG(, int line = 0)): pos(pos), next(0) DIAG(, line(line)) { }
             std::pair<const char*, int> asStrSize(const MLParser& parser, bool quotes) const;   // string, id or number
-            Identifier asId(const MLParser& parser, const StringManager& strMng) const;                 // string, id or number
+            Identifier asId(const MLParser& parser, const StringManager& strMng) const;         // string, id or number
             StringId asStrId(const MLParser& parser, StringManager& strMng, bool quotes) const; // string, id or number
             const char* pos;
             int next;
+            DIAG(int line);
         };
 
         inline void clear() { entries.clear(); }
@@ -42,14 +43,17 @@ namespace webui {
 
         void copyTo(MLParser& dst, int iEntry, int jEntry) const;
 
-        void dump() const;
-        void dumpTree() const;
+        // returns false
+        DIAG(bool error(const char* ml, const char* msg, int line = 0) const);
+
+        DIAG(void dump() const);
+        DIAG(void dumpTree() const);
 
     private:
         const char* mlOrig;
         const char* mlEnd;
-        mutable int line;
-        bool errorFlag;
+        DIAG(mutable int line);
+        DIAG(mutable bool errorFlag);
         bool ownOrig;
         std::vector<Entry> entries;
 
@@ -68,11 +72,8 @@ namespace webui {
         bool skipString(const char*& ml) const;
         bool skipValue(const char*& ml) const;
 
-        // returns false
-        bool error(const char* ml, const char* msg);
-
         // debug
-        void dumpTreeRecur(int iEntry, int fEntry, int level) const;
+        DIAG(void dumpTreeRecur(int iEntry, int fEntry, int level) const);
     };
 
 }

@@ -108,16 +108,18 @@ namespace webui {
         if (xhr->getType() == RequestXHR::TypeApplication) {
             assert(!root);
             if (!parser.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct(parser))) {
-                xhr->makeCString();
-                LOG("cannot parse: %s", xhr->getData());
+                DIAG(
+                    xhr->makeCString();
+                    LOG("cannot parse: %s", xhr->getData()));
                 clear();
             } else
                 resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
 
-            //parser.dumpTree();
             parser.clear();
             ctx.forceRender();
-            dump();
+            DIAG(
+                //parser.dumpTree();
+                dump());
         } else if (xhr->getType() == RequestXHR::TypeFont) {
             // check that font id matches in font list
             bool ok(false);
@@ -171,8 +173,10 @@ namespace webui {
             auto key(entryKey.asId(parser, strMng));
             int next(entryVal.next ? entryVal.next : fEntry);
             if (key == Identifier::InvalidId) {
-                auto ss(entryKey.asStrSize(parser, true));
-                LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
+                DIAG(
+                    auto ss(entryKey.asStrSize(parser, true));
+                    LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
+                    parser.error(entryKey.pos, "=>", entryKey.line));
             } else {
                 if ((widgetChild = createWidget(key, widget/*parent*/))) {
                     if (recurse) {
@@ -196,8 +200,10 @@ namespace webui {
                         define = true;
                     }
                     if (!setProp(key, widget, iEntry + 1, next)) {
-                        auto ss(entryVal.asStrSize(parser, true));
-                        LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
+                        DIAG(
+                            auto ss(entryVal.asStrSize(parser, true));
+                            LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
+                            parser.error(entryKey.pos, "=>", entryKey.line));
                     }
                 }
             }
@@ -236,7 +242,7 @@ namespace webui {
         }
         const auto& id(widget->getId());
         if (widgets.count(id)) {
-            LOG("repeated widget id: %s", strMng.get(id));
+            DIAG(LOG("repeated widget id: %s", strMng.get(id)));
             return false;
         }
         widgets[id] = widget;
@@ -247,9 +253,10 @@ namespace webui {
         const auto* prop(widget->getProp(id));
         if (!prop) return false;
         if (!setProp(*prop, id, widget, iEntry, fEntry, widget)) {
-            auto ss(entryAsStrSize(iEntry, true));
-            LOG("%s was expecting the type %s, received %.*s (%d parameters) and failed",
-                strMng.get(id), toString(prop->type), ss.second, ss.first, fEntry - iEntry);
+            DIAG(
+                auto ss(entryAsStrSize(iEntry, true));
+                LOG("%s was expecting the type %s, received %.*s (%d parameters) and failed",
+                    strMng.get(id), toString(prop->type), ss.second, ss.first, fEntry - iEntry));
             return false;
         }
         return true;
@@ -259,59 +266,60 @@ namespace webui {
         pair<const char*, int> ss;
         switch (prop.type) {
         case Type::Uint8:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<uint8_t*>(data)[prop.pos] = atoi(parser[iEntry].pos);
             return true;
         case Type::Int32:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<int*>(data)[prop.pos] = atoi(parser[iEntry].pos);
             return true;
         case Type::Id:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<Identifier*>(data)[prop.pos] = entryId(iEntry);
             return true;
         case Type::Str:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry, true);
             return true;
         case Type::StrId:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<StringId*>(data)[prop.pos] = entryAsStrId(iEntry, false);
             return true;
         case Type::Float:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<float*>(data)[prop.pos] = strtof(parser[iEntry].pos, nullptr);
             return true;
         case Type::Color:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<RGBA*>(data)[prop.pos] = entry(iEntry).pos;
             return true;
         case Type::ColorModif:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<RGBAref*>(data)[prop.pos] = parseColorModif(iEntry, widget);
             return true;
         case Type::SizeRelative:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             ss = entryAsStrSize(iEntry, false);
             reinterpret_cast<SizeRelative*>(data)[prop.pos] = ss;
             return true;
         case Type::Coord:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<int*>(data)[prop.pos] = parseCoord(iEntry, widget);
             return true;
         case Type::FontIdx:
+            DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<int*>(data)[prop.pos] = getFont(entryAsStrId(iEntry, false));
             return true;
         case Type::ActionTable:
             return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos], widget);
         case Type::Text:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             ss = entryAsStrSize(iEntry, false);
             free(reinterpret_cast<char**>(data)[prop.pos]);
             reinterpret_cast<char**>(data)[prop.pos] = strndup(ss.first, ss.second);
             return true;
         case Type::TextPropOrStrId:
-            if (fEntry > iEntry + 1) return false;
+            DIAG(if (fEntry > iEntry + 1) return false);
             ss = entryAsStrSize(iEntry, true);
             if (*ss.first == '"')
                 reinterpret_cast<TextPropOrStrId*>(data)[prop.pos] = strMng.add(ss.first + 1, ss.second - 2);
@@ -322,7 +330,7 @@ namespace webui {
             }
             return true;
         default:
-            LOG("internal error, unhandled property type!");
+            DIAG(LOG("internal error, unhandled property type!"));
             return false;
         }
     }
@@ -345,7 +353,7 @@ namespace webui {
         case Identifier::onClick:        tableEntry = &table.onClick;        break;
         case Identifier::onRender:       tableEntry = &table.onRender;       break;
         case Identifier::onRenderActive: tableEntry = &table.onRenderActive; break;
-        default: LOG("unknown action"); return false;
+        default: DIAG(LOG("unknown action")); return false;
         }
         return addActionCommands(iEntry, fEntry, *tableEntry, widget);
     }
@@ -376,8 +384,9 @@ namespace webui {
             case Identifier::text:          params = textParams; break;
             case Identifier::query:         params = queryParams; break;
             default:
-                auto ss(entry.asStrSize(parser, true));
-                LOG("unknown command: {%.*s}", ss.second, ss.first);
+                DIAG(
+                    auto ss(entry.asStrSize(parser, true));
+                    LOG("unknown command: {%.*s}", ss.second, ss.first));
             }
             if (params) ok &= addCommandGeneric(command, iEntry, next, params, widget);
             iEntry = next;
@@ -387,10 +396,11 @@ namespace webui {
     }
 
     bool Application::addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget) {
-        if (params[fEntry - iEntry] != Type::LastType) {
-            LOG("%s command got %d parameters", strMng.get(name), fEntry - iEntry);
-            return false;
-        }
+        DIAG(
+            if (params[fEntry - iEntry] != Type::LastType) {
+                LOG("%s command got %d parameters", strMng.get(name), fEntry - iEntry);
+                return false;
+            });
         actionCommands.push_back(int(name));
         Property prop;
         prop.all = 0;
@@ -398,7 +408,8 @@ namespace webui {
         while (*params != Type::LastType) {
             int value;
             prop.type = *params++;
-            if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1, widget)) LOG("error in command argument");
+            if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1, widget))
+                DIAG(LOG("error in command argument"));
             iEntry++;
             actionCommands.push_back(value);
         }
@@ -418,24 +429,25 @@ namespace webui {
     }
 
     int Application::parseCoord(int iEntry, Widget* widget) const {
-        bool bad(false);
+        DIAG(bool bad(false));
         int out(0);
         auto param(entry(iEntry).pos);
         const Property* prop(nullptr);
-        if (!parseId(widget, param, prop)) bad = true;
+        if (!parseId(widget, param, prop)) DIAG(bad = true);
         if (prop) {
             if (prop->size == 2 && prop->type == Type::Int16) out |= prop->pos << 16;
-            else bad = true;
+            else DIAG(bad = true);
         } else
             out |= 0xffff0000;
         if (*param == '+' || *param == '-' || isdigit(*param)) {
             float num(strtof(param, nullptr));
             out |= int(num*4) & 0xffff;
         }
-        if (bad) {
-            auto ss(entryAsStrSize(iEntry, true));
-            LOG("unrecognized coord string: %.*s", ss.second, ss.first);
-        }
+        DIAG(
+            if (bad) {
+                auto ss(entryAsStrSize(iEntry, true));
+                LOG("unrecognized coord string: %.*s", ss.second, ss.first);
+            });
         return out;
     }
 
@@ -444,9 +456,10 @@ namespace webui {
         if (*param == '"') return RGBAref(param); // normal color, no reference
         // referenced color
         const Property* prop;
-        if (!parseId(widget, param, prop) || !prop || prop->size != 4 || prop->type != Type::Color) {
-            auto ss(entryAsStrSize(iEntry, true));
-            LOG("unrecognized color string: %.*s", ss.second, ss.first);
+        if (!parseId(widget, param, prop) DIAG(|| !prop || prop->size != 4 || prop->type != Type::Color)) {
+            DIAG(
+                auto ss(entryAsStrSize(iEntry, true));
+                LOG("unrecognized color string: %.*s", ss.second, ss.first));
             return RGBAref();
         } else {
             auto ref(prop->pos);
@@ -542,9 +555,10 @@ namespace webui {
                 cont = false;
                 break;
             default:
-                LOG("internal: executing command error: %d %d %zu", *command, commandList, actionCommands.size());
-                for (command = &actionCommands[commandList]; command < &actionCommands.back(); command++)
-                    LOG("%08x", *command);
+                DIAG(
+                    LOG("internal: executing command error: %d %d %zu", *command, commandList, actionCommands.size());
+                    for (command = &actionCommands[commandList]; command < &actionCommands.back(); command++)
+                        LOG("%08x", *command));
                 cont = false;
                 break;
             }
@@ -598,14 +612,15 @@ namespace webui {
         return len + 1;
     }
 
-    void Application::dump() const {
-        if (root) {
-            LOG("Application tree");
-            root->dump(strMng);
-        }
-        LOG("Registered widgets:");
-        for (const auto& widget: widgets)
-            LOG("  %s", strMng.get(widget.first));
-    }
+    DIAG(
+        void Application::dump() const {
+            if (root) {
+                LOG("Application tree");
+                root->dump(strMng);
+            }
+            LOG("Registered widgets:");
+            for (const auto& widget: widgets)
+                LOG("  %s", strMng.get(widget.first));
+        });
 
 }
