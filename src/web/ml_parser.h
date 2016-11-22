@@ -22,7 +22,7 @@ namespace webui {
         ~MLParser();
 
         // returns false on error
-        bool parse(const char* ml, int n);
+        bool parse(const char* ml, int n, bool value = false);
 
         struct Entry {
             Entry(const char* pos = nullptr DIAG(, int line = 0)): pos(pos), next(0) DIAG(, line(line)) { }

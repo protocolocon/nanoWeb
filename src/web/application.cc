@@ -105,7 +105,8 @@ namespace webui {
     }
 
     void Application::onLoad(RequestXHR* xhr) {
-        if (xhr->getType() == RequestXHR::TypeApplication) {
+        switch (xhr->getType()) {
+        case RequestXHR::TypeApplication:
             assert(!root);
             if (!parser.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct(parser))) {
                 DIAG(
@@ -120,7 +121,25 @@ namespace webui {
             DIAG(
                 //parser.dumpTree();
                 dump());
-        } else if (xhr->getType() == RequestXHR::TypeFont) {
+            break;
+        case RequestXHR::TypeTemplate: {
+            // get template widget
+            auto it(widgets.find(xhr->getId()));
+            DIAG(
+                if (it == widgets.end())
+                    LOG("internal: cannot find template %s", strMng.get(xhr->getId())));
+            auto* tpl(reinterpret_cast<WidgetTemplate*>(it->second));
+            if (!parser.parse(xhr->getData(), xhr->getNData(), true/*value*/) ||
+                !updateConstruct(tpl->getParser(), tpl, 0, tpl->getParser().size(),
+                                 parser, 0, parser.size())) {
+                LOG("error: update template");
+            }
+            DIAG(
+                parser.dump();
+                parser.dumpTree());
+            break;
+        }
+        case RequestXHR::TypeFont: {
             // check that font id matches in font list
             bool ok(false);
             StringId id(xhr->getId());
@@ -136,11 +155,15 @@ namespace webui {
                     break;
                 }
             if (!ok)
-                LOG("internal error with font indices: %s", strMng.get(id));
+                LOG("internal error: font indices: %s", strMng.get(id));
             ctx.forceRender();
-        } else {
-            xhr->makeCString();
-            LOG("unknown query: %s %s", strMng.get(xhr->getId()), xhr->getData());
+            break;
+        }
+        default:
+            DIAG(
+                xhr->makeCString();
+                LOG("internal error: unknown query: %s %s", strMng.get(xhr->getId()), xhr->getData()));
+            break;
         }
         delete xhr;
     }
@@ -209,6 +232,10 @@ namespace webui {
             }
             iEntry = next;
         }
+        return true;
+    }
+
+    bool Application::updateConstruct(const MLParser& tpl, Widget* widget, int iTpl, int fTpl, const MLParser& gen, int iGen, int jGen) {
         return true;
     }
 

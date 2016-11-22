@@ -98,6 +98,7 @@ namespace webui {
 
         Widget* initializeConstruct(const MLParser& parser);
         bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
+        bool updateConstruct(const MLParser& tpl, Widget* widget, int iTpl, int fTpl, const MLParser& gen, int iGen, int jGen);
 
         // widget factory and registration
         Widget* createWidget(Identifier id, Widget* parent);

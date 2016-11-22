@@ -19,15 +19,24 @@ namespace webui {
             free(const_cast<char*>(mlOrig));
     }
 
-    bool MLParser::parse(const char* ml, int n) {
+    bool MLParser::parse(const char* ml, int n, bool value) {
         mlOrig = ml;
         mlEnd = ml + n;
         DIAG(line = 1);
         DIAG(errorFlag =) ownOrig = false;
         clear();
-        if (!parseLevel(ml))
-            return DIAG(error(ml, "trailing content") &&) false;
-        return true;
+        if (value) {
+            if (skipSpace(ml))
+                return DIAG(error(ml, "no value found") &&) false;
+            if (parseValue(ml))
+                return DIAG(error(ml, "parse value") &&) false;
+            if (!skipSpace(ml))
+                return DIAG(error(ml, "trailing content in value parser") &&) false;
+        } else {
+            if (!parseLevel(ml))
+                return DIAG(error(ml, "trailing content in object parser") &&) false;
+        }
+        return true DIAG(&& !errorFlag);
     }
 
     bool MLParser::parseLevel(const char*& ml) {
@@ -93,12 +102,12 @@ namespace webui {
             prev = newEntry(ml, prev);
             if (parseValue(ml) DIAG(|| errorFlag)) return DIAG(error(ml, "EOF expecting value") &&) false;
             if (skipSpace(ml)) return DIAG(error(ml, "unfinished list") &&) false;
-            if (*ml == expectedEndChar) { ++ml; break; }
+            if (*ml == expectedEndChar) { ++ml; return false; }
             if (*ml != ',') return DIAG(error(ml, "expecting ',' to separate values") &&) false;
             ++ml;
             if (skipSpace(ml)) return DIAG(error(ml, "unfinished list") &&) false;
         }
-        return false;
+        return true;
     }
 
     bool MLParser::parseValue(const char*& ml) {
