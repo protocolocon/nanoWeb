@@ -172,10 +172,9 @@ namespace webui {
         return true;
     }
 
-    bool MLParser::skipValue(const char*& ml) const {
+    bool MLParser::skipSimpleValue(const char*& ml) const {
         if (*ml == '"') return skipString(ml);
-        else if (isalnum(*ml)) return skipId(ml);
-        return false;
+        return skipId(ml);
     }
 
     DIAG(
@@ -221,10 +220,25 @@ namespace webui {
         DIAG(dst.errorFlag = false);
         dst.ownOrig = true;
         dst.entries.assign(entries.begin() + iEntry, entries.begin() + jEntry);
+        // fix next indices and text positions in dst parser
+        for (auto& entry: dst.entries) {
+            entry.pos += dst.mlOrig - entries[iEntry].pos;
+            entry.next = entry.next ? entry.next - iEntry : 0;
+        }
+    }
+
+    void MLParser::swap(MLParser& o) {
+        std::swap(mlOrig, o.mlOrig);
+        std::swap(mlEnd, o.mlEnd);
+        DIAG(std::swap(line, o.line));
+        DIAG(std::swap(errorFlag, o.errorFlag));
+        std::swap(ownOrig, o.ownOrig);
+        entries.swap(o.entries);
     }
 
     DIAG(
         void MLParser::dump() const {
+            LOG("parser entries: %zu", entries.size());
             char buffer[20];
             buffer[sizeof(buffer) - 1] = 0;
             for (const auto& entry: entries) {
@@ -236,6 +250,7 @@ namespace webui {
 
     DIAG(
         void MLParser::dumpTree() const {
+            LOG("parser entries tree");
             dumpTreeRecur(0, entries.size(), 0);
         });
 
@@ -248,7 +263,8 @@ namespace webui {
                     if (isalnum(*entry.pos)) {
                         auto strSize(entry.asStrSize(*this, true));
                         LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
-                    }
+                    } else
+                        LOG("%*s%d %c", level*2, "", iEntry, *entry.pos);
                     dumpTreeRecur(iEntry + 1, next, level + 1);
                 } else {
                     auto strSize(entry.asStrSize(*this, true));
@@ -261,7 +277,7 @@ namespace webui {
     // Entry
     pair<const char*, int> MLParser::Entry::asStrSize(const MLParser& parser, bool quotes) const {
         auto ml(pos);
-        if (!parser.skipValue(ml)) {
+        if (!parser.skipSimpleValue(ml)) {
             if (!quotes && *pos == '"') return make_pair(pos + 1, ml - pos - 2);
             return make_pair(pos, ml - pos);
         }
@@ -270,13 +286,13 @@ namespace webui {
 
     Identifier MLParser::Entry::asId(const MLParser& parser, const StringManager& strMng) const {
         auto ml(pos);
-        if (!parser.skipValue(ml)) return Identifier(strMng.search(pos, ml - pos).getId());
+        if (!parser.skipSimpleValue(ml)) return Identifier(strMng.search(pos, ml - pos).getId());
         return Identifier::InvalidId;
     }
 
     StringId MLParser::Entry::asStrId(const MLParser& parser, StringManager& strMng, bool quotes) const {
         auto ml(pos);
-        if (!parser.skipValue(ml)) {
+        if (!parser.skipSimpleValue(ml)) {
             if (!quotes && *pos == '"') return strMng.add(pos + 1, ml - pos - 2);
             return strMng.add(pos, ml - pos);
         }

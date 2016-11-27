@@ -36,12 +36,15 @@ namespace webui {
 
         inline void clear() { entries.clear(); }
         inline int size() const { return entries.size(); }
+        inline Entry& operator[](int i) { return entries[i]; }
         inline const Entry& operator[](int i) const { return entries[i]; }
         int getLevelEnd(int iEntry) const;
 
         int getTemporalEntry(const char* text);
 
         void copyTo(MLParser& dst, int iEntry, int jEntry) const;
+        void swap(MLParser& other);
+        inline void swapEnd(MLParser& other) { std::swap(mlEnd, other.mlEnd); }
 
         // returns false
         DIAG(bool error(const char* ml, const char* msg, int line = 0) const);
@@ -70,7 +73,7 @@ namespace webui {
         bool skipLine(const char*& ml) const;
         bool skipId(const char*& ml) const;
         bool skipString(const char*& ml) const;
-        bool skipValue(const char*& ml) const;
+        bool skipSimpleValue(const char*& ml) const;
 
         // debug
         DIAG(void dumpTreeRecur(int iEntry, int fEntry, int level) const);

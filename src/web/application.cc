@@ -108,7 +108,7 @@ namespace webui {
         switch (xhr->getType()) {
         case RequestXHR::TypeApplication:
             assert(!root);
-            if (!parser.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct(parser))) {
+            if (!tree.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct())) {
                 DIAG(
                     xhr->makeCString();
                     LOG("cannot parse: %s", xhr->getData()));
@@ -116,10 +116,10 @@ namespace webui {
             } else
                 resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
 
-            parser.clear();
+            tree.clear();
             ctx.forceRender();
             DIAG(
-                //parser.dumpTree();
+                //tree.dumpTree();
                 dump());
             break;
         case RequestXHR::TypeTemplate: {
@@ -128,15 +128,25 @@ namespace webui {
             DIAG(
                 if (it == widgets.end())
                     LOG("internal: cannot find template %s", strMng.get(xhr->getId())));
-            auto* tpl(reinterpret_cast<WidgetTemplate*>(it->second));
-            if (!parser.parse(xhr->getData(), xhr->getNData(), true/*value*/) ||
-                !updateConstruct(tpl->getParser(), tpl, 0, tpl->getParser().size(),
-                                 parser, 0, parser.size())) {
+            auto* tplWidget(reinterpret_cast<WidgetTemplate*>(it->second));
+            tree.swap(tplWidget->getParser());
+            bool define;
+            if (!tpl.parse(xhr->getData(), xhr->getNData(), true/*value*/) ||
+                !initializeConstruct(tplWidget, 0, tree.size(), 0, tpl.size(), define, true)) {
                 LOG("error: update template");
             }
+            tplWidget->setVisible(true);
             DIAG(
-                parser.dump();
-                parser.dumpTree());
+                tree.dump();
+                tree.dumpTree();
+                LOG("----------");
+                tpl.dump();
+                tpl.dumpTree();
+                LOG("----------");
+                dump());
+            tree.swap(tplWidget->getParser());
+            layoutStable = false;
+            ctx.forceRender();
             break;
         }
         case RequestXHR::TypeFont: {
@@ -173,70 +183,127 @@ namespace webui {
         delete xhr;
     }
 
-    Widget* Application::initializeConstruct(const MLParser& parser) {
-        if (parser.size() > 1 && parser[0].next == 1 && parser[1].next == 0 && *parser[1].pos == '{') {
+    Widget* Application::initializeConstruct() {
+        if (tree.size() > 1 && tree[0].next == 1 && tree[1].next == 0 && *tree[1].pos == '{') {
             bool define;
-            auto* widget(createWidget(parser[0].asId(parser, strMng), nullptr));
-            if (widget && initializeConstruct(parser, widget, 2, parser.size(), define, true) && registerWidget(widget))
+            auto* widget(createWidget(tree[0].asId(tree, strMng), nullptr));
+            if (widget && initializeConstruct(widget, 2, tree.size(), -1, -1, define, true) && registerWidget(widget))
                 return widget;
             delete widget;
         }
         return nullptr;
     }
 
-    bool Application::initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define, bool recurse) {
+    bool Application::initializeConstruct(Widget* widget, int iEntry, int fEntry, int iTpl, int jTpl, bool& define, bool recurse) {
         define = false;
-        Widget* widgetChild;
         while (iEntry < fEntry) {
             // key : value
-            const auto& entryKey(parser[iEntry]);
+            const auto& entryKey(tree[iEntry]);
             assert(iEntry + 1 < fEntry && entryKey.next == iEntry + 1);
-            const auto& entryVal(parser[iEntry + 1]);
+            auto& entryVal(tree[iEntry + 1]);
             // key and next after value
-            auto key(entryKey.asId(parser, strMng));
+            auto key(entryKey.asId(tree, strMng));
             int next(entryVal.next ? entryVal.next : fEntry);
             if (key == Identifier::InvalidId) {
                 DIAG(
-                    auto ss(entryKey.asStrSize(parser, true));
+                    auto ss(entryKey.asStrSize(tree, true));
                     LOG("error: invalid identifier {%.*s}", ss.second, ss.first);
-                    parser.error(entryKey.pos, "=>", entryKey.line));
-            } else {
-                if ((widgetChild = createWidget(key, widget/*parent*/))) {
-                    if (recurse) {
+                    tree.error(entryKey.pos, "=>", entryKey.line));
+            } else if (isWidget(key)) {
+                if (recurse) {
+                    int iIter(-1), jIter(0);
+                    if (iTpl >= 0) {
+                        if (iTpl < jTpl) {
+                            if (*tpl[iTpl].pos == '[') { // list of widgets
+                                iIter = iTpl + 1;
+                                jIter = tpl[iTpl].next ? tpl[iTpl].next : jTpl;
+                                iTpl = jIter; // skip the widget list
+                            } else {
+                                DIAG(
+                                    LOG("expected list of widgets");
+                                    tpl.error(tpl[iTpl].pos, "=>", tpl[iTpl].line));
+                            }
+                        } else {
+                            DIAG(LOG("run out of template values while creating child %d %d", iTpl, jTpl));
+                            return false;
+                        }
+                    }
+                    while (iIter < jIter) {
+                        // template widget
+                        int iWidget(-1), jWidget(-1);
+                        if (iIter >= 0) {
+                            if (*tpl[iIter].pos == '[') { // widget
+                                iWidget = iIter + 1;
+                                jWidget = tpl[iIter].next ? tpl[iIter].next : jIter;
+                            } else {
+                                DIAG(
+                                    LOG("expected widget []");
+                                    tpl.error(tpl[iIter].pos, "=>", tpl[iIter].line));
+                            }
+                        }
                         // child widget
+                        Widget* widgetChild(createWidget(key, widget/*parent*/));
+                        assert(widgetChild);
                         bool defineChild(false);
                         bool isTemplate(key == Identifier::Template);
-                        if (!initializeConstruct(parser, widgetChild, iEntry + 2, next, defineChild, !isTemplate) || !registerWidget(widgetChild)) {
+                        if (!initializeConstruct(widgetChild, iEntry + 2, next, iWidget, jWidget, defineChild, !isTemplate) ||
+                            !registerWidget(widgetChild)) {
                             delete widgetChild;
                             return false;
                         }
                         if (!defineChild) widget->addChild(widgetChild);
                         if (isTemplate) {
                             auto* tpl(reinterpret_cast<WidgetTemplate*>(widgetChild));
-                            parser.copyTo(tpl->getParser(), iEntry + 2, next);
+                            tree.copyTo(tpl->getParser(), iEntry + 2, next);
                         }
-                    } else
-                        delete widgetChild;
-                } else {
-                    if (key == Identifier::define) {
-                        key = Identifier::id;
-                        define = true;
+                        // prepare next template widget
+                        if (iIter >= 0)
+                            iIter = jWidget; // next widget
+                        else
+                            break; // normal construction
                     }
-                    if (!setProp(key, widget, iEntry + 1, next)) {
+                }
+            } else {
+                // check for @
+                bool templateReplaced(false);
+                if (entryVal.pos[0] == '@') {
+                    if (iTpl < jTpl) {
+                        templateReplaced = true;
+                        swap(entryVal.pos, tpl[iTpl].pos);
+                        tree.swapEnd(tpl);
+                    } else {
                         DIAG(
-                            auto ss(entryVal.asStrSize(parser, true));
-                            LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
-                            parser.error(entryKey.pos, "=>", entryKey.line));
+                            LOG("out of template values: %d %d", iTpl, jTpl);
+                            tree.error(entryKey.pos, "=>", entryKey.line));
+                        return false;
                     }
+                }
+                if (key == Identifier::define) {
+                    key = Identifier::id;
+                    define = true;
+                }
+                if (!setProp(key, widget, iEntry + 1, next)) {
+                    DIAG(
+                        auto ss(entryVal.asStrSize(tree, true));
+                        LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
+                        tree.error(entryKey.pos, "=>", entryKey.line));
+                }
+                if (templateReplaced) {
+                    swap(entryVal.pos, tpl[iTpl].pos);
+                    tree.swapEnd(tpl);
+                    iTpl++;
                 }
             }
             iEntry = next;
         }
+        DIAG(
+            if (iTpl < jTpl)
+                LOG("trailing template values after widget"));
         return true;
     }
 
-    bool Application::updateConstruct(const MLParser& tpl, Widget* widget, int iTpl, int fTpl, const MLParser& gen, int iGen, int jGen) {
-        return true;
+    bool Application::isWidget(Identifier id) const {
+        return id < Identifier::WLast || widgets.find(int(id)) != widgets.end();
     }
 
     Widget* Application::createWidget(Identifier id, Widget* parent) {
@@ -294,11 +361,11 @@ namespace webui {
         switch (prop.type) {
         case Type::Uint8:
             DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<uint8_t*>(data)[prop.pos] = atoi(parser[iEntry].pos);
+            reinterpret_cast<uint8_t*>(data)[prop.pos] = atoi(tree[iEntry].pos);
             return true;
         case Type::Int32:
             DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<int*>(data)[prop.pos] = atoi(parser[iEntry].pos);
+            reinterpret_cast<int*>(data)[prop.pos] = atoi(tree[iEntry].pos);
             return true;
         case Type::Id:
             DIAG(if (fEntry > iEntry + 1) return false);
@@ -314,7 +381,7 @@ namespace webui {
             return true;
         case Type::Float:
             DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<float*>(data)[prop.pos] = strtof(parser[iEntry].pos, nullptr);
+            reinterpret_cast<float*>(data)[prop.pos] = strtof(tree[iEntry].pos, nullptr);
             return true;
         case Type::Color:
             DIAG(if (fEntry > iEntry + 1) return false);
@@ -386,12 +453,12 @@ namespace webui {
     }
 
     bool Application::addActionCommands(int iEntry, int fEntry, int& tableEntry, Widget* widget) {
-        if (*parser[iEntry].pos == '[') iEntry++;
+        if (*tree[iEntry].pos == '[') iEntry++;
         bool ok(true);
         tableEntry = int(actionCommands.size());
         while (iEntry < fEntry) {
-            const auto& entry(parser[iEntry++]);
-            auto command(entry.asId(parser, strMng));
+            const auto& entry(tree[iEntry++]);
+            auto command(entry.asId(tree, strMng));
             int next(entry.next ? entry.next : fEntry);
 
             const Type* params(nullptr);
@@ -412,7 +479,7 @@ namespace webui {
             case Identifier::query:         params = queryParams; break;
             default:
                 DIAG(
-                    auto ss(entry.asStrSize(parser, true));
+                    auto ss(entry.asStrSize(tree, true));
                     LOG("unknown command: {%.*s}", ss.second, ss.first));
             }
             if (params) ok &= addCommandGeneric(command, iEntry, next, params, widget);
@@ -508,50 +575,50 @@ namespace webui {
     bool Application::executeNoCheck(int commandList, Widget* w) {
         bool cont(true), executed(false);
         V2s pos;
-        auto* command(&actionCommands[commandList]);
         auto& render(ctx.getRender());
         while (cont) {
+            auto* const command(&actionCommands[commandList]);
             switch (Identifier(*command)) {
             case Identifier::log:
-                LOG("%s", strMng.get(StringId(*++command)));
-                ++command;
+                LOG("%s", strMng.get(StringId(command[1])));
+                commandList += 2;
                 break;
             case Identifier::toggleVisible:
-                executed |= executeToggleVisible(StringId(*++command));
-                ++command;
+                executed |= executeToggleVisible(StringId(command[1]));
+                commandList += 2;
                 break;
             case Identifier::beginPath:
                 render.beginPath();
-                ++command;
+                ++commandList;
                 break;
             case Identifier::roundedRect:
                 render.roundedRect(getCoord(command[1], w), getCoord(command[2], w), getCoord(command[3], w),
                                    getCoord(command[4], w), getCoord(command[5], w));
-                command += 6;
+                commandList += 6;
                 break;
             case Identifier::fillColor:
-                render.fillColor(RGBAref(*++command).get(w));
-                ++command;
+                render.fillColor(RGBAref(command[1]).get(w));
+                commandList += 2;
                 break;
             case Identifier::fillVertGrad:
                 render.fillVertGrad(getCoord(command[1], w), getCoord(command[2], w), RGBAref(command[3]).get(w), RGBAref(command[4]).get(w));
-                command += 5;
+                commandList += 5;
                 break;
             case Identifier::fill:
                 render.fill();
-                ++command;
+                ++commandList;
                 break;
             case Identifier::strokeWidth:
-                render.strokeWidth(*(float*)++command);
-                ++command;
+                render.strokeWidth(*(float*)&command[1]);
+                commandList += 2;
                 break;
             case Identifier::strokeColor:
-                render.strokeColor(RGBAref(*++command).get(w));
-                ++command;
+                render.strokeColor(RGBAref(command[1]).get(w));
+                commandList += 2;
                 break;
             case Identifier::stroke:
                 render.stroke();
-                ++command;
+                ++commandList;
                 break;
             case Identifier::font:
                 if (command[1] < int(fonts.size()) && fonts[command[1]].second) {
@@ -559,7 +626,7 @@ namespace webui {
                     fontValid = true;
                 }
                 render.fontSize(*(float*)&command[2]);
-                command += 3;
+                commandList += 3;
                 break;
             case Identifier::text:
                 if (fontValid) {
@@ -568,15 +635,15 @@ namespace webui {
                     render.text(pos.x + getCoord(command[1], w), pos.y + getCoord(command[2], w),
                                 reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, strMng));
                 }
-                command += 4;
+                commandList += 4;
                 break;
             case Identifier::set:
                 executed |= executeSet(StringId(command[1]), Identifier(command[2]), StringId(command[3]), w);
-                command += 4;
+                commandList += 4;
                 break;
             case Identifier::query:
                 executed |= executeQuery(StringId(command[1]), StringId(command[2]));
-                command += 3;
+                commandList += 3;
                 break;
             case Identifier::CLast:
                 cont = false;
@@ -584,7 +651,7 @@ namespace webui {
             default:
                 DIAG(
                     LOG("internal: executing command error: %d %d %zu", *command, commandList, actionCommands.size());
-                    for (command = &actionCommands[commandList]; command < &actionCommands.back(); command++)
+                    for (auto* command = &actionCommands[commandList]; command < &actionCommands.back(); command++)
                         LOG("%08x", *command));
                 cont = false;
                 break;
@@ -608,7 +675,7 @@ namespace webui {
 
     bool Application::executeSet(StringId widgetId, Identifier prop, StringId value, Widget* w) {
         bool set(false);
-        auto iEntry(parser.getTemporalEntry(strMng.get(value)));
+        auto iEntry(tree.getTemporalEntry(strMng.get(value)));
         if (widgetId.getId() == int(Identifier::self)) {
             // change own property
             setProp(prop, w, iEntry, iEntry + 1);

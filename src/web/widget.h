@@ -63,6 +63,7 @@ namespace webui {
 
         // setters
         inline void setId(StringId id_) { id = id_; }
+        inline void setVisible(bool v) { visible = v; }
         inline void toggleVisible() { visible ^= 1; }
 
         // utils

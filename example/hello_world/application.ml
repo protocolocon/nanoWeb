@@ -68,47 +68,49 @@ Application {
     // test template
     Timer {
         id: timer
-        repeat: 1
-        delay: 5000 // ms
+        repeat: 0
+        delay: 1000 // ms
         onTimeout: query("tree.ml", treeTemplate)
     }
 
+    // tree definition
+    LayoutHor {
     Template {
         id: treeTemplate
-        ButtonLevel1 {
-            id: @
-            text: @
-        }
-    }
-
-    // tree definition
-    LayoutVer {
-        id: root
-
-        Template {
-            ButtonLevel1 {
-                id: @
-                text: @
-                onClick: toggleVisible(@)
-            }
-            LayoutVer {
-                id: @
+        LayoutVer { // 1
+            id: rootTest
+            LayoutVer { // 2
                 height: 0%
-                ButtonLevel2 {
+                ButtonLevel1 {
                     id: @
                     text: @
                     onClick: toggleVisible(@)
                 }
-                LayoutVer {
+                LayoutVer { // 3
                     id: @
                     height: 0%
-                    ButtonLevel3 {
-                        text: @
+                    LayoutVer { // 4
+                        height: 0%
+                        ButtonLevel2 {
+                            id: @
+                            text: @
+                            onClick: toggleVisible(@)
+                        }
+                        LayoutVer { // 5
+                            id: @
+                            height: 0%
+                            ButtonLevel3 {
+                                text: @
+                            }
+                        }
                     }
                 }
             }
         }
+    }
 
+    LayoutVer {
+        id: root
         ButtonLevel1 {
             id: but1
             text: "level 1 first"
@@ -221,4 +223,5 @@ Application {
             }
         }
     }
+}
 }

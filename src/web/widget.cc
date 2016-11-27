@@ -164,7 +164,8 @@ namespace webui {
 
     DIAG(
         void Widget::dump(const StringManager& strMng, int level) const {
-            LOG("%*s%-*s: %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %3d  flags: %08x %s", level * 2, "", 24 - level*2, strMng.get(id),
+            LOG("%*s%-*s: %-15s %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %3d  flags: %08x %s", level * 2, "", 32 - level*2, strMng.get(id),
+                strMng.get(type()),
                 curPos.x, curPos.y, curSize.x, curSize.y,
                 size[0].dumpValue(), size[0].dumpFlags(),
                 size[1].dumpValue(), size[1].dumpFlags(),

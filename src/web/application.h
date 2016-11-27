@@ -46,10 +46,10 @@ namespace webui {
         void render();
 
         // get parsed entry
-        inline const MLParser::Entry& entry(int idx) const { return parser[idx]; }
-        inline std::pair<const char*, int> entryAsStrSize(int idx, bool quotes) const { return parser[idx].asStrSize(parser, quotes); }
-        inline Identifier entryId(int idx) const { return parser[idx].asId(parser, strMng); }
-        inline StringId entryAsStrId(int idx, bool quotes) { return parser[idx].asStrId(parser, strMng, quotes); }
+        inline const MLParser::Entry& entry(int idx) const { return tree[idx]; }
+        inline std::pair<const char*, int> entryAsStrSize(int idx, bool quotes) const { return tree[idx].asStrSize(tree, quotes); }
+        inline Identifier entryId(int idx) const { return tree[idx].asId(tree, strMng); }
+        inline StringId entryAsStrId(int idx, bool quotes) { return tree[idx].asStrId(tree, strMng, quotes); }
 
         // set generic properties
         bool setProp(Identifier id, Widget* widget, int iEntry, int fEntry);
@@ -79,7 +79,7 @@ namespace webui {
 
     private:
         Context& ctx;
-        MLParser parser;
+        MLParser tree, tpl;    // application tree description and template data
         StringManager strMng;
 
         // layout
@@ -96,11 +96,11 @@ namespace webui {
         std::vector<std::pair<StringId, char*>> fonts;
         bool fontValid;
 
-        Widget* initializeConstruct(const MLParser& parser);
-        bool initializeConstruct(const MLParser& parser, Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
-        bool updateConstruct(const MLParser& tpl, Widget* widget, int iTpl, int fTpl, const MLParser& gen, int iGen, int jGen);
+        Widget* initializeConstruct();
+        bool initializeConstruct(Widget* widget, int iEntry, int fEntry, int iTpl, int jTpl, bool& define, bool recurse);
 
         // widget factory and registration
+        bool isWidget(Identifier id) const;
         Widget* createWidget(Identifier id, Widget* parent);
         bool registerWidget(Widget* widget);
         int getWidgetRange(StringId widgetId) const;
