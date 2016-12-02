@@ -45,7 +45,8 @@ namespace {
 
 namespace webui {
 
-    Application::Application(Context& ctx): ctx(ctx), layoutStable(false), actionTables(1), actionCommands(1, int(Identifier::CLast)), root(nullptr),
+    Application::Application(Context& ctx): ctx(ctx), iTplProp(0), fTplProp(0), layoutStable(false),
+                                            actionTables(1), actionCommands(1, int(Identifier::CLast)), root(nullptr),
                                             fontValid(false) {
     }
 
@@ -194,7 +195,7 @@ namespace webui {
         return nullptr;
     }
 
-    bool Application::initializeConstruct(Widget* widget, int iEntry, int fEntry, int iTpl, int jTpl, bool& define, bool recurse) {
+    bool Application::initializeConstruct(Widget* widget, int iEntry, int fEntry, int iTpl, int fTpl, bool& define, bool recurse) {
         define = false;
         while (iEntry < fEntry) {
             // key : value
@@ -211,30 +212,30 @@ namespace webui {
                     tree.error(entryKey.pos, "=>", entryKey.line));
             } else if (isWidget(key)) {
                 if (recurse) {
-                    int iIter(-1), jIter(0);
+                    int iIter(-1), fIter(0);
                     if (iTpl >= 0) {
-                        if (iTpl < jTpl) {
+                        if (iTpl < fTpl) {
                             if (*tpl[iTpl].pos == '[') { // list of widgets
                                 iIter = iTpl + 1;
-                                jIter = tpl[iTpl].next ? tpl[iTpl].next : jTpl;
-                                iTpl = jIter; // skip the widget list
+                                fIter = tpl[iTpl].next ? tpl[iTpl].next : fTpl;
+                                iTpl = fIter; // skip the widget list
                             } else {
                                 DIAG(
                                     LOG("expected list of widgets");
                                     tpl.error(tpl[iTpl].pos, "=>", tpl[iTpl].line));
                             }
                         } else {
-                            DIAG(LOG("run out of template values while creating child %d %d", iTpl, jTpl));
+                            DIAG(LOG("run out of template values while creating child %d %d", iTpl, fTpl));
                             return false;
                         }
                     }
-                    while (iIter < jIter) {
+                    while (iIter < fIter) {
                         // template widget
-                        int iWidget(-1), jWidget(-1);
+                        int iWidget(-1), fWidget(-1);
                         if (iIter >= 0) {
                             if (*tpl[iIter].pos == '[') { // widget
                                 iWidget = iIter + 1;
-                                jWidget = tpl[iIter].next ? tpl[iIter].next : jIter;
+                                fWidget = tpl[iIter].next ? tpl[iIter].next : fIter;
                             } else {
                                 DIAG(
                                     LOG("expected widget []");
@@ -246,7 +247,7 @@ namespace webui {
                         assert(widgetChild);
                         bool defineChild(false);
                         bool isTemplate(key == Identifier::Template);
-                        if (!initializeConstruct(widgetChild, iEntry + 2, next, iWidget, jWidget, defineChild, !isTemplate) ||
+                        if (!initializeConstruct(widgetChild, iEntry + 2, next, iWidget, fWidget, defineChild, !isTemplate) ||
                             !registerWidget(widgetChild)) {
                             delete widgetChild;
                             return false;
@@ -258,26 +259,14 @@ namespace webui {
                         }
                         // prepare next template widget
                         if (iIter >= 0)
-                            iIter = jWidget; // next widget
+                            iIter = fWidget; // next widget
                         else
                             break; // normal construction
                     }
                 }
             } else {
                 // check for @
-                bool templateReplaced(false);
-                if (entryVal.pos[0] == '@') {
-                    if (iTpl < jTpl) {
-                        templateReplaced = true;
-                        swap(entryVal.pos, tpl[iTpl].pos);
-                        tree.swapEnd(tpl);
-                    } else {
-                        DIAG(
-                            LOG("out of template values: %d %d", iTpl, jTpl);
-                            tree.error(entryKey.pos, "=>", entryKey.line));
-                        return false;
-                    }
-                }
+                bool templateReplaced(replaceProperty(iEntry + 1, iTpl, fTpl));
                 if (key == Identifier::define) {
                     key = Identifier::id;
                     define = true;
@@ -288,18 +277,44 @@ namespace webui {
                         LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
                         tree.error(entryKey.pos, "=>", entryKey.line));
                 }
-                if (templateReplaced) {
-                    swap(entryVal.pos, tpl[iTpl].pos);
-                    tree.swapEnd(tpl);
-                    iTpl++;
-                }
+                iTpl = replaceBackProperty(templateReplaced, iEntry + 1, iTpl);
             }
             iEntry = next;
         }
         DIAG(
-            if (iTpl < jTpl)
+            if (iTpl < fTpl)
                 LOG("trailing template values after widget"));
         return true;
+    }
+
+    bool Application::replaceProperty(int iEntry, int iTpl, int fTpl) {
+        iTplProp = iTpl;
+        fTplProp = fTpl;
+        auto& entry(tree[iEntry]);
+        if (entry.pos[0] == '@') {
+            if (iTpl < fTpl) {
+                swap(entry.pos, tpl[iTpl].pos);
+                tree.swapEnd(tpl);
+                return true;
+            } else {
+                DIAG(
+                    LOG("out of template values: %d %d", iTpl, fTpl);
+                    tree.error(entry.pos, "=>", entry.line));
+            }
+        }
+        return false;
+    }
+
+    int Application::replaceBackProperty(bool templateReplaced, int iEntry, int iTpl) {
+        int iTplNew;
+        if (templateReplaced) {
+            swap(tree[iEntry].pos, tpl[iTpl].pos);
+            tree.swapEnd(tpl);
+            iTplNew = iTpl + 1;
+        } else
+            iTplNew = iTplProp;
+        iTplProp = fTplProp = 0;
+        return iTplNew;
     }
 
     bool Application::isWidget(Identifier id) const {
@@ -502,8 +517,10 @@ namespace webui {
         while (*params != Type::LastType) {
             int value;
             prop.type = *params++;
+            bool templateReplaced(replaceProperty(iEntry, iTplProp, fTplProp));
             if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1, widget))
                 DIAG(LOG("error in command argument"));
+            iTplProp = replaceBackProperty(templateReplaced, iEntry, iTplProp);
             iEntry++;
             actionCommands.push_back(value);
         }

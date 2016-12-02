@@ -64,7 +64,6 @@ namespace webui {
             int onRender;
             int onRenderActive;
         };
-        bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget); // add action to widget
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
         inline bool execute(int commandList, Widget* widget) { return commandList ? executeNoCheck(commandList, widget) : false; } // true if commands executed
         bool executeNoCheck(int commandList, Widget* widget);
@@ -80,6 +79,7 @@ namespace webui {
     private:
         Context& ctx;
         MLParser tree, tpl;    // application tree description and template data
+        int iTplProp, fTplProp;
         StringManager strMng;
 
         // layout
@@ -97,7 +97,7 @@ namespace webui {
         bool fontValid;
 
         Widget* initializeConstruct();
-        bool initializeConstruct(Widget* widget, int iEntry, int fEntry, int iTpl, int jTpl, bool& define, bool recurse);
+        bool initializeConstruct(Widget* widget, int iEntry, int fEntry, int iTpl, int fTpl, bool& define, bool recurse);
 
         // widget factory and registration
         bool isWidget(Identifier id) const;
@@ -108,7 +108,12 @@ namespace webui {
         // fonts
         int getFont(StringId str);
 
+        // templates in properties
+        bool replaceProperty(int iEntry, int iTpl, int fTpl);
+        int replaceBackProperty(bool templateReplaced, int iEntry, int iTpl);
+
         // actions
+        bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget); // add action to widget
         bool addActionCommands(int iEntry, int fEntry, int& tableEntry, Widget* widget);
         bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
         bool addCommandToggle(int iEntry);
