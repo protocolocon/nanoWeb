@@ -31,6 +31,10 @@ namespace webui {
         void endFrame();
         inline int multAlpha(int m, int a) { int alpha((m * a) >> 8); nvgGlobalAlpha(vg, float(alpha) * (1.0f / 256.0f)); return alpha; }
         inline void beginPath() const { nvgBeginPath(vg); }
+        inline void moveto(float x, float y) const { nvgMoveTo(vg, x, y); }
+        inline void lineto(float x, float y) const { nvgLineTo(vg, x, y); }
+        inline void bezierto(float x1, float y1, float x2, float y2, float x, float y) const { nvgBezierTo(vg, x1, y1, x2, y2, x, y); }
+        inline void closePath() const { nvgClosePath(vg); }
         inline void roundedRect(float x, float y, float w, float h, float r) const { nvgRoundedRect(vg, x, y, w, h, r); }
         inline void fillColor(RGBA color) const { nvgFillColor(vg, color.toVGColor()); }
         inline void fillVertGrad(float y, float h, RGBA top, RGBA bottom) const {

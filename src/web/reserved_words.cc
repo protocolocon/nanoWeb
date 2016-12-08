@@ -55,6 +55,10 @@ namespace webui {
         add(log);
         add(toggleVisible);
         add(beginPath);
+        add(moveto);
+        add(lineto);
+        add(bezierto);
+        add(closePath);
         add(roundedRect);
         add(fillColor);
         add(fillVertGrad);

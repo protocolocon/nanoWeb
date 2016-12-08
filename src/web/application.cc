@@ -29,6 +29,10 @@ namespace {
     const Type logParams[] =           { Type::StrId, Type::LastType };
     const Type toggleVisibleParams[] = { Type::StrId, Type::LastType };
     const Type beginPathParams[] =     { Type::LastType };
+    const Type linetoParams[] =        { Type::Coord, Type::Coord, Type::LastType };
+    const Type movetoParams[] =        { Type::Coord, Type::Coord, Type::LastType };
+    const Type beziertoParams[] =      { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
+    const Type closePathParams[] =     { Type::LastType };
     const Type roundedRectParams[] =   { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
     const Type fillColorParams[] =     { Type::ColorModif, Type::LastType };
     const Type fillVertGradParams[] =  { Type::Coord, Type::Coord, Type::ColorModif, Type::ColorModif, Type::LastType };
@@ -481,6 +485,10 @@ namespace webui {
             case Identifier::log:           params = logParams; break;
             case Identifier::toggleVisible: params = toggleVisibleParams; break;
             case Identifier::beginPath:     params = beginPathParams; break;
+            case Identifier::moveto:        params = movetoParams; break;
+            case Identifier::lineto:        params = linetoParams; break;
+            case Identifier::bezierto:      params = beziertoParams; break;
+            case Identifier::closePath:     params = closePathParams; break;
             case Identifier::roundedRect:   params = roundedRectParams; break;
             case Identifier::fillColor:     params = fillColorParams; break;
             case Identifier::fillVertGrad:  params = fillVertGradParams; break;
@@ -606,6 +614,24 @@ namespace webui {
                 break;
             case Identifier::beginPath:
                 render.beginPath();
+                ++commandList;
+                break;
+            case Identifier::moveto:
+                render.moveto(getCoord(command[1], w), getCoord(command[2], w));
+                commandList += 3;
+                break;
+            case Identifier::lineto:
+                render.lineto(getCoord(command[1], w), getCoord(command[2], w));
+                commandList += 3;
+                break;
+            case Identifier::bezierto:
+                render.bezierto(getCoord(command[1], w), getCoord(command[2], w),
+                                getCoord(command[3], w), getCoord(command[4], w),
+                                getCoord(command[5], w), getCoord(command[6], w));
+                commandList += 7;
+                break;
+            case Identifier::closePath:
+                render.closePath();
                 ++commandList;
                 break;
             case Identifier::roundedRect:
