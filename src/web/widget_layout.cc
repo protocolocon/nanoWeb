@@ -49,6 +49,7 @@ namespace webui {
 
     bool WidgetLayout::layout(Context& ctx, V2s posAvail, V2s sizeAvail) {
         bool stable(true);
+        int coord2(coord ^ 1);
         curPos = posAvail;
         curSize = sizeAvail;
         if (visible) {
@@ -101,6 +102,13 @@ namespace webui {
             if (size[coord].adapt) {
                 size[coord].size = elems[children.size()].posTarget - elems[0].posTarget;
                 if (size[coord].size != curSize[coord]) stable = false;
+            }
+            if (size[coord2].adapt) {
+                if (children.empty())
+                    size[coord2].size = 0;
+                else
+                    size[coord2].size = children[0]->curSize[coord2]; // TODO: take max of all children?
+                if (size[coord2].size != curSize[coord2]) stable = false;
             }
 
             // drag & drop
