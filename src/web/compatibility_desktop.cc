@@ -25,7 +25,7 @@ namespace {
 
 namespace webui {
 
-    void setMainLoop(int argc, char** argv, void (*loop)(void)) {
+    void setCommandLine(int argc, char** argv) {
         // initialize curl
         curl_global_init(CURL_GLOBAL_DEFAULT);
 
@@ -37,7 +37,9 @@ namespace webui {
             LOG("no server address specified, using: %s", curlServerAddr);
             LOG("use: %s [<domain | IP>[:<port>]]", argv[0]);
         }
+    }
 
+    void setMainLoop(void (*loop)(void)) {
         // synchronous main loop
         while (mainLoopRunning) {
             loop();
