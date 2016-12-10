@@ -71,6 +71,7 @@ namespace webui {
         add(stroke);
         add(font);
         add(text);
+        add(textLeft);
         add(translateCenter);
         add(scale100);
         add(resetTransform);

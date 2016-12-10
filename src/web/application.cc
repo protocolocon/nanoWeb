@@ -510,7 +510,8 @@ namespace webui {
             case Identifier::strokeColor:     params = strokeColorParams; break;
             case Identifier::stroke:          params = strokeParams; break;
             case Identifier::font:            params = fontParams; break;
-            case Identifier::text:            params = textParams; break;
+            case Identifier::text:
+            case Identifier::textLeft:        params = textParams; break;
             case Identifier::translateCenter: params = translateCenterParams; break;
             case Identifier::scale100:        params = scale100Params; break;
             case Identifier::resetTransform:  params = resetTransformParams; break;
@@ -697,6 +698,14 @@ namespace webui {
                 }
                 commandList += 4;
                 break;
+            case Identifier::textLeft:
+                if (fontValid) {
+                    render.textAlign(NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+                    render.text(w->curPos.x + getCoord(command[1], w), w->curPos.y + (w->curSize.y >> 1) + getCoord(command[2], w),
+                                reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, strMng));
+                }
+                commandList += 4;
+                break;
             case Identifier::translateCenter:
                 render.translate(w->curSize.x >> 1, w->curSize.y >> 1);
                 ++commandList;
@@ -770,7 +779,13 @@ namespace webui {
     }
 
     bool Application::executeQuery(StringId query, StringId widgetId) {
-        new RequestXHR(*this, RequestXHR::TypeTemplate, widgetId, strMng.get(query));
+        // execute only in visible widgets
+        auto it(widgets.find(widgetId));
+        DIAG(
+            if (it == widgets.end())
+                LOG("internal: cannot find widget %s to send query", strMng.get(widgetId)));
+        if (it->second->visible)
+            new RequestXHR(*this, RequestXHR::TypeTemplate, widgetId, strMng.get(query));
         return true;
     }
 

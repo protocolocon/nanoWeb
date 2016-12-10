@@ -31,9 +31,9 @@ namespace webui {
 
     bool WidgetTimer::refreshTimer(Context& ctx) {
         if (repeat < 2) {
-            if (curDelay > delay) curDelay = delay;
+            if (curDelay > delay) curDelay = repeat ? 0 : delay; // if repeated, do first trigger immediately
             curDelay -= ctx.getTimeDiffMs();
-            if (curDelay < 0) {
+            if (curDelay <= 0) {
                 curDelay += delay;
                 // triggered
                 auto& app(ctx.getApplication());

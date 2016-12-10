@@ -66,7 +66,7 @@ namespace webui {
         */
         int prev(-1);
         while (ml < mlEnd) {
-            if (skipSpace(ml)) return DIAG(error(ml, "unsinished object") &&) false;
+            if (skipSpace(ml)) return DIAG(error(ml, "unfinished object") &&) false;
             if (*ml == '}') { ++ml; break; } // object definition finished
             if (isalpha(*ml)) {
                 prev = newEntry(ml, prev); // id

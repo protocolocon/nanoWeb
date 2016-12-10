@@ -115,12 +115,14 @@ namespace webui {
         for (const auto& prop: props)
             if (!prop.second.redundant)
                 props.set(prop.first, this, props.get(prop.first, widget));
-        if (type() != Identifier::Widget)
-            Widget::copyFrom(widget);
-        else {
-            actions = widget->actions;
-            sharedActions = 1;
+        if (type() != Identifier::Widget) {
+            const auto& propsWidget = Widget::getProps();
+            for (const auto& prop: propsWidget)
+                if (!prop.second.redundant)
+                    props.set(prop.first, this, props.get(prop.first, widget));
         }
+        actions = widget->actions;
+        sharedActions = 1;
     }
 
     bool Widget::animeAlpha(Context& ctx) {
