@@ -87,10 +87,16 @@ namespace webui {
         union {
             uint32_t all;
             struct {
+                uint8_t byte0;
+                uint8_t byte1;
+                uint8_t byte2;
+                uint8_t byte3;
+            };
+            struct {
                 uint8_t visible:1;        // if the widget and its children are visible
                 uint8_t inside:1;         // cursor is inside widget
                 uint8_t sharedActions:1;  // indicates that is sharing the action table
-                uint8_t adaptSize:1;      // size will be updated with content size
+                uint8_t canFocus:1;       // if can receive events
                 uint8_t reserved:4;
                 uint8_t zoom;
                 uint8_t alpha;

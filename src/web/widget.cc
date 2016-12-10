@@ -30,6 +30,7 @@ namespace {
         { Identifier::background,     PROP(Widget, background,Color,        4, 0, 0) },
         { Identifier::foreground,     PROP(Widget, foreground,Color,        4, 0, 0) },
         { Identifier::all,            PROP(Widget, all,       Int32,        4, 0, 0) },
+        { Identifier::canFocus,       PROP(Widget, byte0,     Bit,          1, 3, 1) },
         { Identifier::onEnter,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
         { Identifier::onLeave,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
         { Identifier::onClick,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
@@ -44,7 +45,7 @@ namespace webui {
 
     Widget::Widget(Widget* parent): parent(parent), text(nullptr),
                                     size { SizeRelative(100.0f, true), SizeRelative(100.0f, true) },
-                                    all(0x00ff4001), actions(0) {
+                                    all(0x00ff4009), actions(0) {
     }
 
     Widget::~Widget() {
@@ -67,7 +68,7 @@ namespace webui {
     }
 
     bool Widget::input(Application& app) {
-        if (Input::mouseButtonAction) {
+        if (canFocus && Input::mouseButtonAction) {
             // this widget takes care of the event and does not propagate upwards
             Input::mouseButtonAction = false;
             if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT) {

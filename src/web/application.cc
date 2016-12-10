@@ -26,24 +26,27 @@ using namespace webui;
 
 namespace {
 
-    const Type logParams[] =           { Type::StrId, Type::LastType };
-    const Type toggleVisibleParams[] = { Type::StrId, Type::LastType };
-    const Type beginPathParams[] =     { Type::LastType };
-    const Type linetoParams[] =        { Type::Coord, Type::Coord, Type::LastType };
-    const Type movetoParams[] =        { Type::Coord, Type::Coord, Type::LastType };
-    const Type beziertoParams[] =      { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
-    const Type closePathParams[] =     { Type::LastType };
-    const Type roundedRectParams[] =   { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
-    const Type fillColorParams[] =     { Type::ColorModif, Type::LastType };
-    const Type fillVertGradParams[] =  { Type::Coord, Type::Coord, Type::ColorModif, Type::ColorModif, Type::LastType };
-    const Type fillParams[] =          { Type::LastType };
-    const Type strokeWidthParams[] =   { Type::Float, Type::LastType };
-    const Type strokeColorParams[] =   { Type::ColorModif, Type::LastType };
-    const Type strokeParams[] =        { Type::LastType };
-    const Type setParams[] =           { Type::StrId, Type::Id, Type::Str, Type::LastType };
-    const Type fontParams[] =          { Type::FontIdx, Type::Float, Type::LastType };
-    const Type textParams[] =          { Type::Coord, Type::Coord, Type::TextPropOrStrId, Type::LastType };
-    const Type queryParams[] =         { Type::StrId, Type::StrId, Type::LastType };
+    const Type logParams[] =             { Type::StrId, Type::LastType };
+    const Type toggleVisibleParams[] =   { Type::StrId, Type::LastType };
+    const Type beginPathParams[] =       { Type::LastType };
+    const Type movetoParams[] =          { Type::Coord, Type::Coord, Type::LastType };
+    const Type linetoParams[] =          { Type::Coord, Type::Coord, Type::LastType };
+    const Type beziertoParams[] =        { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
+    const Type closePathParams[] =       { Type::LastType };
+    const Type roundedRectParams[] =     { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
+    const Type fillColorParams[] =       { Type::ColorModif, Type::LastType };
+    const Type fillVertGradParams[] =    { Type::Coord, Type::Coord, Type::ColorModif, Type::ColorModif, Type::LastType };
+    const Type fillParams[] =            { Type::LastType };
+    const Type strokeWidthParams[] =     { Type::Float, Type::LastType };
+    const Type strokeColorParams[] =     { Type::ColorModif, Type::LastType };
+    const Type strokeParams[] =          { Type::LastType };
+    const Type fontParams[] =            { Type::FontIdx, Type::Float, Type::LastType };
+    const Type textParams[] =            { Type::Coord, Type::Coord, Type::TextPropOrStrId, Type::LastType };
+    const Type translateCenterParams[] = { Type::LastType };
+    const Type scale100Params[] =        { Type::Coord, Type::LastType };
+    const Type resetTransformParams[] =  { Type::LastType };
+    const Type setParams[] =             { Type::StrId, Type::Id, Type::Str, Type::LastType };
+    const Type queryParams[] =           { Type::StrId, Type::StrId, Type::LastType };
 
 }
 
@@ -378,6 +381,13 @@ namespace webui {
     bool Application::setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry, Widget* widget) {
         pair<const char*, int> ss;
         switch (prop.type) {
+        case Type::Bit:
+            DIAG(if (fEntry > iEntry + 1) return false);
+            if (*tree[iEntry].pos == '0')
+                reinterpret_cast<uint8_t*>(data)[prop.pos] &= ~(1 << prop.bit);
+            else
+                reinterpret_cast<uint8_t*>(data)[prop.pos] |= 1 << prop.bit;
+            return true;
         case Type::Uint8:
             DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<uint8_t*>(data)[prop.pos] = atoi(tree[iEntry].pos);
@@ -482,24 +492,27 @@ namespace webui {
 
             const Type* params(nullptr);
             switch (command) {
-            case Identifier::log:           params = logParams; break;
-            case Identifier::toggleVisible: params = toggleVisibleParams; break;
-            case Identifier::beginPath:     params = beginPathParams; break;
-            case Identifier::moveto:        params = movetoParams; break;
-            case Identifier::lineto:        params = linetoParams; break;
-            case Identifier::bezierto:      params = beziertoParams; break;
-            case Identifier::closePath:     params = closePathParams; break;
-            case Identifier::roundedRect:   params = roundedRectParams; break;
-            case Identifier::fillColor:     params = fillColorParams; break;
-            case Identifier::fillVertGrad:  params = fillVertGradParams; break;
-            case Identifier::fill:          params = fillParams; break;
-            case Identifier::strokeWidth:   params = strokeWidthParams; break;
-            case Identifier::strokeColor:   params = strokeColorParams; break;
-            case Identifier::stroke:        params = strokeParams; break;
-            case Identifier::set:           params = setParams; break;
-            case Identifier::font:          params = fontParams; break;
-            case Identifier::text:          params = textParams; break;
-            case Identifier::query:         params = queryParams; break;
+            case Identifier::log:             params = logParams; break;
+            case Identifier::toggleVisible:   params = toggleVisibleParams; break;
+            case Identifier::beginPath:       params = beginPathParams; break;
+            case Identifier::moveto:          params = movetoParams; break;
+            case Identifier::lineto:          params = linetoParams; break;
+            case Identifier::bezierto:        params = beziertoParams; break;
+            case Identifier::closePath:       params = closePathParams; break;
+            case Identifier::roundedRect:     params = roundedRectParams; break;
+            case Identifier::fillColor:       params = fillColorParams; break;
+            case Identifier::fillVertGrad:    params = fillVertGradParams; break;
+            case Identifier::fill:            params = fillParams; break;
+            case Identifier::strokeWidth:     params = strokeWidthParams; break;
+            case Identifier::strokeColor:     params = strokeColorParams; break;
+            case Identifier::stroke:          params = strokeParams; break;
+            case Identifier::font:            params = fontParams; break;
+            case Identifier::text:            params = textParams; break;
+            case Identifier::translateCenter: params = translateCenterParams; break;
+            case Identifier::scale100:        params = scale100Params; break;
+            case Identifier::resetTransform:  params = resetTransformParams; break;
+            case Identifier::set:             params = setParams; break;
+            case Identifier::query:           params = queryParams; break;
             default:
                 DIAG(
                     auto ss(entry.asStrSize(tree, true));
@@ -600,6 +613,7 @@ namespace webui {
     bool Application::executeNoCheck(int commandList, Widget* w) {
         bool cont(true), executed(false);
         V2s pos;
+        float value;
         auto& render(ctx.getRender());
         while (cont) {
             auto* const command(&actionCommands[commandList]);
@@ -679,6 +693,19 @@ namespace webui {
                                 reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, strMng));
                 }
                 commandList += 4;
+                break;
+            case Identifier::translateCenter:
+                render.translate(w->curSize.x >> 1, w->curSize.y >> 1);
+                ++commandList;
+                break;
+            case Identifier::scale100:
+                value = getCoord(command[1], w) * 0.01;
+                render.scale(value, value);
+                commandList += 2;
+                break;
+            case Identifier::resetTransform:
+                render.resetTransform();
+                ++commandList;
                 break;
             case Identifier::set:
                 executed |= executeSet(StringId(command[1]), Identifier(command[2]), StringId(command[3]), w);

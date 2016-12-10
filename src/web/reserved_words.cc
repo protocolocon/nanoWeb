@@ -39,6 +39,7 @@ namespace webui {
         add(all);
         add(visible);
         add(inside);
+        add(canFocus);
         add(color);
         add(onEnter);
         add(onLeave);
@@ -68,6 +69,9 @@ namespace webui {
         add(stroke);
         add(font);
         add(text);
+        add(translateCenter);
+        add(scale100);
+        add(resetTransform);
         add(set);
         add(query);
         add(CLast);

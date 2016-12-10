@@ -39,7 +39,7 @@ class SvgPath:
         self.ytrans = v
 
     def transform(self, x, y):
-        return (x * self.xscale + self.xtrans, y * self.yscale + self.ytrans)
+        return ((x + self.xtrans) * self.xscale, (y + self.ytrans) * self.yscale)
         
     def coordDump(self, coord, rel, pair):
         if rel:

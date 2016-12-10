@@ -23,6 +23,7 @@ namespace webui {
     class Application;
 
     enum class Type: uint8_t {
+        Bit,
         Uint8,
         Int16,
         Int32,

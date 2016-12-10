@@ -13,6 +13,7 @@ namespace webui {
 
     const char* toString(Type t) {
         const char* strs[int(Type::LastType)] = {
+            "Bit",
             "Uint8",
             "Int16",
             "Int32",
