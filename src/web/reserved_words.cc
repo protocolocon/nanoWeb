@@ -40,6 +40,8 @@ namespace webui {
         add(visible);
         add(inside);
         add(canFocus);
+        add(active);
+        add(draggable);
         add(color);
         add(onEnter);
         add(onLeave);

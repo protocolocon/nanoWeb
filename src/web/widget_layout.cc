@@ -29,7 +29,7 @@ namespace webui {
     bool WidgetLayout::input(Application& app) {
         if (Input::mouseButtonWidget && Input::cursorLeftPress.manhatan(Input::cursor) > 16) {
             // drag & drop
-            if (!dragDrop) {
+            if (draggable && !dragDrop) {
                 // check if clicked in one of layout widgets
                 for (size_t idx = 0; idx < children.size(); idx++)
                     if (children[idx] == Input::mouseButtonWidget) {

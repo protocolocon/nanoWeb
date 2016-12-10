@@ -30,7 +30,10 @@ namespace {
         { Identifier::background,     PROP(Widget, background,Color,        4, 0, 0) },
         { Identifier::foreground,     PROP(Widget, foreground,Color,        4, 0, 0) },
         { Identifier::all,            PROP(Widget, all,       Int32,        4, 0, 0) },
+        { Identifier::visible,        PROP(Widget, byte0,     Bit,          1, 0, 1) },
         { Identifier::canFocus,       PROP(Widget, byte0,     Bit,          1, 3, 1) },
+        { Identifier::active,         PROP(Widget, byte0,     Bit,          1, 4, 1) },
+        { Identifier::draggable,      PROP(Widget, byte0,     Bit,          1, 5, 1) },
         { Identifier::onEnter,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
         { Identifier::onLeave,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
         { Identifier::onClick,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
@@ -58,7 +61,7 @@ namespace webui {
 
         auto& app(ctx.getApplication());
         const auto& actionTable(app.getActionTable(actions));
-        if (actionTable.onRenderActive && Input::mouseButtonWidget == this && inside)
+        if (actionTable.onRenderActive && (active || (Input::mouseButtonWidget == this && inside)))
             app.executeNoCheck(actionTable.onRenderActive, this);
         else if (actionTable.onRender)
             app.executeNoCheck(actionTable.onRender, this);

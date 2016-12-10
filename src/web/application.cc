@@ -367,7 +367,10 @@ namespace webui {
 
     bool Application::setProp(Identifier id, Widget* widget, int iEntry, int fEntry) {
         const auto* prop(widget->getProp(id));
-        if (!prop) return false;
+        if (!prop) {
+            DIAG(LOG("invalid property '%s' for widget of type: %s", strMng.get(id), strMng.get(widget->type())));
+            return false;
+        }
         if (!setProp(*prop, id, widget, iEntry, fEntry, widget)) {
             DIAG(
                 auto ss(entryAsStrSize(iEntry, true));
@@ -748,7 +751,8 @@ namespace webui {
         auto iEntry(tree.getTemporalEntry(strMng.get(value)));
         if (widgetId.getId() == int(Identifier::self)) {
             // change own property
-            setProp(prop, w, iEntry, iEntry + 1);
+            if (!setProp(prop, w, iEntry, iEntry + 1))
+                DIAG(LOG("error setting property"));
             set = true;
         } else {
             // change in the tree
@@ -756,7 +760,8 @@ namespace webui {
             const char* idSearch(strMng.get(widgetId));
             for (auto& widget: widgets) {
                 if (!memcmp(strMng.get(widget.first), idSearch, len)) {
-                    setProp(prop, widget.second, iEntry, iEntry + 1);
+                    if (!setProp(prop, widget.second, iEntry, iEntry + 1))
+                        DIAG(LOG("error setting property"));
                     set = true;
                 }
             }

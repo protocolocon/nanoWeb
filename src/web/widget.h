@@ -97,7 +97,9 @@ namespace webui {
                 uint8_t inside:1;         // cursor is inside widget
                 uint8_t sharedActions:1;  // indicates that is sharing the action table
                 uint8_t canFocus:1;       // if can receive events
-                uint8_t reserved:4;
+                uint8_t active:1;         // if widget is in it's active status (like a pressed button)
+                uint8_t draggable:1;      // if widget is draggable
+                uint8_t reserved:2;
                 uint8_t zoom;
                 uint8_t alpha;
                 uint8_t reserved2;
