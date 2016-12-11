@@ -41,6 +41,10 @@ namespace webui {
 
 
     // class RequestXHR
+    RequestXHR::RequestXHR(Application& app, Type type, StringId id, const char* data, int nData):
+        app(app), type(type), id(id), data(nullptr), nData(0) {
+    }
+
     RequestXHR::~RequestXHR() {
     }
 

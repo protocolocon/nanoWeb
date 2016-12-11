@@ -4,3 +4,6 @@
 [submodule "submodules/nanosvg"]
 	path = submodules/nanosvg
 	url = https://github.com/protocolocon/nanosvg.git
+[submodule "submodules/Catch"]
+	path = submodules/Catch
+	url = https://github.com/protocolocon/Catch.git

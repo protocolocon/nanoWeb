@@ -130,13 +130,15 @@ message("EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
 include_directories(
   ${PROJECT_SOURCE_DIR}/submodules/nanovg/src)
 
-add_executable(${TARGET_NAME}
+# nanoWeb library
+add_library(nanoweb
   src/web/main.cc
   src/web/util.cc
   src/web/types.cc
   src/web/input.cc
   src/web/widget.cc
   src/web/render.cc
+  src/web/context.cc
   src/web/ml_parser.cc
   src/web/properties.cc
   src/web/application.cc
@@ -148,3 +150,23 @@ add_executable(${TARGET_NAME}
   src/web/widget_template.cc
   src/web/widget_application.cc
   submodules/nanovg/src/nanovg.c)
+
+add_executable(${TARGET_NAME}
+  src/web/main.cc)
+
+target_link_libraries(${TARGET_NAME} nanoweb)
+
+# test framework
+if(NOT NANO_BROWSER)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -frtti")
+
+  include_directories(
+    ${PROJECT_SOURCE_DIR}/src/web
+    ${PROJECT_SOURCE_DIR}/submodules/Catch/include)
+
+  add_executable(test_parser
+    test/test_parser.cc)
+
+  target_link_libraries(test_parser nanoweb)
+
+endif()

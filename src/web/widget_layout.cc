@@ -7,9 +7,9 @@
 */
 
 #include "widget_layout.h"
-#include "main.h"
 #include "input.h"
 #include "nanovg.h"
+#include "context.h"
 
 using namespace std;
 

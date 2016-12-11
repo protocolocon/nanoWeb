@@ -70,7 +70,10 @@ Application {
         id: timer
         repeat: 0
         delay: 1000 // ms
-        onTimeout: query("tree.ml", treeTemplate)
+        onTimeout: [
+            set(treeTemplate, visible, 1),
+            query("tree.ml", treeTemplate)
+        ]
     }
 
     // tree definition

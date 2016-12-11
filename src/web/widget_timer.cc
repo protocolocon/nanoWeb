@@ -7,7 +7,7 @@
 */
 
 #include "widget_timer.h"
-#include "main.h"
+#include "context.h"
 #include "properties.h"
 
 using namespace std;

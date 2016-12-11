@@ -7,9 +7,9 @@
 */
 
 #include "application.h"
-#include "main.h"
 #include "input.h"
 #include "widget.h"
+#include "context.h"
 #include "properties.h"
 #include "widget_timer.h"
 #include "reserved_words.h"
@@ -55,6 +55,7 @@ namespace webui {
     Application::Application(Context& ctx): ctx(ctx), iTplProp(0), fTplProp(0), layoutStable(false),
                                             actionTables(1), actionCommands(1, int(Identifier::CLast)), root(nullptr),
                                             fontValid(false) {
+        addReservedWords(strMng);
     }
 
     Application::~Application() {
@@ -64,9 +65,7 @@ namespace webui {
     }
 
     void Application::initialize() {
-        addReservedWords(strMng);
-        auto id(strMng.add("application.ml"));
-        new RequestXHR(*this, RequestXHR::TypeApplication, id, strMng.get(id));
+        new RequestXHR(*this, RequestXHR::TypeApplication, StringId(), "application.ml");
     }
 
     void Application::refresh() {

@@ -7,7 +7,7 @@
 */
 
 #include "util.h"
-#include "main.h"
+#include "context.h"
 #include "compatibility.h"
 
 using namespace std;

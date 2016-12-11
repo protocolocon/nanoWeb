@@ -7,8 +7,8 @@
 */
 
 #include "widget_application.h"
-#include "main.h"
 #include "nanovg.h"
+#include "context.h"
 #include "application.h"
 #include <cassert>
 

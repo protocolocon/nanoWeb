@@ -7,9 +7,9 @@
 */
 
 #include "widget.h"
-#include "main.h"
 #include "input.h"
 #include "nanovg.h"
+#include "context.h"
 #include "properties.h"
 #include <cstdlib>
 #include <cstddef>

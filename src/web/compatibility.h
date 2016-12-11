@@ -50,6 +50,7 @@ namespace webui {
         enum Type { TypeApplication, TypeTemplate, TypeFont, TypeLast };
 
         RequestXHR(Application& app, Type type, StringId id, const char* req);
+        RequestXHR(Application& app, Type type, StringId id, const char* data, int nData);
         ~RequestXHR();
         void query(const char* req);
         void makeCString();

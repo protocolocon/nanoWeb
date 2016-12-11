@@ -75,6 +75,7 @@ namespace webui {
         // debug
         DIAG(void dump() const);
         inline auto& getStrMng() { return strMng; }
+        inline auto* getRoot() { return root; }
 
     private:
         Context& ctx;
