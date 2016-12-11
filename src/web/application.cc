@@ -305,8 +305,10 @@ namespace webui {
                 return true;
             } else {
                 DIAG(
-                    LOG("out of template values: %d %d", iTpl, fTpl);
-                    tree.error(entry.pos, "=>", entry.line));
+                    if (iTpl != -1 || fTpl != -1) {
+                        LOG("out of template values: %d %d", iTpl, fTpl);
+                        tree.error(entry.pos, "=>", entry.line);
+                    });
             }
         }
         return false;
@@ -320,7 +322,7 @@ namespace webui {
             iTplNew = iTpl + 1;
         } else
             iTplNew = iTplProp;
-        iTplProp = fTplProp = 0;
+        iTplProp = fTplProp = -1;
         return iTplNew;
     }
 
@@ -542,10 +544,12 @@ namespace webui {
         while (*params != Type::LastType) {
             int value;
             prop.type = *params++;
+            int fTplPropSave(fTplProp);
             bool templateReplaced(replaceProperty(iEntry, iTplProp, fTplProp));
             if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1, widget))
                 DIAG(LOG("error in command argument"));
             iTplProp = replaceBackProperty(templateReplaced, iEntry, iTplProp);
+            fTplProp = fTplPropSave;
             iEntry++;
             actionCommands.push_back(value);
         }
