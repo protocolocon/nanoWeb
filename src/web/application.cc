@@ -191,7 +191,6 @@ namespace webui {
     }
 
     Widget* Application::initializeConstruct() {
-        tree.dumpTree();
         if (tree.size() > 1 && tree[0].next == 1 && tree[1].next == 0 && *tree[1].pos == '{') {
             bool define;
             auto* widget(createWidget(tree[0].asId(tree, strMng), nullptr));
