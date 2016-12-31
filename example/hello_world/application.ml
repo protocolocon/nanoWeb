@@ -80,30 +80,36 @@ Application {
     LayoutHor {
     Template {
         id: treeTemplate
-        LayoutVer { // 1
+        LayoutVer {
             id: rootTest
-            LayoutVer { // 2
-                height: 0%
-                ButtonLevel1 {
-                    id: @
-                    text: @
-                    onClick: toggleVisible(@)
-                }
-                LayoutVer { // 3
-                    id: @
+            { // loop 1
+                LayoutVer {
                     height: 0%
-                    LayoutVer { // 4
+                    ButtonLevel1 {
+                        id: @
+                        text: @
+                        onClick: toggleVisible(@)
+                    }
+                    LayoutVer {
+                        id: @
                         height: 0%
-                        ButtonLevel2 {
-                            id: @
-                            text: @
-                            onClick: toggleVisible(@)
-                        }
-                        LayoutVer { // 5
-                            id: @
-                            height: 0%
-                            ButtonLevel3 {
-                                text: @
+                        { // loop 2
+                            LayoutVer {
+                                height: 0%
+                                ButtonLevel2 {
+                                    id: @
+                                    text: @
+                                    onClick: toggleVisible(@)
+                                }
+                                LayoutVer {
+                                    id: @
+                                    height: 0%
+                                    { // loop 3
+                                        ButtonLevel3 {
+                                            text: @
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

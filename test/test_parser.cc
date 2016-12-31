@@ -52,3 +52,26 @@ TEST_CASE("definition") {
     REQUIRE(child.size() == 1);
     CHECK(child[0]->type() == Identifier::LayoutHor);
 }
+
+TEST_CASE("template") {
+    Context ctx;
+    Application app(ctx);
+
+    app.onLoad(mlApp(app,
+                      "Application{"
+                     _"  Template {"
+                     _"    id: template"
+                     _"    {"
+                     _"      Widget { id: a }"
+                     _"      Widget { id: b }"
+                     _"    }"
+                     _"    width: 100"
+                     _"  }"
+                     _"}"));
+    auto root(app.getRoot());
+    REQUIRE(root);
+    CHECK(root->type() == Identifier::Application);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 1);
+    CHECK(child[0]->type() == Identifier::Template);
+}

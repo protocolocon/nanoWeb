@@ -80,7 +80,7 @@ namespace webui {
     private:
         Context& ctx;
         MLParser tree, tpl;    // application tree description and template data
-        int iTplProp, fTplProp;
+        int iTpl, fTpl;
         StringManager strMng;
 
         // layout
@@ -98,7 +98,7 @@ namespace webui {
         bool fontValid;
 
         Widget* initializeConstruct();
-        bool initializeConstruct(Widget* widget, int iEntry, int fEntry, int iTpl, int fTpl, bool& define, bool recurse);
+        bool initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
 
         // widget factory and registration
         bool isWidget(Identifier id) const;
@@ -110,8 +110,8 @@ namespace webui {
         int getFont(StringId str);
 
         // templates in properties
-        bool replaceProperty(int iEntry, int iTpl, int fTpl);
-        int replaceBackProperty(bool templateReplaced, int iEntry, int iTpl);
+        bool replaceProperty(int iEntry);
+        void replaceBackProperty(bool templateReplaced, int iEntry);
 
         // actions
         bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget); // add action to widget

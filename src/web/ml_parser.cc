@@ -60,9 +60,10 @@ namespace webui {
 
     bool MLParser::parseObject(const char*& ml) {
         /* expecting:
-             key: value,
-             <object id> {
-             }
+             key: value
+             <object id> { }
+             { }
+             ...
         */
         int prev(-1);
         while (ml < mlEnd) {
@@ -85,8 +86,12 @@ namespace webui {
                     if (parseObject(ml)) DIAG(error(ml, "EOF parsing object"));
                 }
                 else return DIAG(error(ml, "expecting ':' or '{' after id") &&) false;
+            } else if (*ml == '{') {
+                prev = newEntry(ml, prev);
+                ++ml;
+                if (parseObject(ml)) return DIAG(error(ml, "expecting list") &&) false;
             } else
-                return DIAG(error(ml, "expecting <id> or '}'") &&) false;
+                return DIAG(error(ml, "expecting <id> or '}' or '['") &&) false;
         }
         return false;
     }
