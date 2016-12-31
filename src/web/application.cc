@@ -469,7 +469,7 @@ namespace webui {
         case Type::TextPropOrStrId:
             DIAG(if (fEntry > iEntry + 1) return false);
             ss = entryAsStrSize(iEntry, true);
-            if (*ss.first == '"')
+            if (*ss.first == '"' || *ss.first == '\'')
                 reinterpret_cast<TextPropOrStrId*>(data)[prop.pos] = strMng.add(ss.first + 1, ss.second - 2);
             else {
                 const auto* propWidget(widget->getProp(entryId(iEntry)));
@@ -566,7 +566,7 @@ namespace webui {
             prop.type = *params++;
             bool templateReplaced(replaceProperty(iEntry));
             if (!setProp(prop, Identifier::InvalidId, &value, iEntry, iEntry + 1, widget))
-                DIAG(LOG("error in command argument"));
+                DIAG(LOG("error in command argument: %d", int(prop.type)));
             replaceBackProperty(templateReplaced, iEntry);
             iEntry++;
             actionCommands.push_back(value);

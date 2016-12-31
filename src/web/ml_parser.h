@@ -72,7 +72,7 @@ namespace webui {
         bool skipSpace(const char*& ml) const;
         bool skipLine(const char*& ml) const;
         bool skipId(const char*& ml) const;
-        bool skipString(const char*& ml) const;
+        bool skipString(const char*& ml, char expectedEndChar) const;
         bool skipSimpleValue(const char*& ml) const;
 
         // debug

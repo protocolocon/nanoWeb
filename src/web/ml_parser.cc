@@ -120,12 +120,13 @@ namespace webui {
            [ ... ]
            { ... }
            " ... "
+           ' ... '
            <id>
            @
         */
         if (*ml == '[') { ++ml; return parseList(ml, ']'); }
         else if (*ml == '{') { ++ml; return parseObject(ml); }
-        else if (*ml == '"') return skipString(ml);
+        else if (*ml == '"' or *ml == '\'') return skipString(ml, *ml);
         else if (isalnum(*ml) || *ml == '-' || *ml == '@') {
             if (skipId(ml)) return DIAG(error(ml, "EOF parsing id") &&) false;
             if (skipSpace(ml)) return DIAG(error(ml, "EOF skipping space") &&) false;
@@ -149,11 +150,11 @@ namespace webui {
         return true;
     }
 
-    bool MLParser::skipString(const char*& ml) const {
+    bool MLParser::skipString(const char*& ml, char expectedEndChar) const {
         ++ml; // '"'
         while (ml < mlEnd) {
-            if (*ml == '"') { ++ml; return false; }
-            if (*ml == '\\' && *ml == '"') ++ml;
+            if (*ml == expectedEndChar) { ++ml; return false; }
+            if (*ml == '\\') ++ml;
             ++ml;
         }
         return true;
@@ -178,7 +179,7 @@ namespace webui {
     }
 
     bool MLParser::skipSimpleValue(const char*& ml) const {
-        if (*ml == '"') return skipString(ml);
+        if (*ml == '"' || *ml == '\'') return skipString(ml, *ml);
         return skipId(ml);
     }
 
@@ -283,7 +284,7 @@ namespace webui {
     pair<const char*, int> MLParser::Entry::asStrSize(const MLParser& parser, bool quotes) const {
         auto ml(pos);
         if (!parser.skipSimpleValue(ml)) {
-            if (!quotes && *pos == '"') return make_pair(pos + 1, ml - pos - 2);
+            if (!quotes && (*pos == '"' || *pos == '\'')) return make_pair(pos + 1, ml - pos - 2);
             return make_pair(pos, ml - pos);
         }
         return make_pair(nullptr, 0);
@@ -298,7 +299,7 @@ namespace webui {
     StringId MLParser::Entry::asStrId(const MLParser& parser, StringManager& strMng, bool quotes) const {
         auto ml(pos);
         if (!parser.skipSimpleValue(ml)) {
-            if (!quotes && *pos == '"') return strMng.add(pos + 1, ml - pos - 2);
+            if (!quotes && (*pos == '"' || *pos == '\'')) return strMng.add(pos + 1, ml - pos - 2);
             return strMng.add(pos, ml - pos);
         }
         return StringId();
