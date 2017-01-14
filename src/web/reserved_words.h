@@ -61,7 +61,9 @@ namespace webui {
         repeat           = OffsetEnum(self),
         delay            = OffsetEnum(repeat),
         propInt16        = OffsetEnum(delay),
-        ALast            = OffsetEnum(propInt16),
+        propText         = OffsetEnum(propInt16),
+        propColor        = OffsetEnum(propText),
+        ALast            = OffsetEnum(propColor),
 
         // commands
         log              = OffsetEnum(ALast),

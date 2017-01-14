@@ -50,7 +50,9 @@ namespace {
     inline void* getPtr(int objectSize) {
         size_t size(objectSize ? objectSize : sizeof(T));
         //DIAG(LOG("object memory: %zu", size));
-        return malloc(size);
+        void* ptr(malloc(size));
+        memset(ptr, 0, size); // so that default value of properties is reset
+        return ptr;
     }
 
 }
@@ -343,7 +345,10 @@ namespace webui {
                         DIAG(LOG("cannot create new type: %s", strMng.get(newTypeId)));
                     }
                 }
-                if (key != Identifier::propInt16 && !setProp(key, widget, iEntry + 1, next)) {
+                if (key != Identifier::propInt16 &&
+                    key != Identifier::propText &&
+                    key != Identifier::propColor &&
+                    !setProp(key, widget, iEntry + 1, next)) {
                     DIAG(
                         auto ss(entryVal->asStrSize(tree, true));
                         LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
@@ -372,14 +377,22 @@ namespace webui {
                 if (key == Identifier::propInt16) {
                     prop.type = Type::Int16;
                     prop.size = 2;
+                } else if (key == Identifier::propText) {
+                    prop.type = Type::Text;
+                    prop.size = sizeof(void*);
+                } else if (key == Identifier::propColor) {
+                    prop.type = Type::Color;
+                    prop.size = 4;
                 }
+
                 if (prop.size) {
                     // property value position and type size
                     type->size = (type->size + prop.size - 1) & -prop.size; // align to property size
                     prop.pos = type->size / prop.size;                      // store pos in size units
                     type->size += prop.size;                                // increase size
                     auto propName(entryAsStrId(iEntry + 1, false));
-                    type->insert(make_pair(Identifier(propName.getId()), prop));
+                    auto propId(Identifier(propName.getId()));
+                    type->insert(make_pair(propId, prop));
                     DIAG(LOG("adding property: %s.%s at %d+%d of type %s",
                              strMng.get(typeId), strMng.get(propName), prop.pos * prop.size, prop.size, toString(prop.type)));
                 }

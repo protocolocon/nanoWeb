@@ -54,6 +54,8 @@ namespace webui {
         add(repeat);
         add(delay);
         add(propInt16);
+        add(propText);
+        add(propColor);
         add(ALast);
 
         add(log);
