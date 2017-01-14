@@ -25,9 +25,9 @@ namespace webui {
         updateTime();
     }
 
-    Context::~Context() {
-        render.finish();
-    }
+    DIAG(Context::~Context() {
+            render.finish();
+        });
 
     void Context::initialize() {
         app.initialize();

@@ -65,11 +65,11 @@ namespace webui {
         addReservedWords(strMng);
     }
 
-    Application::~Application() {
-        clear();
-        for (auto& font: fonts)
-            free(font.second);
-    }
+    DIAG(Application::~Application() {
+            clear();
+            for (auto& font: fonts)
+                free(font.second);
+        });
 
     void Application::initialize() {
         // widget inheritance
@@ -104,24 +104,24 @@ namespace webui {
         return root->update(*this);
     }
 
-    void Application::clear() {
-        root = nullptr;
-        // delete new types
-        for (auto& widget: widgets) {
-            auto* type(widget.second->typeWidget);
-            if (type && type->type > Identifier::WLast) {
-                // dynamic type
-                for (auto& widget: widgets)
-                    if (widget.second->typeWidget == type)
-                        widget.second->typeWidget = nullptr;
-                delete type;
+    DIAG(void Application::clear() {
+            root = nullptr;
+            // delete new types
+            for (auto& widget: widgets) {
+                auto* type(widget.second->typeWidget);
+                if (type && type->type > Identifier::WLast) {
+                    // dynamic type
+                    for (auto& widget: widgets)
+                        if (widget.second->typeWidget == type)
+                            widget.second->typeWidget = nullptr;
+                    delete type;
+                }
             }
-        }
 
-        for (auto& widget: widgets)
-            delete widget.second;
-        widgets.clear();
-    }
+            for (auto& widget: widgets)
+                delete widget.second;
+            widgets.clear();
+        });
 
     void Application::resize(int width, int height) {
         if (root) {
@@ -146,8 +146,8 @@ namespace webui {
             if (!tree.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct())) {
                 DIAG(
                     xhr->makeCString();
-                    LOG("cannot parse: %s", xhr->getData()));
-                clear();
+                    LOG("cannot parse: %s", xhr->getData());
+                    clear());
             } else
                 resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
 

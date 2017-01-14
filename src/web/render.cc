@@ -56,9 +56,9 @@ namespace webui {
         return true;
     }
 
-    void Render::finish() {
-        glfwTerminate();
-    }
+    DIAG(void Render::finish() {
+            glfwTerminate();
+        });
 
     void Render::setWindowSize(int width, int height) {
         windowSize[0] = width;

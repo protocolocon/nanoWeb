@@ -21,7 +21,7 @@ namespace webui {
     public:
         Render(): win(nullptr), vg(nullptr) { }
         bool init();
-        void finish();
+        DIAG(void finish());
         void setWindowSize(int width, int height);
         void swapBuffers();
         static bool checkError();

@@ -28,11 +28,11 @@ namespace webui {
     class Application {
     public:
         Application(Context& ctx);
-        ~Application();
+        DIAG(~Application());
         void initialize();
 
         // wipes-out application definition
-        void clear();
+        DIAG(void clear());
 
         // resize
         void resize(int width, int height);

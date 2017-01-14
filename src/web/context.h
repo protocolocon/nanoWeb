@@ -17,7 +17,7 @@ namespace webui {
     class Context {
     public:
         Context();
-        ~Context();
+        DIAG(~Context());
 
         void initialize();
 
