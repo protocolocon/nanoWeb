@@ -10,10 +10,36 @@
 #include "input.h"
 #include "nanovg.h"
 #include "context.h"
+#include "type_widget.h"
 
 using namespace std;
+using namespace webui;
+
+namespace {
+
+    TypeWidget widgetLayoutHorType = {
+        Identifier::LayoutHor, sizeof(WidgetLayout), { }
+    };
+
+    TypeWidget widgetLayoutVerType = {
+        Identifier::LayoutVer, sizeof(WidgetLayout), { }
+    };
+
+}
 
 namespace webui {
+
+    WidgetLayout::WidgetLayout(Widget* parent, int coord): Widget(parent), coord(coord), dragDrop(nullptr) {
+        typeWidget = coord ? &widgetLayoutVerType : &widgetLayoutHorType;
+    }
+
+    TypeWidget& WidgetLayout::getTypeHor() {
+        return widgetLayoutHorType;
+    }
+
+    TypeWidget& WidgetLayout::getTypeVer() {
+        return widgetLayoutVerType;
+    }
 
     void WidgetLayout::render(Context& ctx, int alphaMult) {
         Widget::render(ctx, alphaMult);

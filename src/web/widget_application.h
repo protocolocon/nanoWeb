@@ -17,9 +17,12 @@ namespace webui {
 
     class WidgetApplication: public Widget {
     public:
-        inline WidgetApplication(Widget* parent = nullptr): Widget(parent) { }
+        WidgetApplication(Widget* parent);
 
-        virtual Identifier type() const final override { return Identifier::Application; }
+        static TypeWidget& getType();
+
+        // polymorphic interface
+        virtual Identifier baseType() const final override { return Identifier::Application; }
         virtual void render(Context& ctx, int alphaMult) final override;
     };
 

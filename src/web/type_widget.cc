@@ -6,34 +6,35 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "properties.h"
+#include "type_widget.h"
 #include "string_manager.h"
 
 namespace webui {
 
-    const char* toString(Type t) {
-        const char* strs[int(Type::LastType)] = {
-            "Bit",
-            "Uint8",
-            "Int16",
-            "Int32",
-            "Id",
-            "Str",
-            "StrId",
-            "Float",
-            "Color",
-            "ColorModif",
-            "SizeRelative",
-            "Coord",
-            "FontIdx",
-            "ActionTable",
-            "Text",
-            "TextPropOrStrId",
-        };
-        return strs[int(t)];
-    }
+    DIAG(const char* toString(Type t) {
+            const char* strs[int(Type::LastType)] = {
+                "Unknown",
+                "Bit",
+                "Uint8",
+                "Int16",
+                "Int32",
+                "Id",
+                "Str",
+                "StrId",
+                "Float",
+                "Color",
+                "ColorModif",
+                "SizeRelative",
+                "Coord",
+                "FontIdx",
+                "ActionTable",
+                "Text",
+                "TextPropOrStrId",
+            };
+            return strs[int(t)];
+        });
 
-    long Properties::get(Identifier id, const void* data) const {
+    long TypeWidget::get(Identifier id, const void* data) const {
         auto it(find(id));
         if (it == end()) {
             LOG("unknown property in get");
@@ -50,7 +51,7 @@ namespace webui {
         }
     }
 
-    void Properties::set(Identifier id, void* data, long value) const {
+    void TypeWidget::set(Identifier id, void* data, long value) const {
         auto it(find(id));
         if (it == end()) {
             LOG("unknown property in set");
@@ -76,5 +77,12 @@ namespace webui {
             }
         }
     }
+
+    DIAG(void TypeWidget::dump(const StringManager& strMng, int indent) const {
+            for (const auto& idProp: *this) {
+                const auto& prop(idProp.second);
+                LOG("%*s%-20s: %-16s %4d %2d", indent, "", strMng.get(idProp.first), toString(prop.type), prop.pos * prop.size, prop.size);
+            }
+        });
 
 }

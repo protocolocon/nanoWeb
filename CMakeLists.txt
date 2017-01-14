@@ -140,7 +140,7 @@ add_library(nanoweb
   src/web/render.cc
   src/web/context.cc
   src/web/ml_parser.cc
-  src/web/properties.cc
+  src/web/type_widget.cc
   src/web/application.cc
   src/web/widget_timer.cc
   src/web/compatibility.cc

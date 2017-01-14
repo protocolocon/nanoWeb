@@ -10,7 +10,6 @@
 #include "input.h"
 #include "nanovg.h"
 #include "context.h"
-#include "properties.h"
 #include <cstdlib>
 #include <cstddef>
 
@@ -19,27 +18,29 @@ using namespace webui;
 
 namespace {
 
-    const Properties widgetProperties = {
-        { Identifier::x,              PROP(Widget, curPos.x,  Int16,        2, 0, 0) },
-        { Identifier::y,              PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
-        { Identifier::w,              PROP(Widget, curSize.x, Int16,        2, 0, 0) },
-        { Identifier::h,              PROP(Widget, curSize.y, Int16,        2, 0, 0) },
-        { Identifier::id,             PROP(Widget, id,        StrId,        4, 0, 1) },
-        { Identifier::width,          PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
-        { Identifier::height,         PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
-        { Identifier::background,     PROP(Widget, background,Color,        4, 0, 0) },
-        { Identifier::foreground,     PROP(Widget, foreground,Color,        4, 0, 0) },
-        { Identifier::all,            PROP(Widget, all,       Int32,        4, 0, 0) },
-        { Identifier::visible,        PROP(Widget, byte0,     Bit,          1, 0, 1) },
-        { Identifier::canFocus,       PROP(Widget, byte0,     Bit,          1, 3, 1) },
-        { Identifier::active,         PROP(Widget, byte0,     Bit,          1, 4, 1) },
-        { Identifier::draggable,      PROP(Widget, byte0,     Bit,          1, 5, 1) },
-        { Identifier::onEnter,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::onLeave,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::onClick,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::onRender,       PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::onRenderActive, PROP(Widget, actions,   ActionTable,  4, 0, 1) },
-        { Identifier::text,           PROP(Widget, text,      Text,         sizeof(void*), 0, 0) },
+    TypeWidget widgetType = {
+        Identifier::Widget, sizeof(Widget), {
+            { Identifier::x,              PROP(Widget, curPos.x,  Int16,        2, 0, 0) },
+            { Identifier::y,              PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
+            { Identifier::w,              PROP(Widget, curSize.x, Int16,        2, 0, 0) },
+            { Identifier::h,              PROP(Widget, curSize.y, Int16,        2, 0, 0) },
+            { Identifier::id,             PROP(Widget, id,        StrId,        4, 0, 1) },
+            { Identifier::width,          PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
+            { Identifier::height,         PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
+            { Identifier::background,     PROP(Widget, background,Color,        4, 0, 0) },
+            { Identifier::foreground,     PROP(Widget, foreground,Color,        4, 0, 0) },
+            { Identifier::all,            PROP(Widget, all,       Int32,        4, 0, 0) },
+            { Identifier::visible,        PROP(Widget, byte0,     Bit,          1, 0, 1) },
+            { Identifier::canFocus,       PROP(Widget, byte0,     Bit,          1, 3, 1) },
+            { Identifier::active,         PROP(Widget, byte0,     Bit,          1, 4, 1) },
+            { Identifier::draggable,      PROP(Widget, byte0,     Bit,          1, 5, 1) },
+            { Identifier::onEnter,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+            { Identifier::onLeave,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+            { Identifier::onClick,        PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+            { Identifier::onRender,       PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+            { Identifier::onRenderActive, PROP(Widget, actions,   ActionTable,  4, 0, 1) },
+            { Identifier::text,           PROP(Widget, text,      Text,         sizeof(void*), 0, 0) },
+        }
     };
 
 }
@@ -49,10 +50,15 @@ namespace webui {
     Widget::Widget(Widget* parent): parent(parent), text(nullptr),
                                     size { SizeRelative(100.0f, true), SizeRelative(100.0f, true) },
                                     all(0x00ff4009), actions(0) {
+        typeWidget = &widgetType;
     }
 
     Widget::~Widget() {
         free(text);
+    }
+
+    TypeWidget& Widget::getType() {
+        return widgetType;
     }
 
     void Widget::render(Context& ctx, int alphaMult) {
@@ -98,29 +104,16 @@ namespace webui {
     }
 
     const Property* Widget::getProp(Identifier id) const {
-        const auto& props = getProps();
-        auto it(props.find(id));
-        if (it == props.end()) {
-            // try with widget if required
-            const auto& propsWidget = Widget::getProps();
-            if (&propsWidget == &props) return nullptr;
-            it = propsWidget.find(id);
-            if (it == propsWidget.end()) return nullptr;
-        }
+        auto it(typeWidget->find(id));
+        if (it == typeWidget->end()) return nullptr;
         return &it->second;
     }
 
     void Widget::copyFrom(const Widget* widget) {
-        const auto& props = getProps();
+        const auto& props = *typeWidget;
         for (const auto& prop: props)
             if (!prop.second.redundant)
                 props.set(prop.first, this, props.get(prop.first, widget));
-        if (type() != Identifier::Widget) {
-            const auto& propsWidget = Widget::getProps();
-            for (const auto& prop: propsWidget)
-                if (!prop.second.redundant)
-                    props.set(prop.first, this, props.get(prop.first, widget));
-        }
         actions = widget->actions;
         sharedActions = 1;
     }
@@ -129,10 +122,6 @@ namespace webui {
         if ( visible && alpha < 0xff) return ctx.getCloser(alpha, 0xff);
         if (!visible && alpha)        return ctx.getCloser(alpha, 0x00);
         return true;
-    }
-
-    const Properties& Widget::getProps() const {
-        return widgetProperties;
     }
 
     bool Widget::update(Application& app) {
@@ -169,14 +158,23 @@ namespace webui {
     }
 
     DIAG(
-        void Widget::dump(const StringManager& strMng, int level) const {
-            LOG("%*s%-*s: %-15s %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %3d  flags: %08x %s", level * 2, "", 32 - level*2, strMng.get(id),
+        void Widget::dump(const StringManager& strMng, int level, bool props) const {
+            bool recur(level >= 0);
+            if (level < 0) level = 1;
+            LOG("%*s%-*s: %-15s %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s  %s",
+                level * 2, "", 32 - level*2, strMng.get(id),
                 strMng.get(type()),
                 curPos.x, curPos.y, curSize.x, curSize.y,
                 size[0].dumpValue(), size[0].dumpFlags(),
                 size[1].dumpValue(), size[1].dumpFlags(),
-                actions, all, text ? text : "");
-            for (const auto* child: children) child->dump(strMng, level + 1);
+                actions, all,
+                typeSize(),
+                strMng.get(baseType()),
+                text ? text : "");
+            if (props)
+                typeWidget->dump(strMng, 48);
+            if (recur)
+                for (const auto* child: children) child->dump(strMng, level + 1);
         });
 
 }

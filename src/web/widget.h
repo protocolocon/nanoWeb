@@ -10,6 +10,7 @@
 
 #include "types.h"
 #include "vector.h"
+#include "type_widget.h"
 #include "compatibility.h"
 #include "string_manager.h"
 #include "reserved_words.h"
@@ -20,7 +21,6 @@ namespace webui {
 
     class Context;
     struct Property;
-    class Properties;
     class Application;
 
     class Widget {
@@ -28,19 +28,23 @@ namespace webui {
         Widget(Widget* parent);
         virtual ~Widget();
 
+        // type related
+        inline Identifier type() const { return typeWidget->type; }
+        inline int typeSize() const { return typeWidget->size; }
+        static TypeWidget& getType();
+
         // hierarchy
         inline void addChild(Widget* child) { children.push_back(child); }
         inline Widget* getParent() { return parent; }
         inline auto& getChildren() { return children; }
 
         // polymorphic interface
-        virtual Identifier type() const { return Identifier::Widget; }
+        virtual Identifier baseType() const { return Identifier::Widget; }
         virtual void render(Context& ctx, int alphaMult);
         virtual bool input(Application& app); // returns true if actions were executed (affecting application)
         virtual bool layout(Context& ctx, V2s pos, V2s size); // returns true if stable
-        virtual const Properties& getProps() const;
 
-        // get a property in this widget (polymorphism) or in Widget or null
+        // get a property or null
         const Property* getProp(Identifier id) const;
 
         // copy properties from provided widget
@@ -70,7 +74,7 @@ namespace webui {
         void translate(V2s t);
 
         // debug
-        DIAG(void dump(const StringManager& strMng, int level = 0) const);
+        DIAG(void dump(const StringManager& strMng, int level = 0, bool props = false) const);
 
     public:
         // dynamic part
@@ -78,6 +82,7 @@ namespace webui {
         V2s curSize;
 
         // static part
+        TypeWidget* typeWidget;
         Widget* parent;
         char* text;
         StringId id;

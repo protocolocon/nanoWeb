@@ -7,15 +7,27 @@
 */
 
 #include "widget_template.h"
-#include "properties.h"
 
 using namespace std;
 using namespace webui;
 
 namespace {
 
+    TypeWidget widgetTemplateType = {
+        Identifier::Template, sizeof(WidgetTemplate), { }
+    };
+
 }
 
 namespace webui {
+
+    WidgetTemplate::WidgetTemplate(Widget* parent): Widget(parent) {
+        visible = false;
+        typeWidget = &widgetTemplateType;
+    }
+
+    TypeWidget& WidgetTemplate::getType() {
+        return widgetTemplateType;
+    }
 
 }

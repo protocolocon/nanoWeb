@@ -16,14 +16,14 @@ namespace webui {
 
     class WidgetTemplate: public Widget {
     public:
-        inline WidgetTemplate(Widget* parent = nullptr): Widget(parent) {
-            visible = false;
-        }
+        WidgetTemplate(Widget* parent);
 
-        // polymorphic interface
-        virtual Identifier type() const final override { return Identifier::Template; }
+        static TypeWidget& getType();
 
         MLParser& getParser() { return parser; }
+
+        // polymorphic interface
+        virtual Identifier baseType() const final override { return Identifier::Template; }
 
     public:
         MLParser parser;

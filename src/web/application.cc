@@ -10,9 +10,7 @@
 #include "input.h"
 #include "widget.h"
 #include "context.h"
-#include "properties.h"
 #include "widget_timer.h"
-#include "reserved_words.h"
 #include "widget_layout.h"
 #include "widget_template.h"
 #include "widget_application.h"
@@ -48,6 +46,13 @@ namespace {
     const Type setParams[] =             { Type::StrId, Type::Id, Type::Str, Type::LastType };
     const Type queryParams[] =           { Type::StrId, Type::StrId, Type::LastType };
 
+    template <typename T>
+    inline void* getPtr(int objectSize) {
+        size_t size(objectSize ? objectSize : sizeof(T));
+        //DIAG(LOG("object memory: %zu", size));
+        return malloc(size);
+    }
+
 }
 
 namespace webui {
@@ -65,6 +70,15 @@ namespace webui {
     }
 
     void Application::initialize() {
+        // widget inheritance
+        auto begin(Widget::getType().begin());
+        auto end(Widget::getType().end());
+        WidgetTimer::getType().insert(begin, end);
+        WidgetLayout::getTypeHor().insert(begin, end);
+        WidgetLayout::getTypeVer().insert(begin, end);
+        WidgetTemplate::getType().insert(begin, end);
+        WidgetApplication::getType().insert(begin, end);
+
         new RequestXHR(*this, RequestXHR::TypeApplication, StringId(), "application.ml");
     }
 
@@ -90,6 +104,18 @@ namespace webui {
 
     void Application::clear() {
         root = nullptr;
+        // delete new types
+        for (auto& widget: widgets) {
+            auto* type(widget.second->typeWidget);
+            if (type && type->type > Identifier::WLast) {
+                // dynamic type
+                for (auto& widget: widgets)
+                    if (widget.second->typeWidget == type)
+                        widget.second->typeWidget = nullptr;
+                delete type;
+            }
+        }
+
         for (auto& widget: widgets)
             delete widget.second;
         widgets.clear();
@@ -125,7 +151,8 @@ namespace webui {
 
             DIAG(
                 //tree.dumpTree();
-                dump());
+                //dump()
+            );
             tree.clear();
             ctx.forceRender();
             break;
@@ -135,23 +162,24 @@ namespace webui {
             DIAG(
                 if (it == widgets.end())
                     LOG("internal: cannot find template %s", strMng.get(xhr->getId())));
-            auto* tplWidget(reinterpret_cast<WidgetTemplate*>(it->second));
-            tree.swap(tplWidget->getParser());
+            auto* tplWidget(it->second);
+            tree.swap(reinterpret_cast<WidgetTemplate*>(tplWidget)->getParser());
             bool define;
             if (!tpl.parse(xhr->getData(), xhr->getNData(), true/*value*/) ||
-                (iTpl = 0, fTpl = tpl.size(), !initializeConstruct(tplWidget, 0, tree.size(), define, true))) {
+                (iTpl = 0, fTpl = tpl.size(), !(tplWidget = initializeConstruct(tplWidget, 0, tree.size(), define, true)))) {
                 LOG("error: update template");
+            } else {
+                tplWidget->setVisible(true);
+                DIAG(
+                    tree.dump();
+                    tree.dumpTree();
+                    LOG("----------");
+                    tpl.dump();
+                    tpl.dumpTree();
+                    LOG("----------");
+                    dump());
             }
-            tplWidget->setVisible(true);
-            DIAG(
-                tree.dump();
-                tree.dumpTree();
-                LOG("----------");
-                tpl.dump();
-                tpl.dumpTree();
-                LOG("----------");
-                dump());
-            tree.swap(tplWidget->getParser());
+            tree.swap(reinterpret_cast<WidgetTemplate*>(tplWidget)->getParser());
             layoutStable = false;
             ctx.forceRender();
             break;
@@ -195,15 +223,15 @@ namespace webui {
             bool define;
             auto* widget(createWidget(tree[0].asId(tree, strMng), nullptr));
             iTpl = fTpl = -1;
-            if (widget && initializeConstruct(widget, 2, tree.size(), define, true) && registerWidget(widget))
+            if (widget && (widget = initializeConstruct(widget, 2, tree.size(), define, true)) && registerWidget(widget))
                 return widget;
-            delete widget;
         }
         return nullptr;
     }
 
-    bool Application::initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse) {
+    Widget* Application::initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse) {
         define = false;
+        auto iEntryOrig(iEntry);
         while (iEntry < fEntry) {
             // cases:
             //   1. key : value
@@ -246,7 +274,8 @@ namespace webui {
                             }
                         } else {
                             DIAG(LOG("run out of template values while preparing template loop %d %d", iTpl, fTpl));
-                            return false;
+                            delete widget;
+                            return nullptr;
                         }
                     } else
                         DIAG(LOG("error: template iteration, but no template data"));
@@ -268,9 +297,10 @@ namespace webui {
                         //LOG("   WIDGET: %d %d", iWidget, fWidget);
                         iTpl = iWidget;
                         fTpl = fWidget;
-                        if (!initializeConstruct(widget, iEntry + 1, next, defineChild, true)) {
+                        if (!(widget = initializeConstruct(widget, iEntry + 1, next, defineChild, true))) {
                             DIAG(LOG("template loop initialize construct"));
-                            return false;
+                            delete widget;
+                            return nullptr;
                         }
                         DIAG(if (defineChild) LOG("error: definition inside loop"));
                         DIAG(
@@ -289,10 +319,10 @@ namespace webui {
                     assert(widgetChild);
                     bool defineChild(false);
                     bool isTemplate(key == Identifier::Template);
-                    if (!initializeConstruct(widgetChild, iEntry + 2, next, defineChild, !isTemplate) ||
+                    if (!(widgetChild = initializeConstruct(widgetChild, iEntry + 2, next, defineChild, !isTemplate)) ||
                         !registerWidget(widgetChild)) {
                         delete widgetChild;
-                        return false;
+                        return nullptr;
                     }
                     if (!defineChild) widget->addChild(widgetChild);
                     if (isTemplate) {
@@ -305,9 +335,15 @@ namespace webui {
                 bool templateReplaced(replaceProperty(iEntry + 1));
                 if (key == Identifier::define) {
                     key = Identifier::id;
+                    DIAG(if (define) LOG("warning: repeated 'define' attribute inside widget"));
                     define = true;
+                    // create new type
+                    auto newTypeId(Identifier(entryAsStrId(iEntry + 1, false).getId()));
+                    if (!(widget = createType(widget, newTypeId, iEntryOrig, fEntry))) {
+                        DIAG(LOG("cannot create new type: %s", strMng.get(newTypeId)));
+                    }
                 }
-                if (!setProp(key, widget, iEntry + 1, next)) {
+                if (key != Identifier::propInt16 && !setProp(key, widget, iEntry + 1, next)) {
                     DIAG(
                         auto ss(entryVal->asStrSize(tree, true));
                         LOG("warning: unknown attribute %s with value %.*s", strMng.get(StringId(int(key))), ss.second, ss.first);
@@ -317,7 +353,48 @@ namespace webui {
             }
             iEntry = next;
         }
-        return true;
+        return widget;
+    }
+
+    Widget* Application::createType(Widget* widget, Identifier typeId, int iEntry, int fEntry) {
+        TypeWidget* type = new TypeWidget(typeId, widget->typeSize(), { });
+        type->insert(widget->typeWidget->begin(), widget->typeWidget->end());
+        // add new properties
+        while (iEntry < fEntry) {
+            const auto& entryKey(tree[iEntry]);
+            if (*entryKey.pos == '{') { // case 3: template loop
+                iEntry = entryKey.next ? entryKey.next : fEntry;
+            } else { // cases 1 & 2: key: value or class {
+                assert(iEntry + 1 < fEntry && entryKey.next == iEntry + 1);
+                Property prop;
+                prop.all = 0;
+                Identifier key = entryKey.asId(tree, strMng);
+                if (key == Identifier::propInt16) {
+                    prop.type = Type::Int16;
+                    prop.size = 2;
+                }
+                if (prop.size) {
+                    // property value position and type size
+                    type->size = (type->size + prop.size - 1) & -prop.size; // align to property size
+                    prop.pos = type->size / prop.size;                      // store pos in size units
+                    type->size += prop.size;                                // increase size
+                    auto propName(entryAsStrId(iEntry + 1, false));
+                    type->insert(make_pair(Identifier(propName.getId()), prop));
+                    DIAG(LOG("adding property: %s.%s at %d+%d of type %s",
+                             strMng.get(typeId), strMng.get(propName), prop.pos * prop.size, prop.size, toString(prop.type)));
+                }
+                const auto& entryVal(tree[iEntry + 1]);
+                iEntry = entryVal.next ? entryVal.next : fEntry;
+            }
+        }
+        // create new widget with correct size to hold new properties
+        // get base widget
+        auto* widgetNew(createWidget(widget->baseType(), widget->parent, type->size));
+        widgetNew->typeWidget = widget->typeWidget;
+        widgetNew->copyFrom(widget);
+        widgetNew->typeWidget = type;
+        delete widget;
+        return widgetNew;
     }
 
     bool Application::replaceProperty(int iEntry) {
@@ -350,20 +427,21 @@ namespace webui {
         return id < Identifier::WLast || widgets.find(int(id)) != widgets.end();
     }
 
-    Widget* Application::createWidget(Identifier id, Widget* parent) {
+    Widget* Application::createWidget(Identifier id, Widget* parent, int objectSize) {
         switch (id) {
-        case Identifier::Application: return new WidgetApplication(parent);
-        case Identifier::Widget:      return new Widget(parent);
-        case Identifier::LayoutHor:   return new WidgetLayout(0, parent);
-        case Identifier::LayoutVer:   return new WidgetLayout(1, parent);
-        case Identifier::Template:    return new WidgetTemplate(parent);
-        case Identifier::Timer:       return new WidgetTimer(parent);
+        case Identifier::Application: return new (getPtr<WidgetApplication>(objectSize)) WidgetApplication(parent);
+        case Identifier::Widget:      return new (getPtr<Widget>(objectSize)) Widget(parent);
+        case Identifier::LayoutHor:   return new (getPtr<WidgetLayout>(objectSize)) WidgetLayout(parent, 0);
+        case Identifier::LayoutVer:   return new (getPtr<WidgetLayout>(objectSize)) WidgetLayout(parent, 1);
+        case Identifier::Template:    return new (getPtr<WidgetTemplate>(objectSize)) WidgetTemplate(parent);
+        case Identifier::Timer:       return new (getPtr<WidgetTimer>(objectSize)) WidgetTimer(parent);
         default:                      break;
         }
         // copy from other widget by id
         auto it(widgets.find(int(id)));
         if (it != widgets.end()) {
-            auto* widget(createWidget(it->second->type(), parent));
+            auto* widget(createWidget(it->second->baseType(), parent, it->second->typeSize()));
+            widget->typeWidget = it->second->typeWidget;
             widget->copyFrom(it->second);
             return widget;
         }
@@ -390,7 +468,9 @@ namespace webui {
     bool Application::setProp(Identifier id, Widget* widget, int iEntry, int fEntry) {
         const auto* prop(widget->getProp(id));
         if (!prop) {
-            DIAG(LOG("invalid property '%s' for widget of type: %s", strMng.get(id), strMng.get(widget->type())));
+            DIAG(
+                LOG("invalid property '%s' for widget of type: %s", strMng.get(id), strMng.get(widget->type()));
+                widget->dump(strMng, -1, true));
             return false;
         }
         if (!setProp(*prop, id, widget, iEntry, fEntry, widget)) {
@@ -416,6 +496,10 @@ namespace webui {
         case Type::Uint8:
             DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<uint8_t*>(data)[prop.pos] = atoi(tree[iEntry].pos);
+            return true;
+        case Type::Int16:
+            DIAG(if (fEntry > iEntry + 1) return false);
+            reinterpret_cast<int16_t*>(data)[prop.pos] = atoi(tree[iEntry].pos);
             return true;
         case Type::Int32:
             DIAG(if (fEntry > iEntry + 1) return false);
@@ -826,7 +910,7 @@ namespace webui {
             }
             LOG("Registered widgets:");
             for (const auto& widget: widgets)
-                LOG("  %s", strMng.get(widget.first));
+                widget.second->dump(strMng, -1, true);
         });
 
 }

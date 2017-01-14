@@ -53,6 +53,7 @@ namespace webui {
         add(self);
         add(repeat);
         add(delay);
+        add(propInt16);
         add(ALast);
 
         add(log);

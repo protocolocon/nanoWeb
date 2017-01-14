@@ -11,7 +11,7 @@
 #include "types.h"
 #include "vector.h"
 #include "ml_parser.h"
-#include "properties.h"
+#include "type_widget.h"
 #include "compatibility.h"
 #include "string_manager.h"
 #include "reserved_words.h"
@@ -24,7 +24,6 @@ namespace webui {
     class Context;
     class MLParser;
     struct Property;
-    class Properties;
 
     class Application {
     public:
@@ -51,7 +50,7 @@ namespace webui {
         inline Identifier entryId(int idx) const { return tree[idx].asId(tree, strMng); }
         inline StringId entryAsStrId(int idx, bool quotes) { return tree[idx].asStrId(tree, strMng, quotes); }
 
-        // set generic properties
+        // add/set generic properties
         bool setProp(Identifier id, Widget* widget, int iEntry, int fEntry);
         bool setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry, Widget* widget);
 
@@ -98,13 +97,14 @@ namespace webui {
         bool fontValid;
 
         Widget* initializeConstruct();
-        bool initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
+        Widget* initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
 
         // widget factory and registration
         bool isWidget(Identifier id) const;
-        Widget* createWidget(Identifier id, Widget* parent);
+        Widget* createWidget(Identifier id, Widget* parent, int objectSize = 0);
         bool registerWidget(Widget* widget);
         int getWidgetRange(StringId widgetId) const;
+        Widget* createType(Widget* widget, Identifier typeId, int iEntry, int fEntry);
 
         // fonts
         int getFont(StringId str);

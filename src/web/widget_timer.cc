@@ -8,25 +8,33 @@
 
 #include "widget_timer.h"
 #include "context.h"
-#include "properties.h"
+#include "type_widget.h"
 
 using namespace std;
 using namespace webui;
 
 namespace {
 
-    const Properties widgetTimerProperties = {
-        { Identifier::repeat,            PROP(WidgetTimer, repeat,  Uint8,        1, 0, 0) },
-        { Identifier::delay,             PROP(WidgetTimer, delay,   Int32,        4, 0, 0) },
-        { Identifier::onTimeout,         PROP(WidgetTimer, actions, ActionTable,  4, 0, 1) },
+    TypeWidget widgetTimerType = {
+        Identifier::Timer, sizeof(WidgetTimer), {
+            { Identifier::repeat,            PROP(WidgetTimer, repeat,  Uint8,        1, 0, 0) },
+            { Identifier::delay,             PROP(WidgetTimer, delay,   Int32,        4, 0, 0) },
+            { Identifier::onTimeout,         PROP(WidgetTimer, actions, ActionTable,  4, 0, 1) },
+        }
     };
 
 }
 
 namespace webui {
 
-    const Properties& WidgetTimer::getProps() const {
-        return widgetTimerProperties;
+    WidgetTimer::WidgetTimer(Widget* parent): Widget(parent), curDelay(0x7fffffff), delay(1000), repeat(1) {
+        size[0].assign(0, false);
+        size[1].assign(0, false);
+        typeWidget = &widgetTimerType;
+    }
+
+    TypeWidget& WidgetTimer::getType() {
+        return widgetTimerType;
     }
 
     bool WidgetTimer::refreshTimer(Context& ctx) {

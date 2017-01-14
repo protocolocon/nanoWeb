@@ -13,16 +13,15 @@
 #include <unordered_map>
 
 #define PROP(class, member, type, size, bit, redundant) \
-    { { uint32_t(int(Type::type) | size << 8 | bit << 12 | redundant << 15 | uint16_t(long(&((class*)nullptr)->member) / size) << 16) } }
-
-#define PROPDIFF(ptr1, ptr0) \
-    { { uint32_t(int(Type::Int32) | 4 << 8 | 0 << 12 | 0 << 15 | uint16_t((ptr1) - (ptr0)) << 16) } }
+    uint32_t(int(Type::type) | size << 8 | bit << 12 | redundant << 15 | uint16_t(long(&((class*)nullptr)->member) / size) << 16)
 
 namespace webui {
 
     class Application;
+    class StringManager;
 
     enum class Type: uint8_t {
+        Unknown,
         Bit,
         Uint8,
         Int16,
@@ -42,9 +41,11 @@ namespace webui {
         LastType
     };
 
-    const char* toString(Type t);
+    DIAG(const char* toString(Type t));
 
     struct Property {
+        Property(): all(0) { }
+        Property(uint32_t all): all(all) { }
         union {
             uint32_t all;
             struct {
@@ -57,13 +58,20 @@ namespace webui {
         };
     };
 
-    class Properties: public std::unordered_map<Identifier, Property> {
+    class TypeWidget: public std::unordered_map<Identifier, Property> {
     public:
-        using std::unordered_map<Identifier, Property>::unordered_map;
+        using Map = std::unordered_map<Identifier, Property>;
+
+        TypeWidget(Identifier type, int size, const Map& properties): Map(properties), type(type), size(size) { }
+
+        Identifier type;
+        int size;
 
         // generic interface
         long get(Identifier id, const void* data) const;
         void set(Identifier id, void* data, long value) const;
+
+        DIAG(void dump(const StringManager& strMng, int indent) const);
     };
 
 }

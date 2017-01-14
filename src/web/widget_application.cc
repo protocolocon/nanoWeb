@@ -13,8 +13,25 @@
 #include <cassert>
 
 using namespace std;
+using namespace webui;
+
+namespace {
+
+    TypeWidget widgetApplicationType = {
+        Identifier::Application, sizeof(WidgetApplication), { }
+    };
+
+}
 
 namespace webui {
+
+    WidgetApplication::WidgetApplication(Widget* parent): Widget(parent) {
+        typeWidget = &widgetApplicationType;
+    }
+
+    TypeWidget& WidgetApplication::getType() {
+        return widgetApplicationType;
+    }
 
     void WidgetApplication::render(Context& ctx, int alphaMult) {
         assert(visible);
