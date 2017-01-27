@@ -17,6 +17,7 @@ namespace webui {
     public:
         StringId(): id(-1) { }
         StringId(int id): id(id) { }
+        StringId(Identifier id): StringId(int(id)) { }
         inline int getId() const { return id; }
         inline bool valid() const { return id >= 0; }
         inline std::size_t operator()(StringId id) const { return id.getId(); }

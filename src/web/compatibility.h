@@ -19,9 +19,23 @@
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
 #  define LOG(msg, ...) emscripten_log(EM_LOG_CONSOLE, msg, ##__VA_ARGS__)
+#  define RED
+#  define GREEN
+#  define BROWN
+#  define BLUE
+#  define MAGENTA
+#  define CYAN
+#  define RESET
 #else
 #  include <cstdio>
 #  define LOG(msg, ...) printf(msg "\n", ##__VA_ARGS__)
+#  define RED       "\033[31m"
+#  define GREEN     "\033[32m"
+#  define BROWN     "\033[33m"
+#  define BLUE      "\033[34m"
+#  define MAGENTA   "\033[35m"
+#  define CYAN      "\033[36m"
+#  define RESET     "\033[0m"
 #endif
 
 // openGL includes

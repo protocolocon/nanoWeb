@@ -63,7 +63,7 @@ set(FLAGS "-Wall -Wno-unknown-warning-option -Wno-misleading-indentation")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(FLAGS "${FLAGS} -O0 -g")
   if(NANO_BROWSER)
-    set(FLAGS "${FLAGS} -s ASSERTIONS=1")
+    set(FLAGS "${FLAGS} -s ASSERTIONS=1 -s SAFE_HEAP=1")
   endif()
 else()
   set(CMAKE_BUILD_TYPE "Release")
@@ -136,6 +136,7 @@ add_library(nanoweb
   src/web/util.cc
   src/web/types.cc
   src/web/input.cc
+  src/web/action.cc
   src/web/widget.cc
   src/web/render.cc
   src/web/context.cc
@@ -164,9 +165,12 @@ if(NOT NANO_BROWSER)
     ${PROJECT_SOURCE_DIR}/src/web
     ${PROJECT_SOURCE_DIR}/submodules/Catch/include)
 
-  add_executable(test_parser
-    test/test_parser.cc)
+  add_executable(test_nanoweb
+    test/test.cc
+    test/test_action.cc
+    test/test_parser.cc
+    test/test_application.cc)
 
-  target_link_libraries(test_parser nanoweb)
+  target_link_libraries(test_nanoweb nanoweb)
 
 endif()

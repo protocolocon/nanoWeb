@@ -31,13 +31,13 @@ namespace webui {
         StrId,           // removes quotes if any
         Float,
         Color,
-        ColorModif,      // color modificaiton or color
-        SizeRelative,
-        Coord,           // with ref
+        ColorModif,      // color modification (reference + '%') or color constant
+        SizeRelative,    // holds a constant that can be relative (%) or absolute; adaptative
+        Coord,           // with ref and optional '+' / '-' operator
         FontIdx,
         ActionTable,
         Text,            // char*
-        TextPropOrStrId, // TextPropOrStrId type
+        TextPropOrStrId, // TextPropOrStrId type: a Text or a StrId
         LastType
     };
 

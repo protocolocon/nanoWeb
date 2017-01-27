@@ -9,6 +9,7 @@
 #pragma once
 
 #include "types.h"
+#include "action.h"
 #include "vector.h"
 #include "ml_parser.h"
 #include "type_widget.h"
@@ -30,6 +31,7 @@ namespace webui {
         Application(Context& ctx);
         DIAG(~Application());
         void initialize();
+        void initializeInheritance();
 
         // wipes-out application definition
         DIAG(void clear());
@@ -43,12 +45,6 @@ namespace webui {
 
         // render
         void render();
-
-        // get parsed entry
-        inline const MLParser::Entry& entry(int idx) const { return tree[idx]; }
-        inline std::pair<const char*, int> entryAsStrSize(int idx, bool quotes) const { return tree[idx].asStrSize(tree, quotes); }
-        inline Identifier entryId(int idx) const { return tree[idx].asId(tree, strMng); }
-        inline StringId entryAsStrId(int idx, bool quotes) { return tree[idx].asStrId(tree, strMng, quotes); }
 
         // add/set generic properties
         bool setProp(Identifier id, Widget* widget, int iEntry, int fEntry);
@@ -68,13 +64,15 @@ namespace webui {
         bool executeNoCheck(int commandList, Widget* widget);
 
         // XHR
-        void onLoad(RequestXHR* xhr);
+        bool onLoad(RequestXHR* xhr);
         void onError(RequestXHR* xhr);
 
         // debug
         DIAG(void dump() const);
         inline auto& getStrMng() { return strMng; }
         inline auto* getRoot() { return root; }
+        inline auto& getWidgets() { return widgets; }
+        inline auto& getActions() { return actions; }
 
     private:
         Context& ctx;
@@ -86,7 +84,7 @@ namespace webui {
         bool layoutStable;
 
         std::vector<ActionTable> actionTables;
-        std::vector<int> actionCommands;
+        Actions actions;
 
         // widget tree and registration
         Widget* root;
@@ -114,10 +112,8 @@ namespace webui {
         void replaceBackProperty(bool templateReplaced, int iEntry);
 
         // actions
-        bool addAction(Identifier actionId, int iEntry, int fEntry, int& actions, Widget* widget); // add action to widget
-        bool addActionCommands(int iEntry, int fEntry, int& tableEntry, Widget* widget);
+        bool addAction(Identifier actionId, int iEntry, int fEntry, int& widgetActions, Widget* widget); // add action to widget
         bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
-        bool addCommandToggle(int iEntry);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled
         bool executeSet(StringId widgetId, Identifier prop, StringId value, Widget* widget);
         bool executeQuery(StringId query, StringId widgetId);

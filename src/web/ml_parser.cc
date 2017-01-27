@@ -8,206 +8,311 @@
 
 #include "ml_parser.h"
 #include <cctype>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
+
+#ifdef DISABLE_DIAGNOSTICS
+#  define ERROR_FALSE(ml, msg) false
+#  define ERROR_INT(ml, msg)   -1
+#else
+#  define ERROR_FALSE(ml, msg) error(ml, msg, line)
+#  define ERROR_INT(ml, msg)   error(ml, msg, line), -1
+#endif
 
 using namespace std;
+using namespace webui;
+
+namespace {
+
+    DIAG(const char* toString(MLParser::EntryType type) {
+            static const char* typeNames[] = {
+                "unknown",
+                "id",
+                "object",
+                "block",
+                "function",
+                "list",
+                "number",
+                "color",
+                "string",
+                "operator",
+                "wildcar",
+            };
+            return typeNames[int(type)];
+        });
+
+}
 
 namespace webui {
 
     MLParser::~MLParser() {
+        finish();
+    }
+
+    void MLParser::finish() {
         if (ownOrig)
             free(const_cast<char*>(mlOrig));
     }
 
-    bool MLParser::parse(const char* ml, int n, bool value) {
+    bool MLParser::parse(const char* ml, int n) {
+        finish();
         mlOrig = ml;
         mlEnd = ml + n;
         DIAG(line = 1);
-        DIAG(errorFlag =) ownOrig = false;
-        clear();
-        if (value) {
-            if (skipSpace(ml))
-                return DIAG(error(ml, "no value found") &&) false;
-            if (parseValue(ml))
-                return DIAG(error(ml, "parse value") &&) false;
-            if (!skipSpace(ml))
-                return DIAG(error(ml, "trailing content in value parser") &&) false;
-        } else {
-            if (!parseLevel(ml))
-                return DIAG(error(ml, "trailing content in object parser") &&) false;
-        }
-        return true DIAG(&& !errorFlag);
-    }
-
-    bool MLParser::parseLevel(const char*& ml) {
-        /* expecting:
-             <object id> {
-               ...
-             }
-         */
-        if (skipSpace(ml)) return true;
-        if (isalpha(*ml)) {
-            // named object
-            int prev(newEntry(ml)); // id
-            if (skipId(ml) || skipSpace(ml)) return DIAG(error(ml, "id with no object") &&) false;
-            if (*ml != '{') return DIAG(error(ml, "expected object defitition") &&) false;
-            newEntry(ml, prev); ++ml; // object
-            parseObject(ml);
-            return skipSpace(ml);
-        } else
-            return DIAG(error(ml, "expecting object identifier") &&) false;
-    }
-
-    bool MLParser::parseObject(const char*& ml) {
-        /* expecting:
-             key: value
-             <object id> { }
-             { }
-             ...
-        */
-        int prev(-1);
-        while (ml < mlEnd) {
-            if (skipSpace(ml)) return DIAG(error(ml, "unfinished object") &&) false;
-            if (*ml == '}') { ++ml; break; } // object definition finished
-            if (isalpha(*ml)) {
-                prev = newEntry(ml, prev); // id
-                if (skipId(ml) || skipSpace(ml)) return DIAG(error(ml, "key w/o value or object w/o definition") &&) false;
-                if (*ml == ':') {
-                    ++ml;
-                    if (skipSpace(ml)) return DIAG(error(ml, "EOF expecting value") &&) false;
-                    prev = newEntry(ml, prev);
-                    if (parseValue(ml)) return DIAG(error(ml, "expeting value") &&) false;
-                    if (skipSpace(ml)) return DIAG(error(ml, "EOF expecting '}' or ','") &&) false;
-                    if (*ml == ',') ++ml;
-                }
-                else if (*ml == '{') {
-                    prev = newEntry(ml, prev);
-                    ++ml;
-                    if (parseObject(ml)) DIAG(error(ml, "EOF parsing object"));
-                }
-                else return DIAG(error(ml, "expecting ':' or '{' after id") &&) false;
-            } else if (*ml == '{') {
-                prev = newEntry(ml, prev);
-                ++ml;
-                if (parseObject(ml)) return DIAG(error(ml, "expecting list") &&) false;
-            } else
-                return DIAG(error(ml, "expecting <id> or '}' or '['") &&) false;
+        entries.clear();
+        if (parseExpression(ml, -1) >= 0) {
+            char c = skipSpace(ml);
+            if (c) return ERROR_FALSE(ml, "expecting EOF");
+            fixLevelEndings(0, entries.size());
+            return true;
         }
         return false;
     }
 
-    bool MLParser::parseList(const char*& ml, char expectedEndChar) {
-        /* expecting:
-           <value>[, <value>[, ...]]
-        */
-        if (skipSpace(ml)) return DIAG(error(ml, "unsinished list") &&) false;
-        if (*ml == expectedEndChar) { ++ml; return false; }
-        int prev(-1);
-        while (ml < mlEnd) {
-            prev = newEntry(ml, prev);
-            if (parseValue(ml) DIAG(|| errorFlag)) return DIAG(error(ml, "EOF expecting value") &&) false;
-            if (skipSpace(ml)) return DIAG(error(ml, "unfinished list") &&) false;
-            if (*ml == expectedEndChar) { ++ml; return false; }
-            if (*ml != ',') return DIAG(error(ml, "expecting ',' to separate values") &&) false;
-            ++ml;
-            if (skipSpace(ml)) return DIAG(error(ml, "unfinished list") &&) false;
+    void MLParser::fixLevelEndings(int iEntry, int jEntry) {
+        while (iEntry < jEntry) {
+            auto& entry(entries[iEntry]);
+            if (!entry.next) entry.next = jEntry;
+            if (entry.next != iEntry + 1)
+                fixLevelEndings(iEntry + 1, entry.next);
+            iEntry = entry.next;
         }
+    }
+
+    int MLParser::parseExpression(const char*&ml, int prev) {
+        // expecting: id, function, formula, list, object, color, number or string
+        int prevOrig(prev);
+        const char* op(nullptr);
+        while (true) {
+            auto c(skipSpace(ml));
+            // id
+            if (isalpha(c)) {
+                prev = parseId(ml, prev);
+                c = skipSpace(ml);
+                // object
+                if (c == '{') {
+                    if (op) return ERROR_INT(ml, "object cannot be used in operation");
+                    entries[prev].setType(EntryType::Object);
+                    ++ml;
+                    if (parseObject(ml, -1, '}') < 0) return -1;
+                    return prev;
+                }
+                // function call (continue for formula)
+                if (c == '(') {
+                    entries[prev].setType(EntryType::Function);
+                    ++ml;
+                    if (!parseList(ml, ')')) return -1;
+                }
+                skipSpace(ml);
+            } else if (c == '[') { // list
+                if (op) return ERROR_INT(ml, "list cannot be used in operation");
+                prev = newEntry(EntryType::List, ml++, prev);
+                return parseList(ml, ']') ? prev : -1;
+            } else if (c =='#') { // color (continue for formula)
+                if ((prev = parseColor(ml, prev)) < 0) return -1;
+            } else if (c =='"') { // string
+                if (op) return ERROR_INT(ml, "string cannot be used in operation");
+                return parseString(ml, prev);
+            } else if (c == '(') { // operation parenthesis
+                ++ml;
+                if (parseExpression(ml, -1) < 0) return -1;
+                c = skipSpace(ml);
+                if (c != ')') return ERROR_INT(ml, "expecting ')' in operation");
+                ++ml;
+            } else if ((!op && c == '-') || c == '.' || isdigit(c)) { // number
+                if ((prev = parseNumber(ml, prev)) < 0) return -1;
+            } else if (c == '@') { // wildcar
+                prev = newEntry(EntryType::Wildcar, ml++, prev);
+            }
+            // operators, a way of continuing with expression
+            c = skipSpace(ml);
+            if (isoperator(c)) {
+                if (prev == -1 || entries.empty() || entries.back().type() == EntryType::Operator) return ERROR_INT(ml, "invalid operator position");
+                op = ml;
+                prev = newEntry(EntryType::Operator, ml++, prev);
+            } else break;
+        }
+        DIAG(if (!entries.empty() && entries.back().type() == EntryType::Operator) {
+                error(ml, "expression ending in operator", line);
+                return -1;
+            });
+        if (prev == prevOrig) return ERROR_INT(ml, "expecting expression");
+        return prev;
+    }
+
+    int MLParser::parseObject(const char*&ml, int prev, char endChar) {
+        // expecting:
+        //    key: expression
+        //    object { }
+        //    [ ]  <- block
+        int prevInner(-1);
+        while (true) {
+            auto c(skipSpace(ml));
+            if (c == endChar) { // end
+                ++ml;
+                return 0;
+            } else if (c == '[') { // block
+                prevInner = newEntry(EntryType::Block, ml++, prevInner);
+                if (parseObject(ml, -1, ']') < 0) return -1;
+            } else if (isalpha(c)) { // key: expression or object { }
+                if ((prevInner = parseId(ml, prevInner)) < 0) return -1;
+                c = skipSpace(ml);
+                if (c == '{') { // object { }
+                    entries[prevInner].setType(EntryType::Object);
+                    ++ml;
+                    if (parseObject(ml, -1, '}') < 0) return -1;
+                } else if (c == ':') { // key: expression
+                    ++ml;
+                    if ((prevInner = parseExpression(ml, prevInner)) < 0) return -1;
+                } else {
+                    return ERROR_INT(ml, "expecting object '{' or key value ':'");
+                }
+            } else {
+                return ERROR_INT(ml, "expecting object end '}|]' or block '[' or id");
+            }
+        }
+    }
+
+    bool MLParser::parseList(const char*&ml, char endChar) {
+        // expecting: [expression[, expression[, ...]]] endchar
+        auto c(skipSpace(ml));
+        if (c == endChar) { ++ml; return true; }
+        int prev(-1);
+        while (true) {
+            if ((prev = parseExpression(ml, prev)) < 0) return false;
+            c = skipSpace(ml);
+            if (c == ',') ++ml;
+            else if (c == endChar) { ++ml; return true; }
+            else return ERROR_FALSE(ml, "expecting ',' or end of list");
+        }
+    }
+
+    int MLParser::parseNumber(const char*&ml, int prev) {
+        prev = newEntry(EntryType::Number, ml, prev);
+        if (!skipNumber(ml)) return -1;
+        return prev;
+    }
+
+    bool MLParser::skipNumber(const char*&ml) const {
+        if (get(ml) == '-') ++ml;
+        bool dot(false);
+        while (true) {
+            auto c(get(ml));
+            if (c == '.') {
+                if (dot) return ERROR_FALSE(ml, "several dots in number");
+                dot = true;
+            } else if (isdigit(c)) {
+            } else if (isalpha(c)) return ERROR_FALSE(ml, "invalid character for number");
+            else return true;
+            ++ml;
+        }
+    }
+
+    int MLParser::parseColor(const char*&ml, int prev) {
+        prev = newEntry(EntryType::Color, ml, prev);
+        if (!skipColor(ml)) return -1;
+        return prev;
+    }
+
+    bool MLParser::skipColor(const char*&ml) const {
+        if (get(ml) != '#') return ERROR_FALSE(ml, "expecting '#' for color");
+        ++ml;
+        // 6 or 8 hexadecimal digits followed by non alnum
+        char c;
+        const char* start(ml);
+        while (true) {
+            c = get(ml);
+            if (!isxdigit(c)) break;
+            ++ml;
+        }
+        if (isalpha(c)) return ERROR_FALSE(ml, "non-hexa digit in color");
+        if (ml - start != 6 && ml - start != 8) return ERROR_FALSE(ml, "expecting 6 or 8 hex digits in color");
         return true;
     }
 
-    bool MLParser::parseValue(const char*& ml) {
-        /* expecting:
-           [ ... ]
-           { ... }
-           " ... "
-           ' ... '
-           <id>
-           @
-        */
-        if (*ml == '[') { ++ml; return parseList(ml, ']'); }
-        else if (*ml == '{') { ++ml; return parseObject(ml); }
-        else if (*ml == '"' or *ml == '\'') return skipString(ml, *ml);
-        else if (isalnum(*ml) || *ml == '-' || *ml == '@') {
-            if (skipId(ml)) return DIAG(error(ml, "EOF parsing id") &&) false;
-            if (skipSpace(ml)) return DIAG(error(ml, "EOF skipping space") &&) false;
-            if (*ml == '(') { ++ml; return parseList(ml, ')'); } // function parameters
-            return false;
-        }
-        else return DIAG(error(ml, "expecting value") &&) false;
+    int MLParser::parseString(const char*&ml, int prev) {
+        prev = newEntry(EntryType::String, ml, prev);
+        if (!skipString(ml)) return -1;
+        return prev;
     }
 
-    int MLParser::newEntry(const char* pos, int prev) {
+    bool MLParser::skipString(const char*&ml) const {
+        if (*ml != '"') return ERROR_FALSE(ml, "expecting '\"' for string");
+        ++ml;
+        while (true) {
+            char c = get(ml);
+            if (c == '"') { ++ml; return true; }
+            if (!c) return ERROR_FALSE(ml, "expection '\"' but found EOF");
+            ++ml;
+        }
+    }
+
+    int MLParser::parseId(const char*&ml, int prev) {
+        if (!isalpha(get(ml))) return ERROR_INT(ml, "expecting id");
+        prev = newEntry(EntryType::Id, ml++, prev);
+        skipId(ml);
+        return prev;
+    }
+
+    void MLParser::skipId(const char*&ml) const {
+        while (isalnum(get(ml))) ++ml;
+    }
+
+    char MLParser::skipSpace(const char*&ml) const {
+        while (true) {
+            char c(get(ml));
+            if (c == '\n') { DIAG(line++); ++ml; }
+            else if (isspace(c)) ++ml;
+            else if (c == '/' && get(++ml) == '/') skipLine(ml); // comment
+            else return c;
+        }
+    }
+
+    void MLParser::skipLine(const char*& ml) const {
+        while (true) {
+            char c(get(ml));
+            if (c == '\n') { DIAG(line++); ++ml; break; }
+            if (!c) break;
+            ++ml;
+        }
+    }
+
+    int MLParser::newEntry(EntryType type, const char* pos, int prev) {
         if (prev >= 0) entries[prev].next = entries.size();
-        entries.push_back(Entry(pos DIAG(, line)));
+        entries.push_back(Entry(type, pos DIAG(, line)));
         return entries.size() - 1;
     }
 
-    bool MLParser::skipId(const char*& ml) const {
-        while (ml < mlEnd) {
-            if (!*ml || *ml == ':' || *ml == '{' || *ml == '(' || *ml == ',' || *ml == ']' || *ml == ')' || isspace(*ml)) return false;
-            ++ml;
+    int MLParser::size(int iEntry) const {
+        assert(iEntry < int(entries.size()));
+        auto& entry(entries[iEntry]);
+        const char* end(entry.pos);
+        switch (entry.type()) {
+        case EntryType::Unknown:   return 0;
+        case EntryType::Id:
+        case EntryType::Object:
+        case EntryType::Function:  skipId(end); break;
+        case EntryType::Number:    skipNumber(end); break;
+        case EntryType::Color:     skipColor(end); break;
+        case EntryType::String:    skipString(end); break;
+        case EntryType::List:      // '['
+        case EntryType::Operator:  // '@'
+        case EntryType::Wildcar:   ++end; break;
+        default:                   abort();
         }
-        return true;
+        return end - entry.pos;
     }
 
-    bool MLParser::skipString(const char*& ml, char expectedEndChar) const {
-        ++ml; // '"'
-        while (ml < mlEnd) {
-            if (*ml == expectedEndChar) { ++ml; return false; }
-            if (*ml == '\\') ++ml;
-            ++ml;
-        }
-        return true;
+    bool MLParser::isoperator(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/';
     }
 
-    bool MLParser::skipSpace(const char*& ml) const {
-        while (ml < mlEnd) {
-            if (*ml == '\n') { DIAG(line++); ++ml; }
-            else if (isspace(*ml)) ++ml;
-            else if (*ml == '/' && ml[1] == '/') skipLine(ml); // comment
-            else return false;
-        }
-        return true;
+    Identifier MLParser::asId(int iEntry, const StringManager& strMng) const {
+        return Identifier(strMng.search(entries[iEntry].pos, size(iEntry)).getId());
     }
 
-    bool MLParser::skipLine(const char*& ml) const {
-        while (ml < mlEnd) {
-            if (*ml == '\n') { DIAG(line++); ++ml; return false; }
-            ++ml;
-        }
-        return true;
-    }
-
-    bool MLParser::skipSimpleValue(const char*& ml) const {
-        if (*ml == '"' || *ml == '\'') return skipString(ml, *ml);
-        return skipId(ml);
-    }
-
-    DIAG(
-        bool MLParser::error(const char* ml, const char* msg, int line_) const {
-            errorFlag = true;
-            if (!line_) line_ = line;
-            LOG("error parsing ML: %s at line %d (document position %ld)", msg, line_, ml - mlOrig);
-            char buffer[64 + 1];
-            for (int i = -32; i < 32; i++) {
-                if (ml + i >= mlOrig && ml +i < mlEnd && ml[i] >= 32)
-                    buffer[i + 32] = ml[i];
-                else
-                    buffer[i + 32] = '.';
-            }
-            buffer[64] = 0;
-            LOG("around: |%s|", buffer);
-            LOG("        |%32s^%31s|", "", "");
-            return false;
-        });
-
-    int MLParser::getLevelEnd(int iEntry) const {
-        int i(iEntry);
-        while (--i >= 0) {
-            const auto& entry(entries[i]);
-            if (entry.next > iEntry) return entry.next;
-        }
-        return int(entries.size());
+    Identifier MLParser::asIdAdd(int iEntry, StringManager& strMng) const {
+        return Identifier(strMng.add(entries[iEntry].pos, size(iEntry)).getId());
     }
 
     int MLParser::getTemporalEntry(const char* text) {
@@ -223,7 +328,6 @@ namespace webui {
         int size( (jEntry < int(entries.size()) ? entries[jEntry].pos : mlEnd) - entries[iEntry].pos );
         dst.mlOrig = strndup(entries[iEntry].pos, size);
         dst.mlEnd = dst.mlOrig + size;
-        DIAG(dst.errorFlag = false);
         dst.ownOrig = true;
         dst.entries.assign(entries.begin() + iEntry, entries.begin() + jEntry);
         // fix next indices and text positions in dst parser
@@ -234,24 +338,28 @@ namespace webui {
     }
 
     void MLParser::swap(MLParser& o) {
-        std::swap(mlOrig, o.mlOrig);
-        std::swap(mlEnd, o.mlEnd);
-        DIAG(std::swap(line, o.line));
-        DIAG(std::swap(errorFlag, o.errorFlag));
-        std::swap(ownOrig, o.ownOrig);
+        ::swap(ownOrig, o.ownOrig);
+        ::swap(mlOrig, o.mlOrig);
+        ::swap(mlEnd, o.mlEnd);
+        DIAG(::swap(line, o.line));
         entries.swap(o.entries);
     }
 
     DIAG(
-        void MLParser::dump() const {
-            LOG("parser entries: %zu", entries.size());
-            char buffer[20];
-            buffer[sizeof(buffer) - 1] = 0;
-            for (const auto& entry: entries) {
-                for (int i = 0; i < int(sizeof(buffer)) - 1; i++)
-                    buffer[i] = (entry.pos + i < mlEnd && entry.pos[i] >= 32) ? entry.pos[i] : '.';
-                LOG("%4d |%s| %4d", int(&entry - entries.data()), buffer, entry.next);
+        bool MLParser::error(const char* ml, const char* msg, int line_) const {
+            if (!line_) line_ = line;
+            LOG("error parsing ML: %s at line %d (document position %ld)", msg, line_, ml - mlOrig);
+            char buffer[64 + 1];
+            for (int i = -32; i < 32; i++) {
+                if (ml + i >= mlOrig && ml +i < mlEnd && ml[i] >= 32)
+                    buffer[i + 32] = ml[i];
+                else
+                    buffer[i + 32] = '.';
             }
+            buffer[64] = 0;
+            LOG("around: |%s|", buffer);
+            LOG("        |%32s^%31s|", "", "");
+            return false;
         });
 
     DIAG(
@@ -267,42 +375,18 @@ namespace webui {
                 int next(entry.next ? entry.next : fEntry);
                 if (next > iEntry + 1) {// children
                     if (isalnum(*entry.pos)) {
-                        auto strSize(entry.asStrSize(*this, true));
-                        LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
+                        LOG("%*s%d %.*s " RED "%s " BLUE "%d" RESET,
+                            level*2, "", iEntry, size(iEntry), entry.pos, toString(entry.type()), entry.next);
                     } else
-                        LOG("%*s%d %c", level*2, "", iEntry, *entry.pos);
+                        LOG("%*s%d %c " RED "%s " BLUE "%d" RESET,
+                            level*2, "", iEntry, *entry.pos, toString(entry.type()), entry.next);
                     dumpTreeRecur(iEntry + 1, next, level + 1);
                 } else {
-                    auto strSize(entry.asStrSize(*this, true));
-                    LOG("%*s%d %.*s", level*2, "", iEntry, strSize.second, strSize.first);
+                    LOG("%*s%d %.*s " RED "%s " BLUE "%d" RESET,
+                        level*2, "", iEntry, size(iEntry), entry.pos, toString(entry.type()), entry.next);
                 }
                 iEntry = next;
             }
         });
-
-    // Entry
-    pair<const char*, int> MLParser::Entry::asStrSize(const MLParser& parser, bool quotes) const {
-        auto ml(pos);
-        if (!parser.skipSimpleValue(ml)) {
-            if (!quotes && (*pos == '"' || *pos == '\'')) return make_pair(pos + 1, ml - pos - 2);
-            return make_pair(pos, ml - pos);
-        }
-        return make_pair(nullptr, 0);
-    }
-
-    Identifier MLParser::Entry::asId(const MLParser& parser, const StringManager& strMng) const {
-        auto ml(pos);
-        if (!parser.skipSimpleValue(ml)) return Identifier(strMng.search(pos, ml - pos).getId());
-        return Identifier::InvalidId;
-    }
-
-    StringId MLParser::Entry::asStrId(const MLParser& parser, StringManager& strMng, bool quotes) const {
-        auto ml(pos);
-        if (!parser.skipSimpleValue(ml)) {
-            if (!quotes && (*pos == '"' || *pos == '\'')) return strMng.add(pos + 1, ml - pos - 2);
-            return strMng.add(pos, ml - pos);
-        }
-        return StringId();
-    }
 
 }

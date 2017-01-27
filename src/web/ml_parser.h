@@ -9,73 +9,93 @@
 #pragma once
 
 #include "compatibility.h"
-#include "string_manager.h"
-#include "reserved_words.h"
 #include <vector>
-#include <string>
 
 namespace webui {
 
+    class StringManager;
+
     class MLParser {
     public:
-        MLParser(): ownOrig(false) { }
+        MLParser(): ownOrig(false), mlOrig(nullptr), mlEnd(nullptr) { }
         ~MLParser();
 
-        // returns false on error
-        bool parse(const char* ml, int n, bool value = false);
+        bool parse(const char* ml, int n);
+
+        enum class EntryType {
+            Unknown,
+            Id,
+            Object,
+            Block,
+            Function,
+            List,
+            Number,
+            Color,
+            String,
+            Operator,
+            Wildcar,
+        };
 
         struct Entry {
-            Entry(const char* pos = nullptr DIAG(, int line = 0)): pos(pos), next(0) DIAG(, line(line)) { }
-            std::pair<const char*, int> asStrSize(const MLParser& parser, bool quotes) const;   // string, id or number
-            Identifier asId(const MLParser& parser, const StringManager& strMng) const;         // string, id or number
-            StringId asStrId(const MLParser& parser, StringManager& strMng, bool quotes) const; // string, id or number
+            Entry(EntryType type, const char* pos = nullptr DIAG(, int line = 0)): pos(pos), next(0), type_(int(type)) DIAG(, line(line)) { }
+            inline EntryType type() const { return EntryType(type_); }
+            inline void setType(EntryType type) { type_ = int(type); }
+
             const char* pos;
-            int next;
+            int next:28;
+            uint32_t type_:4;
             DIAG(int line);
         };
 
+        inline bool empty() const { return entries.empty(); }
         inline void clear() { entries.clear(); }
         inline int size() const { return entries.size(); }
         inline Entry& operator[](int i) { return entries[i]; }
         inline const Entry& operator[](int i) const { return entries[i]; }
-        int getLevelEnd(int iEntry) const;
-
-        int getTemporalEntry(const char* text);
-
-        void copyTo(MLParser& dst, int iEntry, int jEntry) const;
-        void swap(MLParser& other);
+        int size(int iEntry) const;
+        void swap(MLParser& o);
         inline void swapEnd(MLParser& other) { std::swap(mlEnd, other.mlEnd); }
+        int getTemporalEntry(const char* text);
+        void copyTo(MLParser& dst, int iEntry, int jEntry) const;
+
+        // get elements of ML
+        Identifier asId(int iEntry, const StringManager& strMng) const;
+        Identifier asIdAdd(int iEntry, StringManager& strMng) const;
 
         // returns false
         DIAG(bool error(const char* ml, const char* msg, int line = 0) const);
-
-        DIAG(void dump() const);
         DIAG(void dumpTree() const);
 
     private:
+        bool ownOrig;                // wether MLParser owns mlOrig memory (needs to free on dtor) or not
         const char* mlOrig;
         const char* mlEnd;
         DIAG(mutable int line);
-        DIAG(mutable bool errorFlag);
-        bool ownOrig;
         std::vector<Entry> entries;
 
-        int newEntry(const char* pos, int prev = -1);
+        void finish();
 
-        // return true on EOF
-        bool parseLevel(const char*& ml);
-        bool parseObject(const char*& ml);
-        bool parseValue(const char*& ml);
-        bool parseList(const char*& ml, char expectedEndChar);
+        inline char get(const char* ml) const { return ml < mlEnd ? *ml : 0; }
+        int newEntry(EntryType type, const char* pos, int prev);
 
-        // return true on EOF
-        bool skipSpace(const char*& ml) const;
-        bool skipLine(const char*& ml) const;
-        bool skipId(const char*& ml) const;
-        bool skipString(const char*& ml, char expectedEndChar) const;
-        bool skipSimpleValue(const char*& ml) const;
+        char skipSpace(const char*&ml) const;
+        void skipLine(const char*&ml) const;
+        void skipId(const char*&ml) const;
+        bool skipNumber(const char*&ml) const;
+        bool skipColor(const char*&ml) const;
+        bool skipString(const char*&ml) const;
+        int parseId(const char*&ml, int prev);
+        int parseNumber(const char*&ml, int prev);
+        int parseColor(const char*&ml, int prev);
+        int parseString(const char*&ml, int prev);
+        int parseExpression(const char*&ml, int prev);
+        int parseObject(const char*&ml, int prev, char endChar);
+        bool parseList(const char*&ml, char endChar);
 
-        // debug
+        static bool isoperator(char c);
+
+        void fixLevelEndings(int iEntry, int jEntry);
+
         DIAG(void dumpTreeRecur(int iEntry, int fEntry, int level) const);
     };
 
