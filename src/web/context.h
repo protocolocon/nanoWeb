@@ -10,6 +10,7 @@
 
 #include "util.h"
 #include "render.h"
+#include "action.h"
 #include "application.h"
 
 namespace webui {
@@ -19,16 +20,13 @@ namespace webui {
         Context();
         DIAG(~Context());
 
-        void initialize();
+        void initialize(DIAG(bool initRender, bool requestAppDescription));
 
         void mainIteration();
 
         void resize(int width, int height);
 
         inline void forceRender() { renderForced = true; }
-
-        inline Render& getRender() { return render; }
-        inline Application& getApplication() { return app; }
 
         inline int getTimeMs() const { return timeMs; }
         inline int getTimeDiffMs() const { return timeDiffMs; }
@@ -43,9 +41,14 @@ namespace webui {
             return xx == target;
         }
 
+    public:
+        // global context
+        static Render render;
+        static Actions actions;
+        static Application app;
+        static StringManager strMng;
+
     private:
-        Render render;
-        Application app;
         bool renderForced;
         int timeMs;
         int timeDiffMs;
@@ -54,5 +57,8 @@ namespace webui {
 
         void updateTime();
     };
+
+    // global context
+    extern Context ctx;
 
 }

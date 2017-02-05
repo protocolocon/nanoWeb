@@ -20,29 +20,51 @@ namespace {
 
     class Fixture {
     public:
-        Fixture(): app(ctx), widget(nullptr), actions(app.getStrMng(), app.getWidgets()) {
-            app.initializeInheritance();
+        Fixture(): widget(nullptr) {
+            ctx.initialize(false, false);
         }
 
         bool addAction(const char* str) {
+            LOG("action: '%s'", str);
             REQUIRE(ml.parse(str, strlen(str)));
             ml.dumpTree();
-            auto iAction(actions.add(ml, 0, ml.size(), &widget));
-            actions.dump(iAction);
+            iAction = Context::actions.add(ml, 0, ml.size(), &widget);
+            Context::actions.dump(iAction);
             return iAction;
         }
 
-    private:
-        Context ctx;
-        Application app;
+        bool executeAction() {
+            return Context::actions.execute(iAction, &widget);
+        }
 
+        const Stack& getStack() const {
+            return Context::actions.getStack();
+        }
+
+        void dumpStack() const {
+            Context::actions.dumpStack();
+        }
+
+    private:
         Widget widget;
         MLParser ml;
-        Actions actions;
+        int iAction;
     };
 
 }
 
-TEST_CASE_METHOD(Fixture, "action: basic", "[action]") {
-    CHECK(addAction("[42, x]"));
+TEST_CASE_METHOD(Fixture, "action: formula", "[action]") {
+    CHECK(addAction("(12 + 21) / 2"));
+    CHECK(executeAction());
+    dumpStack();
+    const auto& stack(getStack());
+    CHECK(stack.size() == 1);
+    CHECK(stack[0].type == Type::Float);
+    CHECK(stack[0].f == 16.5f);
+}
+
+TEST_CASE_METHOD(Fixture, "action: log", "[action]") {
+    CHECK(addAction("log(\"hello\")"));
+    CHECK(executeAction());
+    dumpStack();
 }

@@ -20,7 +20,7 @@ namespace webui {
 
         static TypeWidget& getType();
 
-        bool refreshTimer(Context& ctx); // returns true on command execution
+        bool refreshTimer(); // returns true on command execution
 
         // polymorphic interface
         virtual Identifier baseType() const final override { return Identifier::Timer; }

@@ -17,9 +17,6 @@
 
 namespace webui {
 
-    class Application;
-    class StringManager;
-
     enum class Type: uint8_t {
         Unknown,
         Bit,
@@ -42,6 +39,9 @@ namespace webui {
     };
 
     DIAG(const char* toString(Type t));
+
+    // put values of one type into strings (returns buffer)
+    DIAG(const char* toString(Type t, const void* data, char* buffer, int nBuffer));
 
     struct Property {
         Property(): all(0) { }
@@ -71,7 +71,7 @@ namespace webui {
         long get(Identifier id, const void* data) const;
         void set(Identifier id, void* data, long value) const;
 
-        DIAG(void dump(const StringManager& strMng, int indent) const);
+        DIAG(void dump(int indent) const);
     };
 
 }

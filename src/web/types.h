@@ -88,7 +88,7 @@ namespace webui {
 
     class TextPropOrStrId {
     public:
-        TextPropOrStrId(StringId id): off(id.getId()), prop(false) { }
+        TextPropOrStrId(StringId id): off(int(id.getId())), prop(false) { }
         TextPropOrStrId(int propPos): off(propPos), prop(true) { }
         const char* get(Widget* w, StringManager& strMng) {
             if (prop) {

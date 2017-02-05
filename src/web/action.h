@@ -11,33 +11,81 @@
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
+#include "types.h"
+#include "type_widget.h"
 #include "compatibility.h"
 #include "string_manager.h"
 
 namespace webui {
 
-    class MLParser;
     class Widget;
+    class Actions;
+    class MLParser;
 
-    enum class TypeBase: uint8_t {
-        Float,
-        Id,                          // index to string manager
-        String,                      // const char*
-        Color,
+    struct StackFrame {
+        StackFrame(long l DIAG(, Type type)): l(l) DIAG(, type(type)) { }
+        union {
+            float f;
+            long l;
+            StringId strId;
+        };
+        DIAG(Type type);
+    };
+    typedef std::vector<StackFrame> Stack;
+
+    typedef void (*FunctionProto)();
+
+    enum class Function: uint16_t {
+        Error,
+        ToggleVisible,
+        BeginPath,
+        Moveto,
+        Lineto,
+        Bezierto,
+        ClosePath,
+        RoundedRect,
+        FillColor,
+        FillVertGrad,
+        Fill,
+        StrokeWidth,
+        StrokeColor,
+        Stroke,
+        Font,
+        Text,
+        TextLeft,
+        TranslateCenter,
+        Scale100,
+        ResetTransform,
+        Set,
+        Query,
+        Log,                         // log(StringId)
+        Add,                         // push(pop + pop)
+        Sub,                         // push(pop - pop)
+        Mul,                         // push(pop * pop)
+        Div,                         // push(pop / pop)
+        Mod,                         // push(pop % pop)
+        Assign,                      //
     };
 
     enum class Instruction: uint8_t {
-        Return,                      // [ ins, 0x00, 0x0000 ]
-        PushFloatConstant,           // [ ins, 0x00, 0x0000 ] [ float]
-        PushProperty,                // [ ins, type, offset ]
-        PushForeignProperty,         // [ ins, type, offset ] [ widget* ]
+                                     //   ins  sub   param
+        Return,                      // [ ins, 0x00, 0x0000    ]
+        PushConstant,                // [ ins, type, 0x0000    ] [ value]
+        PushProperty,                // [ ins, type, offset/sz ]
+        PushForeignProperty,         // [ ins, type, offset/sz ] [ widget* ]
+        FunctionCall,                // [ ins, 0,    func      ]
     };
 
 
     struct Command {
-        Command(Instruction inst, uint8_t sub = 0, uint16_t param = 0): instruction(uint8_t(inst)), sub(sub), param(param) { }
+        Command(Instruction inst, Type type = Type::Unknown, int off = 0): instruction(uint8_t(inst)), sub(int(type)), param(off) { }
+        Command(Instruction inst, Function func): instruction(uint8_t(inst)), sub(0), param(int(func)) { }
         Command(float f): f(f) { }
+        Command(StringId strId): strId(strId) { }
+        Command(RGBA color): color(color) { }
+        Command(Widget* widget): widget(widget) { }
         inline Instruction inst() const { return Instruction(instruction); }
+        inline Type type() const { return Type(sub); }
 
         union {
             struct {
@@ -46,29 +94,38 @@ namespace webui {
                 uint32_t param:16;
             };
             float f;
+            long l;
+            StringId strId;
+            RGBA color;
+            Widget* widget;
         };
     };
 
 
     class Actions {
     public:
-        using WidgetMap = std::unordered_map<StringId, Widget*, StringId>;
-
-        Actions(StringManager& strMng, WidgetMap& widgets);
+        Actions();
 
         // returns an index for the actions or 0 in case of error
         int add(MLParser& parser, int iEntry, int fEntry, Widget* widget);
 
-        // dump action
+        // execute
+        bool execute(int iAction, Widget* widget);
+
+        // dump action and stack
         DIAG(void dump(int i) const);
+        DIAG(void dumpStack() const);
+        DIAG(const Stack& getStack() const);
 
     private:
         // compiled actions
         std::vector<Command> actions;
-        StringManager& strMng;
-        WidgetMap& widgets;
 
-        bool pushSymbol(MLParser& parser, int iEntry, Widget* widget);
+        bool addRecur(MLParser& parser, int iEntry, int fEntry, Widget* widget);
+        bool pushSymbol(MLParser& parser, int& iEntry, Widget* widget);
+        static long getPropertyData(const void* data, int offSz);
+
+        DIAG(const char* valueToString(Type type, const Command& action, char* buffer, int nBuffer) const);
     };
 
 }

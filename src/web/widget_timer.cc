@@ -37,17 +37,16 @@ namespace webui {
         return widgetTimerType;
     }
 
-    bool WidgetTimer::refreshTimer(Context& ctx) {
+    bool WidgetTimer::refreshTimer() {
         if (repeat < 2) {
             if (curDelay > delay) curDelay = repeat ? 0 : delay; // if repeated, do first trigger immediately
             curDelay -= ctx.getTimeDiffMs();
             if (curDelay <= 0) {
                 curDelay += delay;
                 // triggered
-                auto& app(ctx.getApplication());
-                const auto& actionTable(app.getActionTable(actions));
+                const auto& actionTable(Context::app.getActionTable(actions));
                 if (actionTable.onEnter)
-                    app.executeNoCheck(actionTable.onEnter, this);
+                    Context::app.executeNoCheck(actionTable.onEnter, this);
                 if (!repeat) repeat = 2; // disable timer
             }
         }

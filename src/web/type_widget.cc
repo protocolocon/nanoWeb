@@ -7,6 +7,7 @@
 */
 
 #include "type_widget.h"
+#include "context.h"
 #include "string_manager.h"
 
 namespace webui {
@@ -32,6 +33,15 @@ namespace webui {
                 "TextPropOrStrId",
             };
             return strs[int(t)];
+        });
+
+    DIAG(const char* toString(Type t, const void* data, char* buffer, int nBuffer) {
+            switch (t) {
+            case Type::Float: snprintf(buffer, nBuffer, "%.4f", *reinterpret_cast<const float*>(data)); break;
+            case Type::StrId: snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
+            default: snprintf(buffer, nBuffer, "value error");
+            }
+            return buffer;
         });
 
     long TypeWidget::get(Identifier id, const void* data) const {
@@ -78,10 +88,10 @@ namespace webui {
         }
     }
 
-    DIAG(void TypeWidget::dump(const StringManager& strMng, int indent) const {
+    DIAG(void TypeWidget::dump(int indent) const {
             for (const auto& idProp: *this) {
                 const auto& prop(idProp.second);
-                LOG("%*s%-20s: %-16s %4d %2d", indent, "", strMng.get(idProp.first), toString(prop.type), prop.pos * prop.size, prop.size);
+                LOG("%*s%-20s: %-16s %4d %2d", indent, "", Context::strMng.get(idProp.first), toString(prop.type), prop.pos * prop.size, prop.size);
             }
         });
 

@@ -19,9 +19,7 @@
 
 namespace webui {
 
-    class Context;
     struct Property;
-    class Application;
 
     class Widget {
     public:
@@ -40,9 +38,9 @@ namespace webui {
 
         // polymorphic interface
         virtual Identifier baseType() const { return Identifier::Widget; }
-        virtual void render(Context& ctx, int alphaMult);
-        virtual bool input(Application& app); // returns true if actions were executed (affecting application)
-        virtual bool layout(Context& ctx, V2s pos, V2s size); // returns true if stable
+        virtual void render(int alphaMult);
+        virtual bool input(); // returns true if actions were executed (affecting application)
+        virtual bool layout(V2s pos, V2s size); // returns true if stable
 
         // get a property or null
         const Property* getProp(Identifier id) const;
@@ -51,10 +49,10 @@ namespace webui {
         void copyFrom(const Widget* widget);
 
         // update widget status
-        bool update(Application& app); // returns true if actions were executed (affecting application)
+        bool update(); // returns true if actions were executed (affecting application)
 
         // animations
-        bool animeAlpha(Context& ctx);
+        bool animeAlpha();
 
         // getters
         inline const StringId getId() const { return id; }
@@ -74,7 +72,7 @@ namespace webui {
         void translate(V2s t);
 
         // debug
-        DIAG(void dump(const StringManager& strMng, int level = 0, bool props = false) const);
+        DIAG(void dump(int level = 0, bool props = false) const);
 
     public:
         // dynamic part

@@ -41,18 +41,17 @@ namespace webui {
         return widgetLayoutVerType;
     }
 
-    void WidgetLayout::render(Context& ctx, int alphaMult) {
-        Widget::render(ctx, alphaMult);
+    void WidgetLayout::render(int alphaMult) {
+        Widget::render(alphaMult);
         if (dragDrop) {
-            auto& render(ctx.getRender());
-            alphaMult = render.multAlpha(alphaMult, alpha);
+            alphaMult = Context::render.multAlpha(alphaMult, alpha);
             dragDrop->translate(Input::cursor - Input::cursorLeftPress);
-            dragDrop->render(ctx, alphaMult >> 1);
+            dragDrop->render(alphaMult >> 1);
             dragDrop->translate(Input::cursorLeftPress - Input::cursor);
         }
     }
 
-    bool WidgetLayout::input(Application& app) {
+    bool WidgetLayout::input() {
         if (Input::mouseButtonWidget && Input::cursorLeftPress.manhatan(Input::cursor) > 16) {
             // drag & drop
             if (draggable && !dragDrop) {
@@ -73,7 +72,7 @@ namespace webui {
         return false;
     }
 
-    bool WidgetLayout::layout(Context& ctx, V2s posAvail, V2s sizeAvail) {
+    bool WidgetLayout::layout(V2s posAvail, V2s sizeAvail) {
         bool stable(true);
         int coord2(coord ^ 1);
         curPos = posAvail;
@@ -112,16 +111,16 @@ namespace webui {
                     la.add(child->curSize[coord], child->size[coord].get(sizeAvail[coord]), child->size[coord].relative);
                 else
                     la.add(child->curSize[coord], 0, true);
-            stable = la.calculate(ctx, sizeAvail[coord]);
+            stable = la.calculate(sizeAvail[coord]);
             if (!coord)
                 for (size_t idx = 0; idx < children.size(); idx++) {
                     auto* child(children[idx]);
-                    stable &= child->layout(ctx, V2s(la.get(idx), posAvail.y), V2s(la.get(idx + 1) - la.get(idx), child->size[1].get(curSize.y)));
+                    stable &= child->layout(V2s(la.get(idx), posAvail.y), V2s(la.get(idx + 1) - la.get(idx), child->size[1].get(curSize.y)));
                 }
             else
                 for (size_t idx = 0; idx < children.size(); idx++) {
                     auto* child(children[idx]);
-                    stable &= child->layout(ctx, V2s(posAvail.x, la.get(idx)), V2s(child->size[0].get(curSize.x), la.get(idx + 1) - la.get(idx)));
+                    stable &= child->layout(V2s(posAvail.x, la.get(idx)), V2s(child->size[0].get(curSize.x), la.get(idx + 1) - la.get(idx)));
                 }
 
             // adaptative size
@@ -141,7 +140,7 @@ namespace webui {
             if (dragDrop)
                 Input::cursorLeftPress[coord] += dragDrop->curPos[coord] - prevCoord;
         }
-        return animeAlpha(ctx) && stable;
+        return animeAlpha() && stable;
     }
 
 }

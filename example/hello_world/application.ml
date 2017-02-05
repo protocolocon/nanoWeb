@@ -25,8 +25,8 @@ Application {
             fillColor(foreground%0),   text(0,  0, text),
             fillColor(foreground%160), text(0, -2, text)
         ]
-        onEnter: set(self, background, "#888898c0")
-        onLeave: set(self, background, "#909090c0")
+        onEnter: [ background = #888898c0 ]
+        onLeave: [ background = #909090c0 ]
         foreground: "#808080a0"
         background: "#808080c0"
     }
@@ -65,26 +65,15 @@ Application {
         text: "more"
     }
 
-    // test template
-    Timer {
-        id: timer
-        repeat: 0
-        delay: 1000 // ms
-        onTimeout: [
-            set(treeTemplate, visible, 1),
-            query("tree.ml", treeTemplate)
-        ]
-    }
-
     // tree definition
     LayoutHor {
     Template {
         id: treeTemplate
         LayoutVer {
             id: rootTest
-            { // loop 1
+            [ // loop 1
                 LayoutVer {
-                    height: 0%
+                    height: 0
                     ButtonLevel1 {
                         id: @
                         text: @
@@ -92,10 +81,10 @@ Application {
                     }
                     LayoutVer {
                         id: @
-                        height: 0%
-                        { // loop 2
+                        height: 0
+                        [ // loop 2
                             LayoutVer {
-                                height: 0%
+                                height: 0
                                 ButtonLevel2 {
                                     id: @
                                     text: @
@@ -103,19 +92,30 @@ Application {
                                 }
                                 LayoutVer {
                                     id: @
-                                    height: 0%
-                                    { // loop 3
+                                    height: 0
+                                    [ // loop 3
                                         ButtonLevel3 {
                                             text: @
                                         }
-                                    }
+                                    ]
                                 }
                             }
-                        }
+                        ]
                     }
                 }
-            }
+            ]
         }
+    }
+
+    // test template
+    Timer {
+        id: timer
+        repeat: 0
+        delay: 1000 // ms
+        onTimeout: [
+            treeTemplate.visible = 1,
+            query("tree.ml", treeTemplate)
+        ]
     }
 
     LayoutVer {
@@ -127,7 +127,7 @@ Application {
         }
         LayoutVer {
             id: lay1
-            height: 0%
+            height: 0
             ButtonLevel2 {
                 id: but1_1
                 text: "level 2 first"
@@ -135,7 +135,7 @@ Application {
             }
             LayoutVer {
                 id: lay1_1
-                height: 0%
+                height: 0
                 ButtonLevel3 { id: level1_1_1 }
                 ButtonLevel3 { id: level1_1_2 }
                 ButtonLevel3 { id: level1_1_3 }
@@ -147,7 +147,7 @@ Application {
             }
             LayoutVer {
                 id: lay1_2
-                height: 0%
+                height: 0
                 ButtonLevel3 { id: level1_2_1 }
                 ButtonLevel3 { id: level1_2_2 }
                 ButtonLevel3 { id: level1_2_3 }
@@ -159,7 +159,7 @@ Application {
             }
             LayoutVer {
                 id: lay1_3
-                height: 0%
+                height: 0
                 ButtonLevel3 { id: level1_3_1 }
                 ButtonLevel3 { id: level1_3_2 }
                 ButtonLevel3 { id: level1_3_3 }
@@ -172,7 +172,7 @@ Application {
         }
         LayoutVer {
             id: lay2
-            height: 0%
+            height: 0
             ButtonLevel2 {
                 id: but2_1
                 text: "level 2 first"
@@ -180,7 +180,7 @@ Application {
             }
             LayoutVer {
                 id: lay2_1
-                height: 0%
+                height: 0
                 ButtonLevel3 { id: level2_1_1 }
                 ButtonLevel3 { id: level2_1_2 }
                 ButtonLevel3 { id: level2_1_3 }
@@ -193,7 +193,7 @@ Application {
         }
         LayoutVer {
             id: lay3
-            height: 0%
+            height: 0
             ButtonLevel2 {
                 id: but3_1
                 text: "level 2 first"
@@ -201,7 +201,7 @@ Application {
             }
             LayoutVer {
                 id: lay3_1
-                height: 0%
+                height: 0
                 ButtonLevel3 { id: level3_1_1 }
                 ButtonLevel3 { id: level3_1_2 }
                 ButtonLevel3 { id: level3_1_3 }
@@ -213,7 +213,7 @@ Application {
             }
             LayoutVer {
                 id: lay3_2
-                height: 0%
+                height: 0
                 ButtonLevel3 { id: level3_2_1 }
                 ButtonLevel3 { id: level3_2_2 }
                 ButtonLevel3 { id: level3_2_3 }
@@ -225,7 +225,7 @@ Application {
             }
             LayoutVer {
                 id: lay3_3
-                height: 0%
+                height: 0
                 ButtonLevel3 { id: level3_3_1 }
                 ButtonLevel3 { id: level3_3_2 }
                 ButtonLevel3 { id: level3_3_3 }

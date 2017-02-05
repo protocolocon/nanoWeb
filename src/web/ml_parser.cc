@@ -7,6 +7,7 @@
 */
 
 #include "ml_parser.h"
+#include "context.h"
 #include <cctype>
 #include <cassert>
 #include <cstdlib>
@@ -22,9 +23,9 @@
 using namespace std;
 using namespace webui;
 
-namespace {
+namespace webui {
 
-    DIAG(const char* toString(MLParser::EntryType type) {
+    DIAG(const char* MLParser::toString(MLParser::EntryType type) {
             static const char* typeNames[] = {
                 "unknown",
                 "id",
@@ -37,13 +38,10 @@ namespace {
                 "string",
                 "operator",
                 "wildcar",
+                "attribute",
             };
             return typeNames[int(type)];
         });
-
-}
-
-namespace webui {
 
     MLParser::~MLParser() {
         finish();
@@ -79,58 +77,65 @@ namespace webui {
         }
     }
 
-    int MLParser::parseExpression(const char*&ml, int prev) {
+    int MLParser::parseExpression(const char*&ml, int prev, bool op) {
         // expecting: id, function, formula, list, object, color, number or string
         int prevOrig(prev);
-        const char* op(nullptr);
-        while (true) {
-            auto c(skipSpace(ml));
-            // id
-            if (isalpha(c)) {
-                prev = parseId(ml, prev);
-                c = skipSpace(ml);
-                // object
-                if (c == '{') {
-                    if (op) return ERROR_INT(ml, "object cannot be used in operation");
-                    entries[prev].setType(EntryType::Object);
-                    ++ml;
-                    if (parseObject(ml, -1, '}') < 0) return -1;
-                    return prev;
-                }
+        auto c(skipSpace(ml));
+        // id
+        if (isalpha(c)) {
+            prev = parseId(ml, prev);
+            c = skipSpace(ml);
+            // object
+            if (c == '{') {
+                if (op) return ERROR_INT(ml, "object cannot be used in operation");
+                entries[prev].setType(EntryType::Object);
+                ++ml;
+                if (parseObject(ml, -1, '}') < 0) return -1;
+                return prev;
+            }
+            while (true) {
                 // function call (continue for formula)
                 if (c == '(') {
                     entries[prev].setType(EntryType::Function);
                     ++ml;
                     if (!parseList(ml, ')')) return -1;
-                }
-                skipSpace(ml);
-            } else if (c == '[') { // list
-                if (op) return ERROR_INT(ml, "list cannot be used in operation");
-                prev = newEntry(EntryType::List, ml++, prev);
-                return parseList(ml, ']') ? prev : -1;
-            } else if (c =='#') { // color (continue for formula)
-                if ((prev = parseColor(ml, prev)) < 0) return -1;
-            } else if (c =='"') { // string
-                if (op) return ERROR_INT(ml, "string cannot be used in operation");
-                return parseString(ml, prev);
-            } else if (c == '(') { // operation parenthesis
-                ++ml;
-                if (parseExpression(ml, -1) < 0) return -1;
-                c = skipSpace(ml);
-                if (c != ')') return ERROR_INT(ml, "expecting ')' in operation");
-                ++ml;
-            } else if ((!op && c == '-') || c == '.' || isdigit(c)) { // number
-                if ((prev = parseNumber(ml, prev)) < 0) return -1;
-            } else if (c == '@') { // wildcar
-                prev = newEntry(EntryType::Wildcar, ml++, prev);
+                    break;
+                } else if (c == '.') {
+                    // attribute
+                    ++ml;
+                    skipSpace(ml);
+                    prev = parseId(ml, prev);
+                    entries[prev].setType(EntryType::Attribute);
+                    c = skipSpace(ml);
+                } else break;
             }
-            // operators, a way of continuing with expression
+        } else if (c == '[') { // list
+            if (op) return ERROR_INT(ml, "list cannot be used in operation");
+            prev = newEntry(EntryType::List, ml++, prev);
+            return parseList(ml, ']') ? prev : -1;
+        } else if (c =='#') { // color (continue for formula)
+            if ((prev = parseColor(ml, prev)) < 0) return -1;
+        } else if (c =='"') { // string
+            if (op) return ERROR_INT(ml, "string cannot be used in operation");
+            return parseString(ml, prev);
+        } else if (c == '(') { // operation parenthesis
+            ++ml;
+            if ((prev = parseExpression(ml, -1)) < 0) return -1;
             c = skipSpace(ml);
-            if (isoperator(c)) {
-                if (prev == -1 || entries.empty() || entries.back().type() == EntryType::Operator) return ERROR_INT(ml, "invalid operator position");
-                op = ml;
-                prev = newEntry(EntryType::Operator, ml++, prev);
-            } else break;
+            if (c != ')') return ERROR_INT(ml, "expecting ')' in operation");
+            ++ml;
+            --prevOrig;
+        } else if ((!op && c == '-') || c == '.' || isdigit(c)) { // number
+            if ((prev = parseNumber(ml, prev)) < 0) return -1;
+        } else if (c == '@') { // wildcar
+            prev = newEntry(EntryType::Wildcar, ml++, prev);
+        }
+        // operators, a way of continuing with expression
+        c = skipSpace(ml);
+        if (isoperator(c)) {
+            if (prev == -1 || entries.empty() || entries.back().type() == EntryType::Operator) return ERROR_INT(ml, "invalid operator position");
+            prev = newEntry(EntryType::Operator, ml++, prev);
+            if (parseExpression(ml, -1, true) < 0) return -1;
         }
         DIAG(if (!entries.empty() && entries.back().type() == EntryType::Operator) {
                 error(ml, "expression ending in operator", line);
@@ -248,14 +253,16 @@ namespace webui {
     }
 
     int MLParser::parseId(const char*&ml, int prev) {
-        if (!isalpha(get(ml))) return ERROR_INT(ml, "expecting id");
+        auto c(get(ml));
+        if (!isalpha(c) && c != '_') return ERROR_INT(ml, "expecting id");
         prev = newEntry(EntryType::Id, ml++, prev);
         skipId(ml);
         return prev;
     }
 
     void MLParser::skipId(const char*&ml) const {
-        while (isalnum(get(ml))) ++ml;
+        char c;
+        while (c = get(ml), isalnum(c) || c == '_') ++ml;
     }
 
     char MLParser::skipSpace(const char*&ml) const {
@@ -263,7 +270,7 @@ namespace webui {
             char c(get(ml));
             if (c == '\n') { DIAG(line++); ++ml; }
             else if (isspace(c)) ++ml;
-            else if (c == '/' && get(++ml) == '/') skipLine(ml); // comment
+            else if (c == '/' && get(ml + 1) == '/') skipLine(ml); // comment
             else return c;
         }
     }
@@ -291,6 +298,7 @@ namespace webui {
         case EntryType::Unknown:   return 0;
         case EntryType::Id:
         case EntryType::Object:
+        case EntryType::Attribute:
         case EntryType::Function:  skipId(end); break;
         case EntryType::Number:    skipNumber(end); break;
         case EntryType::Color:     skipColor(end); break;
@@ -304,15 +312,15 @@ namespace webui {
     }
 
     bool MLParser::isoperator(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/';
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '=' || c == '%';
     }
 
-    Identifier MLParser::asId(int iEntry, const StringManager& strMng) const {
-        return Identifier(strMng.search(entries[iEntry].pos, size(iEntry)).getId());
+    Identifier MLParser::asId(int iEntry) const {
+        return Identifier(Context::strMng.search(entries[iEntry].pos, size(iEntry)).getId());
     }
 
-    Identifier MLParser::asIdAdd(int iEntry, StringManager& strMng) const {
-        return Identifier(strMng.add(entries[iEntry].pos, size(iEntry)).getId());
+    Identifier MLParser::asIdAdd(int iEntry) const {
+        return Identifier(Context::strMng.add(entries[iEntry].pos, size(iEntry)).getId());
     }
 
     int MLParser::getTemporalEntry(const char* text) {

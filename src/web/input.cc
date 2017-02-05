@@ -8,23 +8,16 @@
 
 #include "input.h"
 #include "widget.h"
+#include "context.h"
 #include "application.h"
 #include "compatibility.h"
 
 using namespace std;
 using namespace webui;
 
-namespace {
-
-    // this is required because glfw does not provide a fast way for callbacks to access context
-    Application* app;
-
-}
-
 namespace webui {
 
-    void Input::init(GLFWwindow* win, Application* app_) {
-        app = app_;
+    void Input::init(GLFWwindow* win) {
         glfwPollEvents();
         glfwSetMouseButtonCallback(win, [](GLFWwindow* win, int button, int action, int mods) {
                 mouseButtonAction = true;
@@ -35,7 +28,7 @@ namespace webui {
                 if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT &&
                     Input::mouseAction == GLFW_PRESS)
                     cursorLeftPress = cursor;
-                updateModifications |= app->update();
+                updateModifications |= Context::app.update();
                 if (action == GLFW_RELEASE) {
                     updateModifications |= refreshStack(mouseButtonWidget);
                     mouseButtonWidget = nullptr;
@@ -64,7 +57,7 @@ namespace webui {
             if (mouseButtonWidget) ret |= refreshStack(mouseButtonWidget);
             // call update if required
             if (!updateCalled && (cursor.x || cursor.y)) // in the browser, when cursor is outside, cursor is (0, 0)
-                ret |= app->update();
+                ret |= Context::app.update();
         }
         updateCalled = updateModifications = false;
         return ret;
@@ -73,7 +66,7 @@ namespace webui {
     bool Input::refreshStack(Widget* w) {
         bool modif(false);
         while (w) {
-            modif |= w->input(*app);
+            modif |= w->input();
             w = w->getParent();
         }
         return modif;

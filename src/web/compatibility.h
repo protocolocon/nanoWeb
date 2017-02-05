@@ -49,8 +49,6 @@
 
 namespace webui {
 
-    class Application;
-
     void setCommandLine(int argc, char** argv);
     void setMainLoop(void (*loop)(void));
     void cancelMainLoop();
@@ -63,8 +61,8 @@ namespace webui {
     public:
         enum Type { TypeApplication, TypeTemplate, TypeFont, TypeLast };
 
-        RequestXHR(Application& app, Type type, StringId id, const char* req);
-        RequestXHR(Application& app, Type type, StringId id, const char* data, int nData);
+        RequestXHR(Type type, StringId id, const char* req);
+        RequestXHR(Type type, StringId id, const char* data, int nData);
         ~RequestXHR();
         void query(const char* req);
         void makeCString();
@@ -85,7 +83,6 @@ namespace webui {
         void onError();
         size_t onAddData(char* data, size_t size, size_t nmemb);
 
-        Application& app;
         Type type;
         StringId id;
         char* data;

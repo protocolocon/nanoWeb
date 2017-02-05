@@ -9,7 +9,6 @@
 #pragma once
 
 #include "types.h"
-#include "action.h"
 #include "vector.h"
 #include "ml_parser.h"
 #include "type_widget.h"
@@ -22,16 +21,14 @@
 namespace webui {
 
     class Widget;
-    class Context;
     class MLParser;
     struct Property;
 
     class Application {
     public:
-        Application(Context& ctx);
+        Application();
         DIAG(~Application());
         void initialize();
-        void initializeInheritance();
 
         // wipes-out application definition
         DIAG(void clear());
@@ -69,22 +66,17 @@ namespace webui {
 
         // debug
         DIAG(void dump() const);
-        inline auto& getStrMng() { return strMng; }
         inline auto* getRoot() { return root; }
         inline auto& getWidgets() { return widgets; }
-        inline auto& getActions() { return actions; }
 
     private:
-        Context& ctx;
         MLParser tree, tpl;    // application tree description and template data
         int iTpl, fTpl;
-        StringManager strMng;
 
         // layout
         bool layoutStable;
 
         std::vector<ActionTable> actionTables;
-        Actions actions;
 
         // widget tree and registration
         Widget* root;

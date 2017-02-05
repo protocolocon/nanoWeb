@@ -12,8 +12,6 @@
 
 namespace webui {
 
-    class Context;
-
     class LinearArrangement {
     public:
         struct Elem {
@@ -24,7 +22,7 @@ namespace webui {
     public:
         inline LinearArrangement(Elem* elems, int initialPos);
         inline void add(int sizeCurrent, int sizeTarget, bool resizable);
-        bool calculate(Context& ctx, int sizeAvailable); // returns true if stable
+        bool calculate(int sizeAvailable); // returns true if stable
         inline int get(int idx) const { return elems[idx].pos; }
         void dump() const;
 

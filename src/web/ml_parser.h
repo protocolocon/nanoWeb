@@ -13,8 +13,6 @@
 
 namespace webui {
 
-    class StringManager;
-
     class MLParser {
     public:
         MLParser(): ownOrig(false), mlOrig(nullptr), mlEnd(nullptr) { }
@@ -34,7 +32,10 @@ namespace webui {
             String,
             Operator,
             Wildcar,
+            Attribute,
         };
+
+        DIAG(static const char* toString(EntryType t));
 
         struct Entry {
             Entry(EntryType type, const char* pos = nullptr DIAG(, int line = 0)): pos(pos), next(0), type_(int(type)) DIAG(, line(line)) { }
@@ -59,8 +60,8 @@ namespace webui {
         void copyTo(MLParser& dst, int iEntry, int jEntry) const;
 
         // get elements of ML
-        Identifier asId(int iEntry, const StringManager& strMng) const;
-        Identifier asIdAdd(int iEntry, StringManager& strMng) const;
+        Identifier asId(int iEntry) const;
+        Identifier asIdAdd(int iEntry) const;
 
         // returns false
         DIAG(bool error(const char* ml, const char* msg, int line = 0) const);
@@ -88,7 +89,7 @@ namespace webui {
         int parseNumber(const char*&ml, int prev);
         int parseColor(const char*&ml, int prev);
         int parseString(const char*&ml, int prev);
-        int parseExpression(const char*&ml, int prev);
+        int parseExpression(const char*&ml, int prev, bool op = false);
         int parseObject(const char*&ml, int prev, char endChar);
         bool parseList(const char*&ml, char endChar);
 

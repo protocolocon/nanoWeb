@@ -67,8 +67,8 @@ namespace webui {
 
 
     // class RequestXHR
-    RequestXHR::RequestXHR(Application& app, Type type, StringId id, const char* data_, int nData):
-        app(app), type(type), id(id), data(nullptr), nData(nData) {
+    RequestXHR::RequestXHR(Type type, StringId id, const char* data_, int nData):
+        type(type), id(id), data(nullptr), nData(nData) {
         if (nData && data_) {
             data = (char*)malloc(nData);
             memcpy(data, data_, nData);

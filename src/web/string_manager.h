@@ -18,9 +18,9 @@ namespace webui {
         StringId(): id(-1) { }
         StringId(int id): id(id) { }
         StringId(Identifier id): StringId(int(id)) { }
-        inline int getId() const { return id; }
+        inline Identifier getId() const { return Identifier(id); }
         inline bool valid() const { return id >= 0; }
-        inline std::size_t operator()(StringId id) const { return id.getId(); }
+        inline std::size_t operator()(StringId id) const { return std::size_t(id.getId()); }
         inline bool operator==(StringId rhs) const { return id == rhs.id; }
         inline bool operator>=(StringId rhs) const { return id >= rhs.id; }
         inline bool operator<=(StringId rhs) const { return id <= rhs.id; }
@@ -55,7 +55,7 @@ namespace webui {
         StringId add(const char* str, int nStr = -1);
 
         // returns the string by doc index or NULL if index==-1
-        inline const char* get(StringId id) const { return id.getId() < 0 ? nullptr : &doc[id.getId()]; }
+        inline const char* get(StringId id) const { return id.getId() == Identifier::InvalidId ? nullptr : &doc[int(id.getId())]; }
         inline const char* get(Identifier id) const { return get(StringId(int(id))); }
 
         // debug

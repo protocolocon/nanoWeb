@@ -7,80 +7,102 @@
 */
 
 #include "reserved_words.h"
+#include "context.h"
 #include "compatibility.h"
 #include "string_manager.h"
 #include <cassert>
 
-#define add(x)                                  \
-    strMng.add(#x, constlen(#x) - 1);           \
-    assert(strMng.search(#x).getId() ==         \
-           int(Identifier::x))
+#define _ "\0"
+
+namespace {
+
+    const char* reservedWords =
+        "Application" _
+        "Widget" _
+        "LayoutHor" _
+        "LayoutVer" _
+        "Template" _
+        "Timer" _
+        "WLast" _
+
+        "id" _
+        "x" _
+        "y" _
+        "w" _
+        "h" _
+        "width" _
+        "height" _
+        "background" _
+        "foreground" _
+        "all" _
+        "visible" _
+        "inside" _
+        "canFocus" _
+        "active" _
+        "draggable" _
+        "color" _
+        "onEnter" _
+        "onLeave" _
+        "onClick" _
+        "onRender" _
+        "onRenderActive" _
+        "onTimeout" _
+        "define" _
+        "self" _
+        "repeat" _
+        "delay" _
+        "propInt16" _
+        "propText" _
+        "propColor" _
+        "ALast" _
+
+        "log" _
+        "toggleVisible" _
+        "beginPath" _
+        "moveto" _
+        "lineto" _
+        "bezierto" _
+        "closePath" _
+        "roundedRect" _
+        "fillColor" _
+        "fillVertGrad" _
+        "fill" _
+        "strokeWidth" _
+        "strokeColor" _
+        "stroke" _
+        "font" _
+        "text" _
+        "textLeft" _
+        "translateCenter" _
+        "scale100" _
+        "resetTransform" _
+        "set" _
+        "query" _
+        "CLast" _
+
+        "+" _
+        "-" _
+        "*" _
+        "/" _
+        "%" _
+        "=" _
+        "FLast" _
+        _;
+}
 
 namespace webui {
 
-    void addReservedWords(StringManager& strMng) {
-        add(Application);
-        add(Widget);
-        add(LayoutHor);
-        add(LayoutVer);
-        add(Template);
-        add(Timer);
-        add(WLast);
-
-        add(id);
-        add(x);
-        add(y);
-        add(w);
-        add(h);
-        add(width);
-        add(height);
-        add(background);
-        add(foreground);
-        add(all);
-        add(visible);
-        add(inside);
-        add(canFocus);
-        add(active);
-        add(draggable);
-        add(color);
-        add(onEnter);
-        add(onLeave);
-        add(onClick);
-        add(onRender);
-        add(onRenderActive);
-        add(onTimeout);
-        add(define);
-        add(self);
-        add(repeat);
-        add(delay);
-        add(propInt16);
-        add(propText);
-        add(propColor);
-        add(ALast);
-
-        add(log);
-        add(toggleVisible);
-        add(beginPath);
-        add(moveto);
-        add(lineto);
-        add(bezierto);
-        add(closePath);
-        add(roundedRect);
-        add(fillColor);
-        add(fillVertGrad);
-        add(fill);
-        add(strokeWidth);
-        add(strokeColor);
-        add(stroke);
-        add(font);
-        add(text);
-        add(textLeft);
-        add(translateCenter);
-        add(scale100);
-        add(resetTransform);
-        add(set);
-        add(query);
-        add(CLast);
+    void addReservedWords() {
+        const char* rw(reservedWords);
+        while (*rw) {
+            int n(strlen(rw));
+            Context::strMng.add(rw);
+            rw += n + 1;
+        }
+        assert(Context::strMng.search("query").getId() == Identifier::query);
+        assert(Context::strMng.search("+").getId() == Identifier::add);
+        assert(Context::strMng.search("-").getId() == Identifier::sub);
+        assert(Context::strMng.search("=").getId() == Identifier::assign);
     }
 
 }

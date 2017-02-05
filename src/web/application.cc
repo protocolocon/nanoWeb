@@ -59,9 +59,8 @@ namespace {
 
 namespace webui {
 
-    Application::Application(Context& ctx): ctx(ctx), iTpl(0), fTpl(0), layoutStable(false),
-                                            actionTables(1), actions(strMng, widgets), root(nullptr), fontValid(false) {
-        addReservedWords(strMng);
+    Application::Application(): iTpl(0), fTpl(0), layoutStable(false),
+                                actionTables(1), root(nullptr), fontValid(false) {
     }
 
     DIAG(Application::~Application() {
@@ -71,11 +70,7 @@ namespace webui {
         });
 
     void Application::initialize() {
-        initializeInheritance();
-        new RequestXHR(*this, RequestXHR::TypeApplication, StringId(), "application.ml");
-    }
-
-    void Application::initializeInheritance() {
+        DIAG(clear());
         // widget inheritance
         auto begin(Widget::getType().begin());
         auto end(Widget::getType().end());
@@ -87,8 +82,8 @@ namespace webui {
     }
 
     void Application::refresh() {
-        if (root && ((Input::refresh(ctx.getRender().getWin()) | refreshTimers()) || !layoutStable)) {
-            layoutStable = root->layout(ctx, V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()));
+        if (root && ((Input::refresh(Context::render.getWin()) | refreshTimers()) || !layoutStable)) {
+            layoutStable = root->layout(V2s(0, 0), V2s(Context::render.getWidth(), Context::render.getHeight()));
             ctx.forceRender();
         }
     }
@@ -97,13 +92,13 @@ namespace webui {
         bool dev(false);
         for (auto child: root->getChildren())
             if (child->type() == Identifier::Timer)
-                dev |= reinterpret_cast<WidgetTimer*>(child)->refreshTimer(ctx);
+                dev |= reinterpret_cast<WidgetTimer*>(child)->refreshTimer();
         return dev;
     }
 
     bool Application::update() {
         assert(root);
-        return root->update(*this);
+        return root->update();
     }
 
     DIAG(void Application::clear() {
@@ -128,16 +123,15 @@ namespace webui {
     void Application::resize(int width, int height) {
         if (root) {
             ctx.resetRatio();
-            root->layout(ctx, V2s(0, 0), V2s(ctx.getRender().getWidth(), ctx.getRender().getHeight()));
+            root->layout(V2s(0, 0), V2s(Context::render.getWidth(), Context::render.getHeight()));
         }
     }
 
     void Application::render() {
         if (root) {
-            auto& render(ctx.getRender());
-            render.beginFrame();
-            root->render(ctx, 0x100);
-            ctx.getRender().endFrame();
+            Context::render.beginFrame();
+            root->render(0x100);
+            Context::render.endFrame();
         }
     }
 
@@ -153,7 +147,7 @@ namespace webui {
                     clear());
                 dev = false;
             } else
-                resize(ctx.getRender().getWidth(), ctx.getRender().getHeight());
+                resize(Context::render.getWidth(), Context::render.getHeight());
 
             DIAG(
                 tree.dumpTree();
@@ -166,7 +160,7 @@ namespace webui {
             // get template widget
             auto it(widgets.find(xhr->getId()));
             if (it == widgets.end()) {
-                DIAG(LOG("internal: cannot find template %s", strMng.get(xhr->getId())));
+                DIAG(LOG("internal: cannot find template %s", Context::strMng.get(xhr->getId())));
                 dev = false;
             } else {
                 auto* tplWidget(it->second);
@@ -201,13 +195,13 @@ namespace webui {
                     // need to copy the font buffer
                     font.second = (char*)malloc(xhr->getNData());
                     memcpy(font.second, xhr->getData(), xhr->getNData());
-                    int vgId(ctx.getRender().loadFont(strMng.get(id), font.second, xhr->getNData()));
+                    int vgId(Context::render.loadFont(Context::strMng.get(id), font.second, xhr->getNData()));
                     if (vgId == &font - fonts.data())
                         ok = true;
                     break;
                 }
             if (!ok) {
-                LOG("internal error: font indices: %s", strMng.get(id));
+                LOG("internal error: font indices: %s", Context::strMng.get(id));
                 dev = false;
             }
             ctx.forceRender();
@@ -216,7 +210,7 @@ namespace webui {
         default:
             DIAG(
                 xhr->makeCString();
-                LOG("internal error: unknown query: %s %s", strMng.get(xhr->getId()), xhr->getData()));
+                LOG("internal error: unknown query: %s %s", Context::strMng.get(xhr->getId()), xhr->getData()));
             break;
         }
         delete xhr;
@@ -224,7 +218,7 @@ namespace webui {
     }
 
     void Application::onError(RequestXHR* xhr) {
-        LOG("lost query: %s", strMng.get(xhr->getId()));
+        LOG("lost query: %s", Context::strMng.get(xhr->getId()));
         delete xhr;
     }
 
@@ -232,7 +226,7 @@ namespace webui {
         DIAG(tree.dumpTree());
         if (!tree.empty() && tree[0].type() == MLParser::EntryType::Object) {
             bool define;
-            auto* widget(createWidget(tree.asId(0, strMng), nullptr));
+            auto* widget(createWidget(tree.asId(0), nullptr));
             iTpl = fTpl = -1;
             if (widget && (widget = initializeConstruct(widget, 1, tree.size(), define, true)) && registerWidget(widget))
                 return widget;
@@ -252,7 +246,7 @@ namespace webui {
             const auto& entryKey(tree[iEntry]);
             if (entryKey.type() == MLParser::EntryType::Id) { // case 1: key : value
                 assert(valEntry < fEntry && tree[iEntry].next == valEntry);
-                auto key(tree.asId(iEntry, strMng));
+                auto key(tree.asId(iEntry));
                 // check for wildcar
                 bool templateReplaced(replaceProperty(valEntry));
                 if (key == Identifier::define) {
@@ -260,9 +254,10 @@ namespace webui {
                     DIAG(if (define) LOG("warning: repeated 'define' attribute inside widget"));
                     define = true;
                     // create new type
-                    auto newTypeId(tree.asIdAdd(valEntry, strMng));
+                    auto newTypeId(tree.asIdAdd(valEntry));
                     if (!(widget = createType(widget, newTypeId, iEntryOrig, fEntry))) {
-                        DIAG(LOG("cannot create new type: %s", strMng.get(newTypeId)));
+                        DIAG(LOG("cannot create new type: %s", Context::strMng.get(newTypeId)));
+                        return nullptr;
                     }
                 }
                 if (key != Identifier::propInt16 &&
@@ -270,7 +265,7 @@ namespace webui {
                     key != Identifier::propColor &&
                     !setProp(key, widget, valEntry, tree[valEntry].next)) {
                     DIAG(
-                        LOG("warning: unknown attribute %s with value %.*s", strMng.get(key), tree.size(valEntry), tree[valEntry].pos);
+                        LOG("warning: unknown attribute %s with value %.*s", Context::strMng.get(key), tree.size(valEntry), tree[valEntry].pos);
                         tree.error(entryKey.pos, "=>", entryKey.line);
                         return nullptr);
                 }
@@ -278,7 +273,7 @@ namespace webui {
                 iEntry = tree[valEntry].next;
 
             } else if (entryKey.type() == MLParser::EntryType::Object) { // case 2: object { }
-                auto key(tree.asId(iEntry, strMng));
+                auto key(tree.asId(iEntry));
                 DIAG(if (!isWidget(key)) {
                          LOG("expecting object id");
                          tree.error(entryKey.pos, "=>", entryKey.line);
@@ -372,10 +367,14 @@ namespace webui {
             if (entryKey.type() == MLParser::EntryType::Block) { // case 3: template loop
                 iEntry = entryKey.next;
             } else { // cases 1 & 2: key: value or class {
-                assert(iEntry + 1 < fEntry && entryKey.next == iEntry + 1);
+                DIAG(if (iEntry + 1 >= fEntry || entryKey.next != iEntry + 1) {
+                        LOG("expected key: value or class {");
+                        tree.error(entryKey.pos, "=>", entryKey.line);
+                        return nullptr;
+                    });
                 Property prop;
                 prop.all = 0;
-                Identifier key = tree.asId(iEntry, strMng);
+                Identifier key = tree.asId(iEntry);
                 if (key == Identifier::propInt16) {
                     prop.type = Type::Int16;
                     prop.size = 2;
@@ -392,10 +391,10 @@ namespace webui {
                     type->size = (type->size + prop.size - 1) & -prop.size; // align to property size
                     prop.pos = type->size / prop.size;                      // store pos in size units
                     type->size += prop.size;                                // increase size
-                    auto propId(tree.asIdAdd(iEntry + 1, strMng));
+                    auto propId(tree.asIdAdd(iEntry + 1));
                     type->insert(make_pair(propId, prop));
                     DIAG(LOG("adding property: %s.%s at %d+%d of type %s",
-                             strMng.get(typeId), strMng.get(propId), prop.pos * prop.size, prop.size, toString(prop.type)));
+                             Context::strMng.get(typeId), Context::strMng.get(propId), prop.pos * prop.size, prop.size, toString(prop.type)));
                 }
                 const auto& entryVal(tree[iEntry + 1]);
                 iEntry = entryVal.next;
@@ -468,11 +467,11 @@ namespace webui {
             static int id(0);
             char buffer[16];
             int nBuffer(snprintf(buffer, sizeof(buffer), "@%x", id++));
-            widget->setId(strMng.add(buffer, nBuffer));
+            widget->setId(Context::strMng.add(buffer, nBuffer));
         }
         const auto& id(widget->getId());
         if (widgets.count(id)) {
-            DIAG(LOG("repeated widget id: %s", strMng.get(id)));
+            DIAG(LOG("repeated widget id: %s", Context::strMng.get(id)));
             return false;
         }
         widgets[id] = widget;
@@ -483,14 +482,14 @@ namespace webui {
         const auto* prop(widget->getProp(id));
         if (!prop) {
             DIAG(
-                LOG("invalid property '%s' for widget of type: %s", strMng.get(id), strMng.get(widget->type()));
-                widget->dump(strMng, -1, true));
+                LOG("invalid property '%s' for widget of type: %s", Context::strMng.get(id), Context::strMng.get(widget->type()));
+                widget->dump(-1, true));
             return false;
         }
         if (!setProp(*prop, id, widget, iEntry, fEntry, widget)) {
             DIAG(
                 LOG("%s was expecting the type %s, received %.*s (%d parameters) and failed",
-                    strMng.get(id), toString(prop->type), tree.size(iEntry), tree[iEntry].pos, fEntry - iEntry));
+                    Context::strMng.get(id), toString(prop->type), tree.size(iEntry), tree[iEntry].pos, fEntry - iEntry));
             return false;
         }
         return true;
@@ -519,15 +518,15 @@ namespace webui {
             return true;
         case Type::Id:
             DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asId(iEntry, strMng);
+            reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asId(iEntry);
             return true;
         case Type::Str:
             DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asIdAdd(iEntry, strMng);
+            reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asIdAdd(iEntry);
             return true;
         case Type::StrId:
             DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asIdAdd(iEntry, strMng); // TODO: quotes
+            reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asIdAdd(iEntry); // TODO: quotes
             return true;
         case Type::Float:
             DIAG(if (fEntry > iEntry + 1) return false);
@@ -551,7 +550,7 @@ namespace webui {
             return true;
         case Type::FontIdx:
             DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<int*>(data)[prop.pos] = getFont(StringId(tree.asIdAdd(iEntry, strMng)));
+            reinterpret_cast<int*>(data)[prop.pos] = getFont(StringId(tree.asIdAdd(iEntry)));
             return true;
         case Type::ActionTable:
             return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos], widget);
@@ -563,9 +562,9 @@ namespace webui {
         case Type::TextPropOrStrId:
             DIAG(if (fEntry > iEntry + 1) return false);
             if (*tree[iEntry].pos == '"' || *tree[iEntry].pos == '\'')
-                reinterpret_cast<TextPropOrStrId*>(data)[prop.pos] = strMng.add(tree[iEntry].pos + 1, tree.size(iEntry) - 2);
+                reinterpret_cast<TextPropOrStrId*>(data)[prop.pos] = Context::strMng.add(tree[iEntry].pos + 1, tree.size(iEntry) - 2);
             else {
-                const auto* propWidget(widget->getProp(tree.asId(iEntry, strMng)));
+                const auto* propWidget(widget->getProp(tree.asId(iEntry)));
                 if (!propWidget) return false;
                 reinterpret_cast<TextPropOrStrId*>(data)[prop.pos] = propWidget->pos;
             }
@@ -596,14 +595,14 @@ namespace webui {
         case Identifier::onRenderActive: tableEntry = &table.onRenderActive; break;
         default: DIAG(LOG("unknown action")); return false;
         }
-        return (*tableEntry = actions.add(tree, iEntry, fEntry, widget));
+        return (*tableEntry = Context::actions.add(tree, iEntry, fEntry, widget));
     }
 
 /*
     bool Application::addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget) {
         DIAG(
             if (params[fEntry - iEntry] != Type::LastType) {
-                LOG("%s command got %d parameters", strMng.get(name), fEntry - iEntry);
+                LOG("%s command got %d parameters", Context::strMng.get(name), fEntry - iEntry);
                 return false;
             });
         actionCommands.push_back(int(name));
@@ -628,7 +627,7 @@ namespace webui {
         if (isalpha(*str)) {
             const auto* start(str++);
             while (isalnum(*str)) ++str;
-            auto id(strMng.search(start, str - start));
+            auto id(Context::strMng.search(start, str - start));
             if (id.valid()) return (prop = widget->getProp(Identifier(id.getId())));
             return false; // error
         }
@@ -676,7 +675,7 @@ namespace webui {
             if (font.first == str) return &font - fonts.data();
         // add font
         fonts.push_back(make_pair(str, nullptr));
-        new RequestXHR(*this, RequestXHR::TypeFont, str, strMng.get(str));
+        new RequestXHR(RequestXHR::TypeFont, str, Context::strMng.get(str));
         return fonts.size() - 1;
     }
 
@@ -684,12 +683,11 @@ namespace webui {
         bool cont(true), executed(false);
         V2s pos;
         float value;
-        auto& render(ctx.getRender());
         while (cont) {
             int* command(nullptr); //!!!!TODO auto* const command(&actionCommands[commandList]);
             switch (Identifier(*command)) {
             case Identifier::log:
-                LOG("%s", strMng.get(StringId(command[1])));
+                LOG("%s", Context::strMng.get(StringId(command[1])));
                 commandList += 2;
                 break;
             case Identifier::toggleVisible:
@@ -697,92 +695,92 @@ namespace webui {
                 commandList += 2;
                 break;
             case Identifier::beginPath:
-                render.beginPath();
+                Context::render.beginPath();
                 ++commandList;
                 break;
             case Identifier::moveto:
-                render.moveto(getCoord(command[1], w), getCoord(command[2], w));
+                Context::render.moveto(getCoord(command[1], w), getCoord(command[2], w));
                 commandList += 3;
                 break;
             case Identifier::lineto:
-                render.lineto(getCoord(command[1], w), getCoord(command[2], w));
+                Context::render.lineto(getCoord(command[1], w), getCoord(command[2], w));
                 commandList += 3;
                 break;
             case Identifier::bezierto:
-                render.bezierto(getCoord(command[1], w), getCoord(command[2], w),
+                Context::render.bezierto(getCoord(command[1], w), getCoord(command[2], w),
                                 getCoord(command[3], w), getCoord(command[4], w),
                                 getCoord(command[5], w), getCoord(command[6], w));
                 commandList += 7;
                 break;
             case Identifier::closePath:
-                render.closePath();
+                Context::render.closePath();
                 ++commandList;
                 break;
             case Identifier::roundedRect:
-                render.roundedRect(getCoord(command[1], w), getCoord(command[2], w), getCoord(command[3], w),
+                Context::render.roundedRect(getCoord(command[1], w), getCoord(command[2], w), getCoord(command[3], w),
                                    getCoord(command[4], w), getCoord(command[5], w));
                 commandList += 6;
                 break;
             case Identifier::fillColor:
-                render.fillColor(RGBAref(command[1]).get(w));
+                Context::render.fillColor(RGBAref(command[1]).get(w));
                 commandList += 2;
                 break;
             case Identifier::fillVertGrad:
-                render.fillVertGrad(getCoord(command[1], w), getCoord(command[2], w), RGBAref(command[3]).get(w), RGBAref(command[4]).get(w));
+                Context::render.fillVertGrad(getCoord(command[1], w), getCoord(command[2], w), RGBAref(command[3]).get(w), RGBAref(command[4]).get(w));
                 commandList += 5;
                 break;
             case Identifier::fill:
-                render.fill();
+                Context::render.fill();
                 ++commandList;
                 break;
             case Identifier::strokeWidth:
-                render.strokeWidth(*(float*)&command[1]);
+                Context::render.strokeWidth(*(float*)&command[1]);
                 commandList += 2;
                 break;
             case Identifier::strokeColor:
-                render.strokeColor(RGBAref(command[1]).get(w));
+                Context::render.strokeColor(RGBAref(command[1]).get(w));
                 commandList += 2;
                 break;
             case Identifier::stroke:
-                render.stroke();
+                Context::render.stroke();
                 ++commandList;
                 break;
             case Identifier::font:
                 if (command[1] < int(fonts.size()) && fonts[command[1]].second) {
-                    render.font(command[1]);
+                    Context::render.font(command[1]);
                     fontValid = true;
                 }
-                render.fontSize(*(float*)&command[2]);
+                Context::render.fontSize(*(float*)&command[2]);
                 commandList += 3;
                 break;
             case Identifier::text:
                 if (fontValid) {
-                    render.textAlign(NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+                    Context::render.textAlign(NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
                     pos = w->curPos + (w->curSize >> 1);
-                    render.text(pos.x + getCoord(command[1], w), pos.y + getCoord(command[2], w),
-                                reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, strMng));
+                    Context::render.text(pos.x + getCoord(command[1], w), pos.y + getCoord(command[2], w),
+                                reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, Context::strMng));
                 }
                 commandList += 4;
                 break;
             case Identifier::textLeft:
                 if (fontValid) {
-                    render.textAlign(NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-                    render.text(w->curPos.x + getCoord(command[1], w), w->curPos.y + (w->curSize.y >> 1) + getCoord(command[2], w),
-                                reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, strMng));
+                    Context::render.textAlign(NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+                    Context::render.text(w->curPos.x + getCoord(command[1], w), w->curPos.y + (w->curSize.y >> 1) + getCoord(command[2], w),
+                                reinterpret_cast<TextPropOrStrId*>(&command[3])->get(w, Context::strMng));
                 }
                 commandList += 4;
                 break;
             case Identifier::translateCenter:
-                render.translate(w->curSize.x >> 1, w->curSize.y >> 1);
+                Context::render.translate(w->curSize.x >> 1, w->curSize.y >> 1);
                 ++commandList;
                 break;
             case Identifier::scale100:
                 value = getCoord(command[1], w) * 0.01;
-                render.scale(value, value);
+                Context::render.scale(value, value);
                 commandList += 2;
                 break;
             case Identifier::resetTransform:
-                render.resetTransform();
+                Context::render.resetTransform();
                 ++commandList;
                 break;
             case Identifier::set:
@@ -812,10 +810,10 @@ namespace webui {
 
     bool Application::executeToggleVisible(StringId widgetId) {
         auto len(getWidgetRange(widgetId));
-        const char* idSearch(strMng.get(widgetId));
+        const char* idSearch(Context::strMng.get(widgetId));
         bool toggled(false);
         for (auto& widget: widgets) {
-            if (!memcmp(strMng.get(widget.first), idSearch, len)) {
+            if (!memcmp(Context::strMng.get(widget.first), idSearch, len)) {
                 widget.second->toggleVisible();
                 toggled = true;
             }
@@ -825,8 +823,8 @@ namespace webui {
 
     bool Application::executeSet(StringId widgetId, Identifier prop, StringId value, Widget* w) {
         bool set(false);
-        auto iEntry(tree.getTemporalEntry(strMng.get(value)));
-        if (widgetId.getId() == int(Identifier::self)) {
+        auto iEntry(tree.getTemporalEntry(Context::strMng.get(value)));
+        if (widgetId.getId() == Identifier::self) {
             // change own property
             if (!setProp(prop, w, iEntry, iEntry + 1))
                 DIAG(LOG("error setting property"));
@@ -834,9 +832,9 @@ namespace webui {
         } else {
             // change in the tree
             auto len(getWidgetRange(widgetId));
-            const char* idSearch(strMng.get(widgetId));
+            const char* idSearch(Context::strMng.get(widgetId));
             for (auto& widget: widgets) {
-                if (!memcmp(strMng.get(widget.first), idSearch, len)) {
+                if (!memcmp(Context::strMng.get(widget.first), idSearch, len)) {
                     if (!setProp(prop, widget.second, iEntry, iEntry + 1))
                         DIAG(LOG("error setting property"));
                     set = true;
@@ -851,14 +849,14 @@ namespace webui {
         auto it(widgets.find(widgetId));
         DIAG(
             if (it == widgets.end())
-                LOG("internal: cannot find widget %s to send query", strMng.get(widgetId)));
+                LOG("internal: cannot find widget %s to send query", Context::strMng.get(widgetId)));
         if (it->second->visible)
-            new RequestXHR(*this, RequestXHR::TypeTemplate, widgetId, strMng.get(query));
+            new RequestXHR(RequestXHR::TypeTemplate, widgetId, Context::strMng.get(query));
         return true;
     }
 
     int Application::getWidgetRange(StringId widgetId) const {
-        const char* id(strMng.get(widgetId));
+        const char* id(Context::strMng.get(widgetId));
         int len(strlen(id));
         if (len && id[len - 1] == '*') return len - 1;
         return len + 1;
@@ -868,11 +866,11 @@ namespace webui {
         void Application::dump() const {
             if (root) {
                 LOG("Application tree");
-                root->dump(strMng);
+                root->dump();
             }
             LOG("Registered widgets:");
             for (const auto& widget: widgets)
-                widget.second->dump(strMng, -1, true);
+                widget.second->dump(-1, true);
         });
 
 }

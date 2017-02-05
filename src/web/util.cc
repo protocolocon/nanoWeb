@@ -14,7 +14,7 @@ using namespace std;
 
 namespace webui {
 
-    bool LinearArrangement::calculate(Context& ctx, int sizeAvailable) {
+    bool LinearArrangement::calculate(int sizeAvailable) {
         auto& f(elems[0]);
         auto& b(elems[nElems - 1]);
         int total(b.posTarget - f.posTarget);

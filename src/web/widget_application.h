@@ -13,8 +13,6 @@
 
 namespace webui {
 
-    class Context;
-
     class WidgetApplication: public Widget {
     public:
         WidgetApplication(Widget* parent);
@@ -23,7 +21,7 @@ namespace webui {
 
         // polymorphic interface
         virtual Identifier baseType() const final override { return Identifier::Application; }
-        virtual void render(Context& ctx, int alphaMult) final override;
+        virtual void render(int alphaMult) final override;
     };
 
 }

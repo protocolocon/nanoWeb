@@ -14,9 +14,7 @@
 
 namespace webui {
 
-    class StringManager;
-
-    void addReservedWords(StringManager& strMng);
+    void addReservedWords();
 
     template <size_t N>
     constexpr int constlen(const char (& s)[N]) { return N; }
@@ -89,6 +87,15 @@ namespace webui {
         set              = OffsetEnum(resetTransform),
         query            = OffsetEnum(set),
         CLast            = OffsetEnum(query),
+
+        // functions
+        add              = OffsetEnum(CLast),      // +
+        sub              = OffsetEnum(CLast) + 2,  // -
+        mul              = OffsetEnum(CLast) + 4,  // *
+        div              = OffsetEnum(CLast) + 6,  // /
+        mod              = OffsetEnum(CLast) + 8,  // %
+        assign           = OffsetEnum(CLast) + 10, // =
+        FLast            = OffsetEnum(CLast) + 12,
     };
 
 }

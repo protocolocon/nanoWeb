@@ -7,6 +7,7 @@
 */
 
 #include "compatibility.h"
+#include "context.h"
 #include "application.h"
 #include <stdlib.h>
 
@@ -19,8 +20,8 @@
 namespace webui {
 
     // class RequestXHR common part
-    RequestXHR::RequestXHR(Application& app, Type type, StringId id, const char* req):
-        app(app), type(type), id(id), data(nullptr), nData(0) {
+    RequestXHR::RequestXHR(Type type, StringId id, const char* req):
+        type(type), id(id), data(nullptr), nData(0) {
         query(req);
     }
 
@@ -40,12 +41,12 @@ namespace webui {
         data = buffer;
         nData = nBuffer;
         DIAG(LOG("XHR load %d bytes", nData));
-        app.onLoad(this);
+        Context::app.onLoad(this);
     }
 
     void RequestXHR::onError() {
         LOG("XHR error");
-        app.onError(this);
+        Context::app.onError(this);
     }
 
     void RequestXHR::makeCString() {

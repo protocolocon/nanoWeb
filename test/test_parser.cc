@@ -172,3 +172,32 @@ TEST_CASE("parser: wildcar", "[parser]") {
     CHECK(ml[0].type() == MLParser::EntryType::Wildcar);
     CHECK(ml[0].next == ml.size());
 }
+
+TEST_CASE("parser: attributes", "[parser]") {
+    MLParser ml;
+    const char* str("self.width");
+    CHECK(ml.parse(str, strlen(str)));
+    DUMP(ml.dumpTree());
+    REQUIRE(ml.size() == 2);
+    CHECK(ml[0].type() == MLParser::EntryType::Id);
+    CHECK(ml[1].type() == MLParser::EntryType::Attribute);
+}
+
+TEST_CASE("parser: assign", "[parser]") {
+    MLParser ml;
+    const char* str("a = 7");
+    CHECK(ml.parse(str, strlen(str)));
+    DUMP(ml.dumpTree());
+    REQUIRE(ml.size() == 3);
+    CHECK(ml[0].type() == MLParser::EntryType::Id);
+    CHECK(ml[1].type() == MLParser::EntryType::Operator);
+    CHECK(ml[2].type() == MLParser::EntryType::Number);
+}
+
+TEST_CASE("parser: failing case operation", "[parser]") {
+    MLParser ml;
+    const char* str("(12 + 21) / 2");
+    CHECK(ml.parse(str, strlen(str)));
+    DUMP(ml.dumpTree());
+    REQUIRE(ml.size() == 5);
+}

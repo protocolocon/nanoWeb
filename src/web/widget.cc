@@ -61,22 +61,20 @@ namespace webui {
         return widgetType;
     }
 
-    void Widget::render(Context& ctx, int alphaMult) {
-        auto& render(ctx.getRender());
-        alphaMult = render.multAlpha(alphaMult, alpha);
+    void Widget::render(int alphaMult) {
+        alphaMult = Context::render.multAlpha(alphaMult, alpha);
 
-        auto& app(ctx.getApplication());
-        const auto& actionTable(app.getActionTable(actions));
+        const auto& actionTable(Context::app.getActionTable(actions));
         if (actionTable.onRenderActive && (active || (Input::mouseButtonWidget == this && inside)))
-            app.executeNoCheck(actionTable.onRenderActive, this);
+            Context::app.executeNoCheck(actionTable.onRenderActive, this);
         else if (actionTable.onRender)
-            app.executeNoCheck(actionTable.onRender, this);
+            Context::app.executeNoCheck(actionTable.onRender, this);
 
         if (alphaMult)
-            for (auto* child: children) child->render(ctx, alphaMult);
+            for (auto* child: children) child->render(alphaMult);
     }
 
-    bool Widget::input(Application& app) {
+    bool Widget::input() {
         if (canFocus && Input::mouseButtonAction) {
             // this widget takes care of the event and does not propagate upwards
             Input::mouseButtonAction = false;
@@ -86,7 +84,7 @@ namespace webui {
                 else if (Input::mouseAction == GLFW_RELEASE) {
                     // it's a click only if the widget of press is the widget of release
                     if (Input::mouseButtonWidget == this)
-                        app.execute(app.getActionTable(actions).onClick, this);
+                        Context::app.execute(Context::app.getActionTable(actions).onClick, this);
                 }
                 return true;
             }
@@ -94,13 +92,13 @@ namespace webui {
         return false;
     }
 
-    bool Widget::layout(Context& ctx, V2s posAvail, V2s sizeAvail) {
+    bool Widget::layout(V2s posAvail, V2s sizeAvail) {
         bool stable(true);
         curPos = posAvail;
         curSize = sizeAvail;
         if (visible)
-            for (auto* child: children) stable &= child->layout(ctx, curPos, child->getSizeTarget(curSize));
-        return animeAlpha(ctx) && stable;
+            for (auto* child: children) stable &= child->layout(curPos, child->getSizeTarget(curSize));
+        return animeAlpha() && stable;
     }
 
     const Property* Widget::getProp(Identifier id) const {
@@ -118,36 +116,36 @@ namespace webui {
         sharedActions = 1;
     }
 
-    bool Widget::animeAlpha(Context& ctx) {
+    bool Widget::animeAlpha() {
         if ( visible && alpha < 0xff) return ctx.getCloser(alpha, 0xff);
         if (!visible && alpha)        return ctx.getCloser(alpha, 0x00);
         return true;
     }
 
-    bool Widget::update(Application& app) {
+    bool Widget::update() {
         if (!visible) return false;
         bool recurse(false), executed(false);
         if (Input::cursor >= curPos && Input::cursor < curPos + curSize) {
             // inside
             if (!inside) {
                 inside = 1;
-                executed = app.execute(app.getActionTable(actions).onEnter, this);
+                executed = Context::app.execute(Context::app.getActionTable(actions).onEnter, this);
             }
             recurse = true;
         } else {
             // outside
             if (inside) {
                 inside = 0;
-                executed = app.execute(app.getActionTable(actions).onLeave, this);
+                executed = Context::app.execute(Context::app.getActionTable(actions).onLeave, this);
                 recurse = true;
             }
         }
         if (recurse)
             for (auto* child: children)
-                executed |= child->update(app);
+                executed |= child->update();
 
         // specific input actions
-        if (inside && (Input::mouseButtonAction || Input::keyboardAction)) executed |= input(app);
+        if (inside && (Input::mouseButtonAction || Input::keyboardAction)) executed |= input();
 
         return executed;
     }
@@ -158,23 +156,23 @@ namespace webui {
     }
 
     DIAG(
-        void Widget::dump(const StringManager& strMng, int level, bool props) const {
+        void Widget::dump(int level, bool props) const {
             bool recur(level >= 0);
             if (level < 0) level = 1;
             LOG("%*s%-*s: %-15s %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s  %s",
-                level * 2, "", 32 - level*2, strMng.get(id),
-                strMng.get(type()),
+                level * 2, "", 32 - level*2, Context::strMng.get(id),
+                Context::strMng.get(type()),
                 curPos.x, curPos.y, curSize.x, curSize.y,
                 size[0].dumpValue(), size[0].dumpFlags(),
                 size[1].dumpValue(), size[1].dumpFlags(),
                 actions, all,
                 typeSize(),
-                strMng.get(baseType()),
+                Context::strMng.get(baseType()),
                 text ? text : "");
             if (props)
-                typeWidget->dump(strMng, 48);
+                typeWidget->dump(48);
             if (recur)
-                for (const auto* child: children) child->dump(strMng, level + 1);
+                for (const auto* child: children) child->dump(level + 1);
         });
 
 }

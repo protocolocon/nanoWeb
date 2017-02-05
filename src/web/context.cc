@@ -16,21 +16,34 @@ using namespace std;
 
 namespace webui {
 
-    Context::Context(): app(*this), renderForced(true), timeMs(getTimeNowMs()) {
-        if (!render.init()) {
-            LOG("cannot initialize render");
-            assert(false && "cannot initialize render");
-        }
-        Input::init(render.getWin(), &app);
-        updateTime();
+    // global context
+    Context ctx;
+    Render Context::render;
+    Actions Context::actions;
+    Application Context::app;
+    StringManager Context::strMng;
+
+    Context::Context(): renderForced(true), timeMs(getTimeNowMs()) {
     }
 
     DIAG(Context::~Context() {
             render.finish();
         });
 
-    void Context::initialize() {
+    void Context::initialize(DIAG(bool initRender, bool requestAppDescription)) {
+        DIAG(if (initRender)) {
+            if (!render.init()) {
+                LOG("cannot initialize render");
+                assert(false && "cannot initialize render");
+            }
+            Input::init(render.getWin());
+        }
+        addReservedWords();
+        updateTime();
         app.initialize();
+
+        DIAG(if (requestAppDescription))
+            new RequestXHR(RequestXHR::TypeApplication, StringId(), "application.ml");
     }
 
     void Context::mainIteration() {

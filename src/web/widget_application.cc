@@ -33,17 +33,16 @@ namespace webui {
         return widgetApplicationType;
     }
 
-    void WidgetApplication::render(Context& ctx, int alphaMult) {
+    void WidgetApplication::render(int alphaMult) {
         assert(visible);
         glClearColor(background.rf(), background.gf(), background.bf(), background.af());
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        auto& app(ctx.getApplication());
-        const auto& actionTable(app.getActionTable(actions));
+        const auto& actionTable(Context::app.getActionTable(actions));
         if (actionTable.onRender)
-            app.executeNoCheck(actionTable.onRender, this);
+            Context::app.executeNoCheck(actionTable.onRender, this);
 
-        for (auto* child: children) child->render(ctx, alphaMult);
+        for (auto* child: children) child->render(alphaMult);
     }
 
 }

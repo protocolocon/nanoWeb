@@ -15,10 +15,9 @@ struct GLFWwindow;
 namespace webui {
 
     class Widget;
-    class Application;
 
     struct Input {
-        static void init(GLFWwindow* win, Application* app);
+        static void init(GLFWwindow* win);
         static bool refresh(GLFWwindow* win); // returns true if input did potential changes in application
         static bool refreshStack(Widget* widget);
 

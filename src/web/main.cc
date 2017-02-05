@@ -18,8 +18,6 @@ using namespace webui;
 
 namespace {
 
-    Context ctx;
-
     inline void mainIteration() {
         ctx.mainIteration();
     }
@@ -35,7 +33,7 @@ namespace {
 int main(int argc, char* argv[]) {
     // main loop
     setCommandLine(argc, argv);
-    ctx.initialize();
+    ctx.initialize(DIAG(true, true));
     setMainLoop(mainIteration);
     return 0;
 }
