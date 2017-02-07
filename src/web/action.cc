@@ -10,6 +10,7 @@
 #include "widget.h"
 #include "context.h"
 #include "ml_parser.h"
+#include <cassert>
 
 using namespace std;
 using namespace webui;
@@ -18,58 +19,45 @@ namespace {
 
     // to reduce code size, make context global
     Stack stack;
+    vector<int> locations;
 
-    DIAG(void checkStack(int n, const vector<Type>& types) {
-            if (int(stack.size()) < n)
-                LOG("expected %d parameters at least, got %zu", n, stack.size());
-            else {
-                for (int i = stack.size() - n, j = 0; i < int(stack.size()); i++, j++) {
-                    if (stack[i].type != types[j])
-                        LOG("expected parameter %d of type %s, got %s", j, toString(types[j]), toString(stack[i].type));
-                }
-            }
-        });
-
+    Type ErrorPrototype[] = { Type::LastType };
     void FunctionError() {
         DIAG(LOG("error function"));
     }
 
+    Type LogPrototype[] = { Type::StrId, Type::LastType };
     void FunctionLog() {
-        DIAG(checkStack(1, { Type::StrId }));
         LOG("%s", Context::strMng.get(stack.back().strId));
         stack.pop_back();
     }
 
+    Type FloatFloatPrototype[] = { Type::Float, Type::Float, Type::LastType };
     void FunctionAdd() {
-        DIAG(checkStack(2, { Type::Float, Type::Float }));
         float f(stack.back().f);
         stack.pop_back();
         stack.back().f += f;
     }
 
     void FunctionSub() {
-        DIAG(checkStack(2, { Type::Float, Type::Float }));
         float f(stack.back().f);
         stack.pop_back();
         stack.back().f -= f;
     }
 
     void FunctionMul() {
-        DIAG(checkStack(2, { Type::Float, Type::Float }));
         float f(stack.back().f);
         stack.pop_back();
         stack.back().f *= f;
     }
 
     void FunctionDiv() {
-        DIAG(checkStack(2, { Type::Float, Type::Float }));
         float f(stack.back().f);
         stack.pop_back();
         stack.back().f /= f;
     }
 
     void FunctionMod() {
-        DIAG(checkStack(2, { Type::Color, Type::Float }));
         float f(stack.back().f);
         stack.pop_back();
         stack.back().f /= f;
@@ -83,36 +71,38 @@ namespace {
         Identifier id;
         Function funcIdx;
         FunctionProto func;
+        Type* prototype;
+        Type retType;
     } functionList[] = {
-        { Identifier::InvalidId,       Function::Error,           FunctionError },
-        { Identifier::toggleVisible,   Function::ToggleVisible,   FunctionError },
-        { Identifier::beginPath,       Function::BeginPath,       FunctionError },
-        { Identifier::moveto,          Function::Moveto,          FunctionError },
-        { Identifier::lineto,          Function::Lineto,          FunctionError },
-        { Identifier::bezierto,        Function::Bezierto,        FunctionError },
-        { Identifier::closePath,       Function::ClosePath,       FunctionError },
-        { Identifier::roundedRect,     Function::RoundedRect,     FunctionError },
-        { Identifier::fillColor,       Function::FillColor,       FunctionError },
-        { Identifier::fillVertGrad,    Function::FillVertGrad,    FunctionError },
-        { Identifier::fill,            Function::Fill,            FunctionError },
-        { Identifier::strokeWidth,     Function::StrokeWidth,     FunctionError },
-        { Identifier::strokeColor,     Function::StrokeColor,     FunctionError },
-        { Identifier::stroke,          Function::Stroke,          FunctionError },
-        { Identifier::font,            Function::Font,            FunctionError },
-        { Identifier::text,            Function::Text,            FunctionError },
-        { Identifier::textLeft,        Function::TextLeft,        FunctionError },
-        { Identifier::translateCenter, Function::TranslateCenter, FunctionError },
-        { Identifier::scale100,        Function::Scale100,        FunctionError },
-        { Identifier::resetTransform,  Function::ResetTransform,  FunctionError },
-        { Identifier::set,             Function::Set,             FunctionError },
-        { Identifier::query,           Function::Query,           FunctionError },
-        { Identifier::log,             Function::Log,             FunctionLog },
-        { Identifier::add,             Function::Add,             FunctionAdd },
-        { Identifier::sub,             Function::Sub,             FunctionSub },
-        { Identifier::mul,             Function::Mul,             FunctionMul },
-        { Identifier::div,             Function::Div,             FunctionDiv },
-        { Identifier::mod,             Function::Mod,             FunctionMod },
-        { Identifier::assign,          Function::Assign,          FunctionAssign },
+        { Identifier::InvalidId,       Function::Error,           FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::toggleVisible,   Function::ToggleVisible,   FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::beginPath,       Function::BeginPath,       FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::moveto,          Function::Moveto,          FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::lineto,          Function::Lineto,          FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::bezierto,        Function::Bezierto,        FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::closePath,       Function::ClosePath,       FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::roundedRect,     Function::RoundedRect,     FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::fillColor,       Function::FillColor,       FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::fillVertGrad,    Function::FillVertGrad,    FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::fill,            Function::Fill,            FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::strokeWidth,     Function::StrokeWidth,     FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::strokeColor,     Function::StrokeColor,     FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::stroke,          Function::Stroke,          FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::font,            Function::Font,            FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::text,            Function::Text,            FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::textLeft,        Function::TextLeft,        FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::translateCenter, Function::TranslateCenter, FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::scale100,        Function::Scale100,        FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::resetTransform,  Function::ResetTransform,  FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::set,             Function::Set,             FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::query,           Function::Query,           FunctionError,  ErrorPrototype,      Type::LastType },
+        { Identifier::log,             Function::Log,             FunctionLog,    LogPrototype,        Type::LastType },
+        { Identifier::add,             Function::Add,             FunctionAdd,    FloatFloatPrototype, Type::Float },
+        { Identifier::sub,             Function::Sub,             FunctionSub,    FloatFloatPrototype, Type::Float },
+        { Identifier::mul,             Function::Mul,             FunctionMul,    FloatFloatPrototype, Type::Float },
+        { Identifier::div,             Function::Div,             FunctionDiv,    FloatFloatPrototype, Type::Float },
+        { Identifier::mod,             Function::Mod,             FunctionMod,    ErrorPrototype,      Type::LastType },
+        { Identifier::assign,          Function::Assign,          FunctionAssign, ErrorPrototype,      Type::LastType },
     };
 
     DIAG(const char* toString(Function func) {
@@ -133,43 +123,59 @@ namespace webui {
         actions(1, Command(Instruction::Return)) {
     }
 
-    int Actions::add(MLParser& parser, int iEntry, int fEntry, Widget* widget) {
+    int Actions::add(MLParser& parser, int iEntry, int fEntry) {
         int dev(actions.size());
         if (parser[iEntry].type() == MLParser::EntryType::List) iEntry++; // list
-        if (!addRecur(parser, iEntry, fEntry, widget)) return 0;
+        if (!addRecur(parser, iEntry, fEntry)) return 0;
         actions.push_back(Command(Instruction::Return));
         return dev;
     }
 
+    template <bool DryRun>
     bool Actions::execute(int iAction, Widget* widget) {
+        if (!iAction) return true;
+        DIAG(LOG("execute: %s", DryRun ? "dry run" : "for real"); dump(iAction); int iActionOrig(iAction));
         stack.clear();
+        if (DryRun) locations.clear();
         while (true) {
             const auto& action(actions[iAction]);
             switch (action.inst()) {
             case Instruction::Return:
+                DIAG(if (DryRun) { LOG("after dry run"); dump(iActionOrig); });
                 return true;
+            case Instruction::Nop:
+                break;
             case Instruction::PushConstant:
                 stack.push_back(StackFrame(actions[iAction + 1].l DIAG(, action.type())));
+                if (DryRun) locations.push_back(iAction);
+                if (action.param) {
+                    stack.push_back(StackFrame(actions[iAction + 2].l DIAG(, action.type())));
+                    if (DryRun) locations.push_back(iAction);
+                    ++iAction;
+                }
                 ++iAction;
                 break;
             case Instruction::PushProperty:
                 stack.push_back(StackFrame(getPropertyData(widget, action.param) DIAG(, action.type())));
+                if (DryRun) locations.push_back(iAction);
                 break;
             case Instruction::PushForeignProperty:
                 abort();
-            case Instruction::FunctionCall:
-                functionList[action.param].func();
+            case Instruction::FunctionCall: {
+                auto& func(functionList[action.param]);
+                if (!DryRun) func.func();
+                else if (!checkFunctionParams(action.param, iAction, widget)) return false;
                 break;
+            }
             default:
                 DIAG(LOG("unknown instruction: %d", action.instruction));
                 abort();
             }
             ++iAction;
         }
-        return true;
     }
 
-    bool Actions::addRecur(MLParser& parser, int iEntry, int fEntry, Widget* widget) {
+    bool Actions::addRecur(MLParser& parser, int iEntry, int fEntry) {
         bool attr;
         while (iEntry < fEntry) {
             // function, expression or assignment expected
@@ -192,14 +198,14 @@ namespace webui {
                 break;
             case MLParser::EntryType::Operator:
             case MLParser::EntryType::Function:
-                if (!addRecur(parser, iEntry + 1, entry->next, widget)) return false;
+                if (!addRecur(parser, iEntry + 1, entry->next)) return false;
                 else {
                     auto func(funcById(Context::strMng.search(entry->pos, parser.size(iEntry)).getId()));
                     if (func == Function::Error) {
                         DIAG(LOG("unknown function name: %.*s", parser.size(iEntry), entry->pos));
                         return false;
                     }
-                    actions.push_back(Command(Instruction::FunctionCall, func));
+                    actions.push_back(Command(Instruction::FunctionCall, functionList[int(func)].retType, func));
                 }
                 break;
             case MLParser::EntryType::Color:
@@ -271,6 +277,56 @@ namespace webui {
         }
     }
 
+    bool Actions::checkFunctionParams(int iFunction, int iAction, Widget* widget) {
+        const auto& func(functionList[iFunction]);
+        assert(stack.size() == locations.size());
+        const Type* proto(func.prototype);
+        int iStack(stack.size());
+        while (*proto != Type::LastType) {
+            if (--iStack < 0) {
+                LOG("run out of parameters for function %s: got", Context::strMng.get(func.id));
+                dumpStack();
+                return false;
+            }
+            auto& command(actions[locations[iStack]]);
+            auto type(command.type());
+            if (type != *proto) {
+                // try to do the execution conversion
+                if (command.inst() == Instruction::PushConstant && type == Type::Id) {
+                    auto& param(actions[locations[iStack] + 1]);
+                    // cast push constant id to push property
+                    auto propId(param.strId);
+                    assert(propId.valid());
+                    const Property* prop(widget->getProp(Identifier(propId.getId())));
+                    if (prop) {
+                        if (prop->type == *proto) {
+                            // conversion ok
+                            command = Command(Instruction::PushProperty, prop->type, prop->pos);
+                            param = Command(Instruction::Nop);
+                        } else
+                            DIAG(LOG("cannot cast '%s' from %s to %s", Context::strMng.get(propId), toString(prop->type), toString(*proto)));
+                    } else
+                        DIAG(LOG("cannot resolve property '%s'", Context::strMng.get(propId)));
+                } else {
+                    // cannot cast
+                    DIAG(
+                        LOG("expected parameter %lu of type %s, got %s in %s at position %d",
+                            stack.size() - iStack, toString(*proto), toString(type), Context::strMng.get(func.id), locations[iStack]);
+                        dumpStack());
+                    return false;
+                }
+            }
+            ++proto;
+            stack.pop_back();
+            locations.pop_back();
+        }
+        if (func.retType != Type::LastType) {
+            stack.push_back(StackFrame(0.0f DIAG(, actions[iAction].type())));
+            locations.push_back(iAction);
+        }
+        return true;
+    }
+
     DIAG(const Stack& Actions::getStack() const {
             return stack;
         });
@@ -284,19 +340,22 @@ namespace webui {
                 case Instruction::Return:
                     LOG("%6d " GREEN "%-20s" RESET, i, "Return");
                     return;
+                case Instruction::Nop:
+                    LOG("%6d " GREEN "%-20s" RESET, i, "Nop");
+                    break;
                 case Instruction::PushConstant:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), value(%s)", i, "Push constant",
                         ::toString(Type(actions[i].sub)),
                         ::toString(Type(actions[i].sub), &actions[i + 1], buffer, sizeof(buffer)));
-                    i++;
+                    i += 1 + actions[i].param;
                     break;
                 case Instruction::PushProperty:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d)",
                         i, "Push prop", ::toString(Type(actions[i].sub)), actions[i].param);
                     break;
                 case Instruction::FunctionCall:
-                    LOG("%6d " GREEN "%-20s " RESET ": func(%s)",
-                        i, "Function call", ::toString(Function(actions[i].param)));
+                    LOG("%6d " GREEN "%-20s " RESET ": func(%s) -> %s",
+                        i, "Function call", ::toString(Function(actions[i].param)), toString(functionList[actions[i].param].retType));
                     break;
                 default:
                     LOG("%6d " RED "%-20s" RESET, i, "internal error");
@@ -306,12 +365,16 @@ namespace webui {
             }
         });
 
-    DIAG(void Actions::dumpStack() const {
+    DIAG(void Actions::dumpStack() {
             LOG("stack: %zu", stack.size());
             char buffer[128];
             for (int i = 0; i < int(stack.size()); i++)
                 LOG("%4d " GREEN "%20s " RESET "%s",
                     i, toString(stack[i].type), toString(stack[i].type, &stack[i].l, buffer, sizeof(buffer)));
         });
+
+    // explicit template instantiations
+    template bool Actions::execute<true>(int iAction, Widget* widget);
+    template bool Actions::execute<false>(int iAction, Widget* widget);
 
 }

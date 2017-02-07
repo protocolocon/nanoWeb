@@ -50,15 +50,19 @@ namespace webui {
         // actions
         struct ActionTable {
             inline ActionTable(): onEnter(0), onLeave(0), onClick(0), onRender(0), onRenderActive(0) { }
-            int onEnter;
-            int onLeave;
-            int onClick;
-            int onRender;
-            int onRenderActive;
+            union {
+                struct {
+                    int onEnter;
+                    int onLeave;
+                    int onClick;
+                    int onRender;
+                    int onRenderActive;
+                };
+                int actions[5];
+            };
+            bool checked;
         };
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
-        inline bool execute(int commandList, Widget* widget) { return commandList ? executeNoCheck(commandList, widget) : false; } // true if commands executed
-        bool executeNoCheck(int commandList, Widget* widget);
 
         // XHR
         bool onLoad(RequestXHR* xhr);
@@ -104,6 +108,7 @@ namespace webui {
         void replaceBackProperty(bool templateReplaced, int iEntry);
 
         // actions
+        bool checkActions();
         bool addAction(Identifier actionId, int iEntry, int fEntry, int& widgetActions, Widget* widget); // add action to widget
         bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
         bool executeToggleVisible(StringId widgetId); // returns true if something toggled

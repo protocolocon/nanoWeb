@@ -70,16 +70,17 @@ namespace webui {
     enum class Instruction: uint8_t {
                                      //   ins  sub   param
         Return,                      // [ ins, 0x00, 0x0000    ]
+        Nop,                         // [ ins, 0x00, 0x0000    ]
         PushConstant,                // [ ins, type, 0x0000    ] [ value]
         PushProperty,                // [ ins, type, offset/sz ]
         PushForeignProperty,         // [ ins, type, offset/sz ] [ widget* ]
-        FunctionCall,                // [ ins, 0,    func      ]
+        FunctionCall,                // [ ins, type, func      ]
     };
 
 
     struct Command {
         Command(Instruction inst, Type type = Type::Unknown, int off = 0): instruction(uint8_t(inst)), sub(int(type)), param(off) { }
-        Command(Instruction inst, Function func): instruction(uint8_t(inst)), sub(0), param(int(func)) { }
+        Command(Instruction inst, Type type, Function func): instruction(uint8_t(inst)), sub(int(type)), param(int(func)) { }
         Command(float f): f(f) { }
         Command(StringId strId): strId(strId) { }
         Command(RGBA color): color(color) { }
@@ -107,22 +108,24 @@ namespace webui {
         Actions();
 
         // returns an index for the actions or 0 in case of error
-        int add(MLParser& parser, int iEntry, int fEntry, Widget* widget);
+        int add(MLParser& parser, int iEntry, int fEntry);
 
         // execute
+        template <bool DryRun = false>
         bool execute(int iAction, Widget* widget);
 
         // dump action and stack
         DIAG(void dump(int i) const);
-        DIAG(void dumpStack() const);
+        DIAG(static void dumpStack());
         DIAG(const Stack& getStack() const);
 
     private:
         // compiled actions
         std::vector<Command> actions;
 
-        bool addRecur(MLParser& parser, int iEntry, int fEntry, Widget* widget);
+        bool addRecur(MLParser& parser, int iEntry, int fEntry);
         bool pushSymbol(MLParser& parser, int& iEntry, Widget* widget);
+        bool checkFunctionParams(int iFunction, int iAction, Widget* widget);
         static long getPropertyData(const void* data, int offSz);
 
         DIAG(const char* valueToString(Type type, const Command& action, char* buffer, int nBuffer) const);

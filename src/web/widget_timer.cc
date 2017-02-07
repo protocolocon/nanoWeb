@@ -45,8 +45,7 @@ namespace webui {
                 curDelay += delay;
                 // triggered
                 const auto& actionTable(Context::app.getActionTable(actions));
-                if (actionTable.onEnter)
-                    Context::app.executeNoCheck(actionTable.onEnter, this);
+                Context::actions.execute(actionTable.onEnter, this);
                 if (!repeat) repeat = 2; // disable timer
             }
         }

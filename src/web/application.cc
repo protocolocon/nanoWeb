@@ -83,7 +83,7 @@ namespace webui {
 
     void Application::refresh() {
         if (root && ((Input::refresh(Context::render.getWin()) | refreshTimers()) || !layoutStable)) {
-            layoutStable = root->layout(V2s(0, 0), V2s(Context::render.getWidth(), Context::render.getHeight()));
+            layoutStable = root->layout(Box4f(0.f, 0.f, float(Context::render.getWidth()), float(Context::render.getHeight())));
             ctx.forceRender();
         }
     }
@@ -123,7 +123,7 @@ namespace webui {
     void Application::resize(int width, int height) {
         if (root) {
             ctx.resetRatio();
-            root->layout(V2s(0, 0), V2s(Context::render.getWidth(), Context::render.getHeight()));
+            root->layout(Box4f(0.f, 0.f, float(Context::render.getWidth()), float(Context::render.getHeight())));
         }
     }
 
@@ -140,7 +140,7 @@ namespace webui {
         switch (xhr->getType()) {
         case RequestXHR::TypeApplication:
             assert(!root);
-            if (!tree.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct())) {
+            if (!tree.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct()) || !checkActions()) {
                 DIAG(
                     xhr->makeCString();
                     LOG("cannot parse: %s", xhr->getData());
@@ -575,6 +575,19 @@ namespace webui {
         }
     }
 
+    bool Application::checkActions() {
+        bool dev(true);
+        for (auto& table: actionTables) table.checked = false;
+        for (auto& idWidget: widgets) {
+            auto& table(actionTables[idWidget.second->actions]);
+            if (!table.checked) {
+                for (auto action: table.actions)
+                    dev &= Context::actions.execute<true>(action, idWidget.second);
+            }
+        }
+        return dev;
+    }
+
     bool Application::addAction(Identifier actionId, int iEntry, int fEntry, int& widgetActions, Widget* widget) {
         if (!widgetActions || widget->isSharingActions()) {
             auto widgetActionsPrev(widgetActions);
@@ -595,7 +608,7 @@ namespace webui {
         case Identifier::onRenderActive: tableEntry = &table.onRenderActive; break;
         default: DIAG(LOG("unknown action")); return false;
         }
-        return (*tableEntry = Context::actions.add(tree, iEntry, fEntry, widget));
+        return (*tableEntry = Context::actions.add(tree, iEntry, fEntry));
     }
 
 /*
@@ -679,6 +692,7 @@ namespace webui {
         return fonts.size() - 1;
     }
 
+#if 0
     bool Application::executeNoCheck(int commandList, Widget* w) {
         bool cont(true), executed(false);
         V2s pos;
@@ -807,6 +821,7 @@ namespace webui {
         }
         return executed;
     }
+#endif
 
     bool Application::executeToggleVisible(StringId widgetId) {
         auto len(getWidgetRange(widgetId));

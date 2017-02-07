@@ -72,26 +72,25 @@ namespace webui {
         return false;
     }
 
-    bool WidgetLayout::layout(V2s posAvail, V2s sizeAvail) {
+    bool WidgetLayout::layout(const Box4f& boxAvail) {
         bool stable(true);
         int coord2(coord ^ 1);
-        curPos = posAvail;
-        curSize = sizeAvail;
+        box = boxAvail;
         if (visible) {
             // drag & drop
-            short prevCoord(0);
+            float prevCoord(0);
             if (dragDrop) {
                 // remove from list
                 for (size_t idx = 0; idx < children.size(); idx++)
                     if (children[idx] == dragDrop)
                         children.erase(children.begin() + idx);
                 // find position
-                short midCoord(dragDrop->curPos[coord] + (dragDrop->curSize[coord] >> 1) + Input::cursor[coord] - Input::cursorLeftPress[coord]);
-                short last(numeric_limits<short>::min());
+                float midCoord(dragDrop->box.pos[coord] + (dragDrop->box.size[coord] * 0.5f) + Input::cursor[coord] - Input::cursorLeftPress[coord]);
+                float last(numeric_limits<float>::min());
                 size_t pos(children.size());
                 for (size_t idx = 0; idx < children.size(); idx++) {
                     auto* child(children[idx]);
-                    short mid(child->curPos[coord] + (child->curSize[coord] >> 1));
+                    float mid(child->box.pos[coord] + (child->box.size[coord] * 0.5f));
                     if (midCoord >= last && midCoord < mid) {
                         pos = idx;
                         break;
@@ -100,45 +99,45 @@ namespace webui {
                 }
                 // add it in correct position
                 children.insert(children.begin() + pos, dragDrop);
-                prevCoord = dragDrop->curPos[coord];
+                prevCoord = dragDrop->box.pos[coord];
             }
 
             // use linear arrangement util
             LinearArrangement::Elem elems[children.size() + 1];
-            LinearArrangement la(elems, posAvail[coord]);
+            LinearArrangement la(elems, boxAvail.pos[coord]);
             for (auto child: children)
                 if (child->isVisible())
-                    la.add(child->curSize[coord], child->size[coord].get(sizeAvail[coord]), child->size[coord].relative);
+                    la.add(child->box.size[coord], child->size[coord].get(boxAvail.size[coord]), child->size[coord].relative);
                 else
-                    la.add(child->curSize[coord], 0, true);
-            stable = la.calculate(sizeAvail[coord]);
+                    la.add(child->box.size[coord], 0, true);
+            stable = la.calculate(boxAvail.size[coord]);
             if (!coord)
                 for (size_t idx = 0; idx < children.size(); idx++) {
                     auto* child(children[idx]);
-                    stable &= child->layout(V2s(la.get(idx), posAvail.y), V2s(la.get(idx + 1) - la.get(idx), child->size[1].get(curSize.y)));
+                    stable &= child->layout(Box4f(la.get(idx), boxAvail.pos.y, la.get(idx + 1) - la.get(idx), child->size[1].get(box.size.y)));
                 }
             else
                 for (size_t idx = 0; idx < children.size(); idx++) {
                     auto* child(children[idx]);
-                    stable &= child->layout(V2s(posAvail.x, la.get(idx)), V2s(child->size[0].get(curSize.x), la.get(idx + 1) - la.get(idx)));
+                    stable &= child->layout(Box4f(box.pos.x, la.get(idx), child->size[0].get(box.size.x), la.get(idx + 1) - la.get(idx)));
                 }
 
             // adaptative size
             if (size[coord].adapt) {
                 size[coord].size = elems[children.size()].posTarget - elems[0].posTarget;
-                if (size[coord].size != curSize[coord]) stable = false;
+                if (size[coord].size != box.size[coord]) stable = false;
             }
             if (size[coord2].adapt) {
                 if (children.empty())
                     size[coord2].size = 0;
                 else
-                    size[coord2].size = children[0]->curSize[coord2]; // TODO: take max of all children?
-                if (size[coord2].size != curSize[coord2]) stable = false;
+                    size[coord2].size = children[0]->box.size[coord2]; // TODO: take max of all children?
+                if (size[coord2].size != box.size[coord2]) stable = false;
             }
 
             // drag & drop
             if (dragDrop)
-                Input::cursorLeftPress[coord] += dragDrop->curPos[coord] - prevCoord;
+                Input::cursorLeftPress[coord] += dragDrop->box.pos[coord] - prevCoord;
         }
         return animeAlpha() && stable;
     }

@@ -24,7 +24,7 @@ namespace webui {
         virtual Identifier baseType() const final override { return coord ? Identifier::LayoutVer : Identifier::LayoutHor; }
         virtual void render(int alphaMult) final override;
         virtual bool input() final override; // returns true if actions were executed (affecting application)
-        virtual bool layout(V2s pos, V2s size) final override; // returns true if stable
+        virtual bool layout(const Box4f& box) final override; // returns true if stable
 
     private:
         int coord;

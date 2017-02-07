@@ -39,8 +39,7 @@ namespace webui {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         const auto& actionTable(Context::app.getActionTable(actions));
-        if (actionTable.onRender)
-            Context::app.executeNoCheck(actionTable.onRender, this);
+        Context::actions.execute(actionTable.onRender, this);
 
         for (auto* child: children) child->render(alphaMult);
     }

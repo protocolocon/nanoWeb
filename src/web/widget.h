@@ -40,7 +40,7 @@ namespace webui {
         virtual Identifier baseType() const { return Identifier::Widget; }
         virtual void render(int alphaMult);
         virtual bool input(); // returns true if actions were executed (affecting application)
-        virtual bool layout(V2s pos, V2s size); // returns true if stable
+        virtual bool layout(const Box4f& box); // returns true if stable
 
         // get a property or null
         const Property* getProp(Identifier id) const;
@@ -69,15 +69,14 @@ namespace webui {
         inline void toggleVisible() { visible ^= 1; }
 
         // utils
-        void translate(V2s t);
+        void translate(V2f t);
 
         // debug
         DIAG(void dump(int level = 0, bool props = false) const);
 
     public:
         // dynamic part
-        V2s curPos;         // absolute position
-        V2s curSize;
+        Box4f box;          // bounding box: absolute position
 
         // static part
         TypeWidget* typeWidget;

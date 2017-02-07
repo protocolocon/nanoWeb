@@ -28,7 +28,7 @@ namespace {
             LOG("action: '%s'", str);
             REQUIRE(ml.parse(str, strlen(str)));
             ml.dumpTree();
-            iAction = Context::actions.add(ml, 0, ml.size(), &widget);
+            iAction = Context::actions.add(ml, 0, ml.size());
             Context::actions.dump(iAction);
             return iAction;
         }

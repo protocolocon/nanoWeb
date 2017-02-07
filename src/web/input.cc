@@ -50,7 +50,7 @@ namespace webui {
         // get cursor position
         double mx, my;
         glfwGetCursorPos(win, &mx, &my);
-        V2s newCursor = V2s(short(mx), short(my));
+        V2f newCursor = V2f(mx, my);
         if (newCursor != cursor) { // do nothing if mouse is not moved
             cursor = newCursor;
             // drag & drop
@@ -72,8 +72,8 @@ namespace webui {
         return modif;
     }
 
-    V2s Input::cursor;
-    V2s Input::cursorLeftPress;
+    V2f Input::cursor;
+    V2f Input::cursorLeftPress;
     bool Input::updateCalled;
     bool Input::updateModifications;
     bool Input::mouseButtonAction;

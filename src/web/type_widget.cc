@@ -13,7 +13,7 @@
 namespace webui {
 
     DIAG(const char* toString(Type t) {
-            const char* strs[int(Type::LastType)] = {
+            const char* strs[int(Type::LastType) + 1] = {
                 "Unknown",
                 "Bit",
                 "Uint8",
@@ -31,6 +31,7 @@ namespace webui {
                 "ActionTable",
                 "Text",
                 "TextPropOrStrId",
+                "Void", // last
             };
             return strs[int(t)];
         });
@@ -38,7 +39,8 @@ namespace webui {
     DIAG(const char* toString(Type t, const void* data, char* buffer, int nBuffer) {
             switch (t) {
             case Type::Float: snprintf(buffer, nBuffer, "%.4f", *reinterpret_cast<const float*>(data)); break;
-            case Type::StrId: snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
+            case Type::Id: snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
+            case Type::StrId: snprintf(buffer, nBuffer, "\"%s\"", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
             default: snprintf(buffer, nBuffer, "value error");
             }
             return buffer;

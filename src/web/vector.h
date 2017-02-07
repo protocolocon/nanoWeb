@@ -145,4 +145,13 @@ namespace webui {
     using V2f = Vector<float>;
     using V2d = Vector<double>;
 
+    template <typename C>
+    struct Box {
+        Box() { }
+        Box(C x, C y, C w, C h): pos(x, y), size(w, h) { }
+        Vector<C> pos;
+        Vector<C> size;
+    };
+
+    using Box4f = Box<float>;
 }

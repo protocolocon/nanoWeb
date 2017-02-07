@@ -20,10 +20,10 @@ namespace {
 
     TypeWidget widgetType = {
         Identifier::Widget, sizeof(Widget), {
-            { Identifier::x,              PROP(Widget, curPos.x,  Int16,        2, 0, 0) },
-            { Identifier::y,              PROP(Widget, curPos.y,  Int16,        2, 0, 0) },
-            { Identifier::w,              PROP(Widget, curSize.x, Int16,        2, 0, 0) },
-            { Identifier::h,              PROP(Widget, curSize.y, Int16,        2, 0, 0) },
+            { Identifier::x,              PROP(Widget, box.pos.x, Float,        4, 0, 0) },
+            { Identifier::y,              PROP(Widget, box.pos.y, Float,        4, 0, 0) },
+            { Identifier::w,              PROP(Widget, box.size.x,Float,        4, 0, 0) },
+            { Identifier::h,              PROP(Widget, box.size.y,Float,        4, 0, 0) },
             { Identifier::id,             PROP(Widget, id,        StrId,        4, 0, 1) },
             { Identifier::width,          PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
             { Identifier::height,         PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
@@ -65,10 +65,10 @@ namespace webui {
         alphaMult = Context::render.multAlpha(alphaMult, alpha);
 
         const auto& actionTable(Context::app.getActionTable(actions));
-        if (actionTable.onRenderActive && (active || (Input::mouseButtonWidget == this && inside)))
-            Context::app.executeNoCheck(actionTable.onRenderActive, this);
-        else if (actionTable.onRender)
-            Context::app.executeNoCheck(actionTable.onRender, this);
+        if (active || (Input::mouseButtonWidget == this && inside))
+            Context::actions.execute(actionTable.onRenderActive, this);
+        else
+            Context::actions.execute(actionTable.onRender, this);
 
         if (alphaMult)
             for (auto* child: children) child->render(alphaMult);
@@ -84,7 +84,7 @@ namespace webui {
                 else if (Input::mouseAction == GLFW_RELEASE) {
                     // it's a click only if the widget of press is the widget of release
                     if (Input::mouseButtonWidget == this)
-                        Context::app.execute(Context::app.getActionTable(actions).onClick, this);
+                        Context::actions.execute(Context::app.getActionTable(actions).onClick, this);
                 }
                 return true;
             }
@@ -92,12 +92,11 @@ namespace webui {
         return false;
     }
 
-    bool Widget::layout(V2s posAvail, V2s sizeAvail) {
+    bool Widget::layout(const Box4f& boxAvail) {
         bool stable(true);
-        curPos = posAvail;
-        curSize = sizeAvail;
+        box = boxAvail;
         if (visible)
-            for (auto* child: children) stable &= child->layout(curPos, child->getSizeTarget(curSize));
+            for (auto* child: children) stable &= child->layout(box); //curPos, child->getSizeTarget(curSize));
         return animeAlpha() && stable;
     }
 
@@ -125,18 +124,18 @@ namespace webui {
     bool Widget::update() {
         if (!visible) return false;
         bool recurse(false), executed(false);
-        if (Input::cursor >= curPos && Input::cursor < curPos + curSize) {
+        if (Input::cursor >= box.pos && Input::cursor < box.pos + box.size) {
             // inside
             if (!inside) {
                 inside = 1;
-                executed = Context::app.execute(Context::app.getActionTable(actions).onEnter, this);
+                executed = Context::actions.execute(Context::app.getActionTable(actions).onEnter, this);
             }
             recurse = true;
         } else {
             // outside
             if (inside) {
                 inside = 0;
-                executed = Context::app.execute(Context::app.getActionTable(actions).onLeave, this);
+                executed = Context::actions.execute(Context::app.getActionTable(actions).onLeave, this);
                 recurse = true;
             }
         }
@@ -150,8 +149,8 @@ namespace webui {
         return executed;
     }
 
-    void Widget::translate(V2s t) {
-        curPos += t;
+    void Widget::translate(V2f t) {
+        box.pos += t;
         for (auto* child: children) child->translate(t);
     }
 
@@ -159,10 +158,10 @@ namespace webui {
         void Widget::dump(int level, bool props) const {
             bool recur(level >= 0);
             if (level < 0) level = 1;
-            LOG("%*s%-*s: %-15s %4d %4d - %4d %4d (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s  %s",
+            LOG("%*s%-*s: %-15s %7.1f %7.1f - %7.1f %7.1f (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s  %s",
                 level * 2, "", 32 - level*2, Context::strMng.get(id),
                 Context::strMng.get(type()),
-                curPos.x, curPos.y, curSize.x, curSize.y,
+                box.pos.x, box.pos.y, box.size.x, box.size.y,
                 size[0].dumpValue(), size[0].dumpFlags(),
                 size[1].dumpValue(), size[1].dumpFlags(),
                 actions, all,
