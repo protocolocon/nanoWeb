@@ -64,6 +64,9 @@ namespace webui {
         };
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
 
+        // fonts
+        int getFont(StringId str);
+
         // XHR
         bool onLoad(RequestXHR* xhr);
         void onError(RequestXHR* xhr);
@@ -99,9 +102,6 @@ namespace webui {
         bool registerWidget(Widget* widget);
         int getWidgetRange(StringId widgetId) const;
         Widget* createType(Widget* widget, Identifier typeId, int iEntry, int fEntry);
-
-        // fonts
-        int getFont(StringId str);
 
         // templates in properties
         bool replaceProperty(int iEntry);

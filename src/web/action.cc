@@ -21,18 +21,112 @@ namespace {
     Stack stack;
     vector<int> locations;
 
-    Type ErrorPrototype[] = { Type::LastType };
+    Type VoidPrototype[] = { Type::LastType };
+    Type FloatPrototype[] = { Type::Float, Type::LastType };
+    Type Float2Prototype[] = { Type::Float, Type::Float, Type::LastType };
+    Type Float5Prototype[] = { Type::Float, Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
+    Type Float6Prototype[] = { Type::Float, Type::Float, Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
+    Type ColorPrototype[] = { Type::Color, Type::LastType };
+    Type StrIdPrototype[] = { Type::StrId, Type::LastType };
+
+    Type ModPrototype[] = { Type::Float, Type::Color, Type::LastType };
+    Type FillVertGradPrototype[] = { Type::Color, Type::Color, Type::Float, Type::Float, Type::LastType };
+    Type FontPrototype[] = { Type::Float, Type::FontIdx, Type::LastType };
+    Type TextPrototype[] = { Type::StrId, Type::Float, Type::Float, Type::LastType };
+
     void FunctionError() {
         DIAG(LOG("error function"));
     }
 
-    Type LogPrototype[] = { Type::StrId, Type::LastType };
+    void FunctionBeginPath() {
+        Context::render.beginPath();
+    }
+
+    void FunctionMoveto() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        Context::render.moveto(s[0].f, s[1].f);
+        stack.resize(stack.size() - 2);
+    }
+
+    void FunctionLineto() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        Context::render.lineto(s[0].f, s[1].f);
+        stack.resize(stack.size() - 2);
+    }
+
+    void FunctionBezierto() {
+        assert(stack.size() >= 6);
+        auto* s(&stack.back() - 5);
+        Context::render.bezierto(s[0].f, s[1].f, s[2].f, s[3].f, s[4].f, s[5].f);
+        stack.resize(stack.size() - 6);
+    }
+
+    void FunctionClosePath() {
+        Context::render.beginPath();
+    }
+
+    void FunctionStrokeWidth() {
+        assert(stack.size() >= 1);
+        Context::render.strokeWidth(stack.back().f);
+        stack.pop_back();
+    }
+
+    void FunctionStrokeColor() {
+        assert(stack.size() >= 1);
+        Context::render.strokeColor(stack.back().color);
+        stack.pop_back();
+    }
+
+    void FunctionStroke() {
+        Context::render.stroke();
+    }
+
+    void FunctionFont() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        Context::render.font(s[0].l);
+        Context::render.fontSize(s[1].f);
+        stack.resize(stack.size() - 2);
+    }
+
+    void FunctionText() {
+        assert(stack.size() >= 3);
+        auto* s(&stack.back() - 2);
+        Context::render.text(s[0].f, s[1].f, Context::strMng.get(s[2].l));
+        stack.resize(stack.size() - 3);
+    }
+
+    void FunctionRoundedRect() {
+        assert(stack.size() >= 5);
+        auto* s(&stack.back() - 4);
+        Context::render.roundedRect(s[0].f, s[1].f, s[2].f, s[3].f, s[4].f);
+        stack.resize(stack.size() - 5);
+    }
+
+    void FunctionFillColor() {
+        assert(stack.size() >= 1);
+        Context::render.fillColor(stack.back().color);
+        stack.pop_back();
+    }
+
+    void FunctionFillVertGrad() {
+        assert(stack.size() >= 4);
+        auto* s(&stack.back() - 3);
+        Context::render.fillVertGrad(s[0].f, s[1].f, s[2].color, s[3].color);
+        stack.resize(stack.size() - 4);
+    }
+
+    void FunctionFill() {
+        Context::render.fill();
+    }
+
     void FunctionLog() {
         LOG("%s", Context::strMng.get(stack.back().strId));
         stack.pop_back();
     }
 
-    Type FloatFloatPrototype[] = { Type::Float, Type::Float, Type::LastType };
     void FunctionAdd() {
         float f(stack.back().f);
         stack.pop_back();
@@ -74,35 +168,35 @@ namespace {
         Type* prototype;
         Type retType;
     } functionList[] = {
-        { Identifier::InvalidId,       Function::Error,           FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::toggleVisible,   Function::ToggleVisible,   FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::beginPath,       Function::BeginPath,       FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::moveto,          Function::Moveto,          FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::lineto,          Function::Lineto,          FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::bezierto,        Function::Bezierto,        FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::closePath,       Function::ClosePath,       FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::roundedRect,     Function::RoundedRect,     FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::fillColor,       Function::FillColor,       FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::fillVertGrad,    Function::FillVertGrad,    FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::fill,            Function::Fill,            FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::strokeWidth,     Function::StrokeWidth,     FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::strokeColor,     Function::StrokeColor,     FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::stroke,          Function::Stroke,          FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::font,            Function::Font,            FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::text,            Function::Text,            FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::textLeft,        Function::TextLeft,        FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::translateCenter, Function::TranslateCenter, FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::scale100,        Function::Scale100,        FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::resetTransform,  Function::ResetTransform,  FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::set,             Function::Set,             FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::query,           Function::Query,           FunctionError,  ErrorPrototype,      Type::LastType },
-        { Identifier::log,             Function::Log,             FunctionLog,    LogPrototype,        Type::LastType },
-        { Identifier::add,             Function::Add,             FunctionAdd,    FloatFloatPrototype, Type::Float },
-        { Identifier::sub,             Function::Sub,             FunctionSub,    FloatFloatPrototype, Type::Float },
-        { Identifier::mul,             Function::Mul,             FunctionMul,    FloatFloatPrototype, Type::Float },
-        { Identifier::div,             Function::Div,             FunctionDiv,    FloatFloatPrototype, Type::Float },
-        { Identifier::mod,             Function::Mod,             FunctionMod,    ErrorPrototype,      Type::LastType },
-        { Identifier::assign,          Function::Assign,          FunctionAssign, ErrorPrototype,      Type::LastType },
+        { Identifier::InvalidId,       Function::Error,           FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::toggleVisible,   Function::ToggleVisible,   FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::beginPath,       Function::BeginPath,       FunctionBeginPath,    VoidPrototype,         Type::LastType },
+        { Identifier::moveto,          Function::Moveto,          FunctionMoveto,       Float2Prototype,       Type::LastType },
+        { Identifier::lineto,          Function::Lineto,          FunctionLineto,       Float2Prototype,       Type::LastType },
+        { Identifier::bezierto,        Function::Bezierto,        FunctionBezierto,     Float6Prototype,       Type::LastType },
+        { Identifier::closePath,       Function::ClosePath,       FunctionClosePath,    VoidPrototype,         Type::LastType },
+        { Identifier::roundedRect,     Function::RoundedRect,     FunctionRoundedRect,  Float5Prototype,       Type::LastType },
+        { Identifier::fillColor,       Function::FillColor,       FunctionFillColor,    ColorPrototype,        Type::LastType },
+        { Identifier::fillVertGrad,    Function::FillVertGrad,    FunctionFillVertGrad, FillVertGradPrototype, Type::LastType },
+        { Identifier::fill,            Function::Fill,            FunctionFill,         VoidPrototype,         Type::LastType },
+        { Identifier::strokeWidth,     Function::StrokeWidth,     FunctionStrokeWidth,  FloatPrototype,        Type::LastType },
+        { Identifier::strokeColor,     Function::StrokeColor,     FunctionStrokeColor,  ColorPrototype,        Type::LastType },
+        { Identifier::stroke,          Function::Stroke,          FunctionStroke,       VoidPrototype,         Type::LastType },
+        { Identifier::font,            Function::Font,            FunctionFont,         FontPrototype,         Type::LastType },
+        { Identifier::text,            Function::Text,            FunctionText,         TextPrototype,         Type::LastType },
+        { Identifier::textLeft,        Function::TextLeft,        FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::translateCenter, Function::TranslateCenter, FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::scale100,        Function::Scale100,        FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::resetTransform,  Function::ResetTransform,  FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::set,             Function::Set,             FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::query,           Function::Query,           FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::log,             Function::Log,             FunctionLog,          StrIdPrototype,        Type::LastType },
+        { Identifier::add,             Function::Add,             FunctionAdd,          Float2Prototype,       Type::Float },
+        { Identifier::sub,             Function::Sub,             FunctionSub,          Float2Prototype,       Type::Float },
+        { Identifier::mul,             Function::Mul,             FunctionMul,          Float2Prototype,       Type::Float },
+        { Identifier::div,             Function::Div,             FunctionDiv,          Float2Prototype,       Type::Float },
+        { Identifier::mod,             Function::Mod,             FunctionMod,          ModPrototype,          Type::Color },
+        { Identifier::assign,          Function::Assign,          FunctionAssign,       VoidPrototype,         Type::LastType },
     };
 
     DIAG(const char* toString(Function func) {
@@ -219,7 +313,7 @@ namespace webui {
                 actions.push_back(Command(Context::strMng.add(entry->pos + 1, parser.size(iEntry) - 2)));
                 break;
             default:
-                LOG("invalid ML entry type: %s", MLParser::toString(entry->type()));
+                DIAG(LOG("invalid ML entry type: %s", MLParser::toString(entry->type())));
                 return false;
             }
             iEntry = entry->next;
@@ -250,7 +344,7 @@ namespace webui {
         // property
         const Property* prop(widget->getProp(Identifier(propId.getId())));
         if (prop) {
-            actions.push_back(Command(foreign ? Instruction::PushForeignProperty : Instruction::PushProperty, prop->type, prop->pos));
+            actions.push_back(Command(foreign ? Instruction::PushForeignProperty : Instruction::PushProperty, prop->type, prop->pos NO!));
             if (foreign)
                 actions.push_back(Command(widget));
             return true;
@@ -277,6 +371,17 @@ namespace webui {
         }
     }
 
+    int Actions::getSizeEncoding(int size) {
+        switch (size) {
+        case 0:
+        case 1: return 0;
+        case 2: return 1;
+        case 4: return 2;
+        case 8: return 3;
+        default: LOG("internal error"); return 0;
+        }
+    }
+
     bool Actions::checkFunctionParams(int iFunction, int iAction, Widget* widget) {
         const auto& func(functionList[iFunction]);
         assert(stack.size() == locations.size());
@@ -284,8 +389,9 @@ namespace webui {
         int iStack(stack.size());
         while (*proto != Type::LastType) {
             if (--iStack < 0) {
-                LOG("run out of parameters for function %s: got", Context::strMng.get(func.id));
-                dumpStack();
+                DIAG(
+                    LOG("run out of parameters for function %s: got", Context::strMng.get(func.id));
+                    dumpStack());
                 return false;
             }
             auto& command(actions[locations[iStack]]);
@@ -293,20 +399,25 @@ namespace webui {
             if (type != *proto) {
                 // try to do the execution conversion
                 if (command.inst() == Instruction::PushConstant && type == Type::Id) {
-                    auto& param(actions[locations[iStack] + 1]);
                     // cast push constant id to push property
+                    auto& param(actions[locations[iStack] + 1]);
                     auto propId(param.strId);
                     assert(propId.valid());
                     const Property* prop(widget->getProp(Identifier(propId.getId())));
                     if (prop) {
                         if (prop->type == *proto) {
                             // conversion ok
-                            command = Command(Instruction::PushProperty, prop->type, prop->pos);
+                            command = Command(Instruction::PushProperty, prop->type, prop->pos << 2 | getSizeEncoding(prop->size));
                             param = Command(Instruction::Nop);
                         } else
                             DIAG(LOG("cannot cast '%s' from %s to %s", Context::strMng.get(propId), toString(prop->type), toString(*proto)));
                     } else
                         DIAG(LOG("cannot resolve property '%s'", Context::strMng.get(propId)));
+                } else if (command.inst() == Instruction::PushConstant && type == Type::StrId && *proto == Type::FontIdx) {
+                    // cast font name to font index
+                    auto& param(actions[locations[iStack] + 1]);
+                    command.sub = int(Type::FontIdx);
+                    param.l = Context::app.getFont(param.strId);
                 } else {
                     // cannot cast
                     DIAG(
@@ -350,11 +461,11 @@ namespace webui {
                     i += 1 + actions[i].param;
                     break;
                 case Instruction::PushProperty:
-                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d)",
-                        i, "Push prop", ::toString(Type(actions[i].sub)), actions[i].param);
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), size(%d)",
+                        i, "Push prop", ::toString(Type(actions[i].sub)), actions[i].param >> 2, 1 << (actions[i].param & 3));
                     break;
                 case Instruction::FunctionCall:
-                    LOG("%6d " GREEN "%-20s " RESET ": func(%s) -> %s",
+                    LOG("%6d " GREEN "%-20s " RESET ": func(" CYAN "%s" RESET ") -> %s",
                         i, "Function call", ::toString(Function(actions[i].param)), toString(functionList[actions[i].param].retType));
                     break;
                 default:

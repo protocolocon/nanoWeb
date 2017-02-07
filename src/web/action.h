@@ -23,11 +23,13 @@ namespace webui {
     class MLParser;
 
     struct StackFrame {
+        StackFrame() { }
         StackFrame(long l DIAG(, Type type)): l(l) DIAG(, type(type)) { }
         union {
             float f;
             long l;
             StringId strId;
+            RGBA color;
         };
         DIAG(Type type);
     };
@@ -127,6 +129,7 @@ namespace webui {
         bool pushSymbol(MLParser& parser, int& iEntry, Widget* widget);
         bool checkFunctionParams(int iFunction, int iAction, Widget* widget);
         static long getPropertyData(const void* data, int offSz);
+        static int getSizeEncoding(int size);
 
         DIAG(const char* valueToString(Type type, const Command& action, char* buffer, int nBuffer) const);
     };

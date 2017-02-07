@@ -135,7 +135,11 @@ namespace webui {
         }
 
         inline C manhatan(const Vector& v) const {
-            return abs(x - v.x) + abs(y - v.y);
+            return this->abs(x - v.x) + this->abs(y - v.y);
+        }
+
+        inline static C abs(C a) {
+            return a < 0 ? -a : a;
         }
 
     };

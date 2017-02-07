@@ -35,7 +35,7 @@ namespace webui {
         inline void lineto(float x, float y) const { nvgLineTo(vg, x, y); }
         inline void bezierto(float x1, float y1, float x2, float y2, float x, float y) const { nvgBezierTo(vg, x1, y1, x2, y2, x, y); }
         inline void closePath() const { nvgClosePath(vg); }
-        inline void roundedRect(float x, float y, float w, float h, float r) const { nvgRoundedRect(vg, x, y, w, h, r); }
+        inline void roundedRect(float x, float y, float w, float h, float r) const { nvgRoundedRect(vg, x, y, w, h, r); LOG("rond %.0f %.0f %.0f %.0f", x, y, w, h); }
         inline void fillColor(RGBA color) const { nvgFillColor(vg, color.toVGColor()); }
         inline void fillVertGrad(float y, float h, RGBA top, RGBA bottom) const {
             nvgFillPaint(vg, nvgLinearGradient(vg, 0, y, 0, y + h, top.toVGColor(), bottom.toVGColor()));
@@ -50,7 +50,7 @@ namespace webui {
         inline void font(int iFont) const { nvgFontFaceId(vg, iFont); }
         inline void fontSize(float size) const { nvgFontSize(vg, size); }
         void textAlign(int align);
-        void text(int x, int y, const char* str);
+        void text(float x, float y, const char* str);
 
         int loadFont(const char* name, char* data, int nData) { return nvgCreateFontMem(vg, name, (uint8_t*)data, nData, false); }
 

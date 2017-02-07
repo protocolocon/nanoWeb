@@ -41,7 +41,8 @@ namespace webui {
             case Type::Float: snprintf(buffer, nBuffer, "%.4f", *reinterpret_cast<const float*>(data)); break;
             case Type::Id: snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
             case Type::StrId: snprintf(buffer, nBuffer, "\"%s\"", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
-            default: snprintf(buffer, nBuffer, "value error");
+            case Type::FontIdx: snprintf(buffer, nBuffer, "%ld", *reinterpret_cast<const long*>(data)); break;
+            default: snprintf(buffer, nBuffer, RED "value error" RESET);
             }
             return buffer;
         });

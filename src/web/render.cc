@@ -92,7 +92,7 @@ namespace webui {
         nvgTextAlign(vg, align);
     }
 
-    void Render::text(int x, int y, const char* str) {
+    void Render::text(float x, float y, const char* str) {
         nvgText(vg, x, y, str, nullptr);
     }
 
