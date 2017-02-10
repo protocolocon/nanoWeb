@@ -169,7 +169,7 @@ namespace webui {
                 Context::strMng.get(baseType()),
                 text ? text : "");
             if (props)
-                typeWidget->dump(48);
+                typeWidget->dump(48, this);
             if (recur)
                 for (const auto* child: children) child->dump(level + 1);
         });

@@ -201,3 +201,21 @@ TEST_CASE("parser: failing case operation", "[parser]") {
     DUMP(ml.dumpTree());
     REQUIRE(ml.size() == 5);
 }
+
+TEST_CASE("parser: failing case operation 2", "[parser]") {
+    MLParser ml;
+    const char* str("f(x + w*0.5, (y-2) + h*0.5)");
+    CHECK(ml.parse(str, strlen(str)));
+    DUMP(ml.dumpTree());
+    REQUIRE(ml.size() == 13);
+    CHECK(ml[2].next == 6);
+}
+
+TEST_CASE("parser: assign op", "[parser]") {
+    MLParser ml;
+    const char* str("x ^= 1");
+    CHECK(ml.parse(str, strlen(str)));
+    DUMP(ml.dumpTree());
+    REQUIRE(ml.size() == 3);
+    CHECK(ml[1].type() == MLParser::EntryType::Operator);
+}

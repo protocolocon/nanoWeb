@@ -86,6 +86,7 @@ namespace {
         "/" _
         "%" _
         "=" _
+        "^=" _
         "FLast" _
         _;
 }
@@ -102,7 +103,7 @@ namespace webui {
         assert(Context::strMng.search("query").getId() == Identifier::query);
         assert(Context::strMng.search("+").getId() == Identifier::add);
         assert(Context::strMng.search("-").getId() == Identifier::sub);
-        assert(Context::strMng.search("=").getId() == Identifier::assign);
+        assert(Context::strMng.search("^=").getId() == Identifier::iXor);
     }
 
 }

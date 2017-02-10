@@ -75,6 +75,8 @@ namespace webui {
         DIAG(void dump() const);
         inline auto* getRoot() { return root; }
         inline auto& getWidgets() { return widgets; }
+        /*TODO*/bool executeToggleVisible(StringId widgetId); // returns true if something toggled
+        Widget* createWidget(Identifier id, Widget* parent, int objectSize = 0);
 
     private:
         MLParser tree, tpl;    // application tree description and template data
@@ -98,7 +100,6 @@ namespace webui {
 
         // widget factory and registration
         bool isWidget(Identifier id) const;
-        Widget* createWidget(Identifier id, Widget* parent, int objectSize = 0);
         bool registerWidget(Widget* widget);
         int getWidgetRange(StringId widgetId) const;
         Widget* createType(Widget* widget, Identifier typeId, int iEntry, int fEntry);
@@ -111,7 +112,6 @@ namespace webui {
         bool checkActions();
         bool addAction(Identifier actionId, int iEntry, int fEntry, int& widgetActions, Widget* widget); // add action to widget
         bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
-        bool executeToggleVisible(StringId widgetId); // returns true if something toggled
         bool executeSet(StringId widgetId, Identifier prop, StringId value, Widget* widget);
         bool executeQuery(StringId query, StringId widgetId);
 

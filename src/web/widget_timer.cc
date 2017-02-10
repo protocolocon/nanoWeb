@@ -30,6 +30,7 @@ namespace webui {
     WidgetTimer::WidgetTimer(Widget* parent): Widget(parent), curDelay(0x7fffffff), delay(1000), repeat(1) {
         size[0].assign(0, false);
         size[1].assign(0, false);
+        visible = 0;
         typeWidget = &widgetTimerType;
     }
 

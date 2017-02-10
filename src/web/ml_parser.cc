@@ -120,7 +120,7 @@ namespace webui {
             return parseString(ml, prev);
         } else if (c == '(') { // operation parenthesis
             ++ml;
-            if ((prev = parseExpression(ml, -1)) < 0) return -1;
+            if ((prev = parseExpression(ml, prev)) < 0) return -1;
             c = skipSpace(ml);
             if (c != ')') return ERROR_INT(ml, "expecting ')' in operation");
             ++ml;
@@ -131,10 +131,12 @@ namespace webui {
             prev = newEntry(EntryType::Wildcar, ml++, prev);
         }
         // operators, a way of continuing with expression
-        c = skipSpace(ml);
-        if (isoperator(c)) {
+        skipSpace(ml);
+        int opSize;
+        if ((opSize = isOperator(ml))) {
             if (prev == -1 || entries.empty() || entries.back().type() == EntryType::Operator) return ERROR_INT(ml, "invalid operator position");
-            prev = newEntry(EntryType::Operator, ml++, prev);
+            prev = newEntry(EntryType::Operator, ml, prev);
+            ml += opSize;
             if (parseExpression(ml, -1, true) < 0) return -1;
         }
         DIAG(if (!entries.empty() && entries.back().type() == EntryType::Operator) {
@@ -303,16 +305,21 @@ namespace webui {
         case EntryType::Number:    skipNumber(end); break;
         case EntryType::Color:     skipColor(end); break;
         case EntryType::String:    skipString(end); break;
-        case EntryType::List:      // '['
-        case EntryType::Operator:  // '@'
-        case EntryType::Wildcar:   ++end; break;
+        case EntryType::List:                    // '['
+        case EntryType::Block:                   // '{'
+        case EntryType::Wildcar:   ++end; break; // '@'
+        case EntryType::Operator:  end += isOperator(end); break;
         default:                   abort();
         }
         return end - entry.pos;
     }
 
-    bool MLParser::isoperator(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/' || c == '=' || c == '%';
+    int MLParser::isOperator(const char* c) {
+        if (*c == '+' || *c == '-' || *c == '*' || *c == '/' || *c == '=' || *c == '%') return 1;
+        if (*c == '^') {
+            if (c[1] == '=') return 2;
+        }
+        return 0;
     }
 
     Identifier MLParser::asId(int iEntry) const {
@@ -381,18 +388,10 @@ namespace webui {
             while (iEntry < fEntry) {
                 const auto& entry(entries[iEntry]);
                 int next(entry.next ? entry.next : fEntry);
-                if (next > iEntry + 1) {// children
-                    if (isalnum(*entry.pos)) {
-                        LOG("%*s%d %.*s " RED "%s " BLUE "%d" RESET,
-                            level*2, "", iEntry, size(iEntry), entry.pos, toString(entry.type()), entry.next);
-                    } else
-                        LOG("%*s%d %c " RED "%s " BLUE "%d" RESET,
-                            level*2, "", iEntry, *entry.pos, toString(entry.type()), entry.next);
+                LOG(CYAN "%*s%d" RESET " %.*s " RED "%s " BLUE "%d" RESET,
+                    level*2, "", iEntry, size(iEntry), entry.pos, toString(entry.type()), entry.next);
+                if (next > iEntry + 1) // children
                     dumpTreeRecur(iEntry + 1, next, level + 1);
-                } else {
-                    LOG("%*s%d %.*s " RED "%s " BLUE "%d" RESET,
-                        level*2, "", iEntry, size(iEntry), entry.pos, toString(entry.type()), entry.next);
-                }
                 iEntry = next;
             }
         });

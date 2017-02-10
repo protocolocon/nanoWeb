@@ -93,7 +93,8 @@ namespace webui {
         int parseObject(const char*&ml, int prev, char endChar);
         bool parseList(const char*&ml, char endChar);
 
-        static bool isoperator(char c);
+        // returns the size of the operator or 0 if no operator found
+        static int isOperator(const char* c);
 
         void fixLevelEndings(int iEntry, int jEntry);
 

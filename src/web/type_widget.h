@@ -35,6 +35,7 @@ namespace webui {
         ActionTable,
         Text,            // char*
         TextPropOrStrId, // TextPropOrStrId type: a Text or a StrId
+        VoidPtr,         // void*
         LastType
     };
 
@@ -71,7 +72,7 @@ namespace webui {
         long get(Identifier id, const void* data) const;
         void set(Identifier id, void* data, long value) const;
 
-        DIAG(void dump(int indent) const);
+        DIAG(void dump(int indent, const void* widget) const);
     };
 
 }

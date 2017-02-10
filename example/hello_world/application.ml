@@ -1,6 +1,6 @@
 // Example application description
 Application {
-    background: "#4d4d4d"
+    background: #4d4d4d
 
     // define a widget button to be used later
     Widget {
@@ -22,13 +22,13 @@ Application {
             beginPath(), roundedRect(x+3,   y+3,   w-6, h-6, 4), strokeColor(background%72), stroke(),
             beginPath(), roundedRect(x+3,   y+3,   w-6, h-8, 4), strokeColor(background%22), stroke(),
             font("Roboto-Bold.ttf", 40),
-            fillColor(foreground%0),   text(0,  0, text),
+            fillColor(foreground%0),   text(0, 0,  text),
             fillColor(foreground%160), text(0, -2, text)
         ]
         onEnter: [ background = #888898c0 ]
         onLeave: [ background = #909090c0 ]
-        foreground: "#808080a0"
-        background: "#808080c0"
+        foreground: #808080a0
+        background: #808080c0
     }
 
     Widget {
@@ -53,20 +53,31 @@ Application {
             fillColor(foreground%0),   text(0,  0, text),
             fillColor(foreground%160), text(0, -1, text)
         ]
-        foreground: "#808080a0"
-        background: "#808080c0"
+        foreground: #808080a0
+        background: #808080c0
     }
 
     ButtonLevel2 {
         define: ButtonLevel3
         width: 80
         height: 24
-        background: "#a08080c0"
+        background: #a08080c0
         text: "more"
     }
 
-    // tree definition
+    Timer {
+        id: timer
+        repeat: 0
+        delay: 1000 // ms
+        onTimeout: [
+            treeTemplate.visible = 1,
+            query("tree.ml", treeTemplate)
+        ]
+    }
+
     LayoutHor {
+
+    // test template
     Template {
         id: treeTemplate
         LayoutVer {
@@ -107,17 +118,7 @@ Application {
         }
     }
 
-    // test template
-    Timer {
-        id: timer
-        repeat: 0
-        delay: 1000 // ms
-        onTimeout: [
-            treeTemplate.visible = 1,
-            query("tree.ml", treeTemplate)
-        ]
-    }
-
+    // tree definition
     LayoutVer {
         id: root
         ButtonLevel1 {
@@ -232,5 +233,5 @@ Application {
             }
         }
     }
-}
+    }
 }

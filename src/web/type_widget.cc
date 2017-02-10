@@ -31,6 +31,7 @@ namespace webui {
                 "ActionTable",
                 "Text",
                 "TextPropOrStrId",
+                "VoidPtr",
                 "Void", // last
             };
             return strs[int(t)];
@@ -42,6 +43,10 @@ namespace webui {
             case Type::Id: snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
             case Type::StrId: snprintf(buffer, nBuffer, "\"%s\"", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
             case Type::FontIdx: snprintf(buffer, nBuffer, "%ld", *reinterpret_cast<const long*>(data)); break;
+            case Type::Color: snprintf(buffer, nBuffer, "%08x", *reinterpret_cast<const uint32_t*>(data)); break;
+            case Type::ActionTable: snprintf(buffer, nBuffer, "%d", *reinterpret_cast<const uint32_t*>(data)); break;
+            case Type::Text: snprintf(buffer, nBuffer, "\"%s\"", *reinterpret_cast<char* const*>(data)); break;
+            case Type::VoidPtr: snprintf(buffer, nBuffer, "%p", *reinterpret_cast<void* const*>(data)); break;
             default: snprintf(buffer, nBuffer, RED "value error" RESET);
             }
             return buffer;
@@ -91,10 +96,13 @@ namespace webui {
         }
     }
 
-    DIAG(void TypeWidget::dump(int indent) const {
+    DIAG(void TypeWidget::dump(int indent, const void* widget) const {
+            char buffer[1024];
             for (const auto& idProp: *this) {
                 const auto& prop(idProp.second);
-                LOG("%*s%-20s: %-16s %4d %2d", indent, "", Context::strMng.get(idProp.first), toString(prop.type), prop.pos * prop.size, prop.size);
+                LOG("%*s%-20s: %-16s %4d %2d  " GREEN "%s" RESET,
+                    indent, "", Context::strMng.get(idProp.first), toString(prop.type), prop.pos * prop.size, prop.size,
+                    toString(prop.type, (uint8_t*)widget + prop.pos * prop.size, buffer, sizeof(buffer)));
             }
         });
 

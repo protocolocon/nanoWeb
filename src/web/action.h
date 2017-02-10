@@ -30,6 +30,8 @@ namespace webui {
             long l;
             StringId strId;
             RGBA color;
+            const char* text;
+            void* voidPtr;
         };
         DIAG(Type type);
     };
@@ -54,6 +56,7 @@ namespace webui {
         Stroke,
         Font,
         Text,
+        TextCharPtr,
         TextLeft,
         TranslateCenter,
         Scale100,
@@ -66,16 +69,27 @@ namespace webui {
         Mul,                         // push(pop * pop)
         Div,                         // push(pop / pop)
         Mod,                         // push(pop % pop)
-        Assign,                      //
+        AssignFloat,                 //
+        AssignColor,                 //
+        AssignBit0,                  //
+        AssignBit1,                  //
+        AssignBit2,                  //
+        AssignBit3,                  //
+        AssignBit4,                  //
+        AssignBit5,                  //
+        AssignBit6,                  //
+        AssignBit7,                  //
     };
 
     enum class Instruction: uint8_t {
                                      //   ins  sub   param
         Return,                      // [ ins, 0x00, 0x0000    ]
         Nop,                         // [ ins, 0x00, 0x0000    ]
-        PushConstant,                // [ ins, type, 0x0000    ] [ value]
+        PushConstant,                // [ ins, type, elems     ] [ value]
         PushProperty,                // [ ins, type, offset/sz ]
         PushForeignProperty,         // [ ins, type, offset/sz ] [ widget* ]
+        PushPropertyPtr,             // [ ins, type, offset/sz ]
+        PushForeignPropertyPtr,      // [ ins, type, offset/sz ] [ widget* ]
         FunctionCall,                // [ ins, type, func      ]
     };
 
@@ -87,6 +101,7 @@ namespace webui {
         Command(StringId strId): strId(strId) { }
         Command(RGBA color): color(color) { }
         Command(Widget* widget): widget(widget) { }
+        Command(void* voidPtr): voidPtr(voidPtr) { }
         inline Instruction inst() const { return Instruction(instruction); }
         inline Type type() const { return Type(sub); }
 
@@ -101,6 +116,7 @@ namespace webui {
             StringId strId;
             RGBA color;
             Widget* widget;
+            void* voidPtr;
         };
     };
 
@@ -126,10 +142,10 @@ namespace webui {
         std::vector<Command> actions;
 
         bool addRecur(MLParser& parser, int iEntry, int fEntry);
-        bool pushSymbol(MLParser& parser, int& iEntry, Widget* widget);
         bool checkFunctionParams(int iFunction, int iAction, Widget* widget);
         static long getPropertyData(const void* data, int offSz);
         static int getSizeEncoding(int size);
+        const Property* resolveProperty(Command* command, Widget* widget, Widget*& propWidget);
 
         DIAG(const char* valueToString(Type type, const Command& action, char* buffer, int nBuffer) const);
     };

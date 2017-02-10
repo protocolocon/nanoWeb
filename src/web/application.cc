@@ -151,7 +151,7 @@ namespace webui {
 
             DIAG(
                 tree.dumpTree();
-                //dump()
+                dump()
             );
             tree.clear();
             ctx.forceRender();
@@ -557,7 +557,7 @@ namespace webui {
         case Type::Text:
             DIAG(if (fEntry > iEntry + 1) return false);
             free(reinterpret_cast<char**>(data)[prop.pos]);
-            reinterpret_cast<char**>(data)[prop.pos] = strndup(tree[iEntry].pos, tree.size(iEntry));
+            reinterpret_cast<char**>(data)[prop.pos] = strndup(tree[iEntry].pos + 1, tree.size(iEntry) - 2);
             return true;
         case Type::TextPropOrStrId:
             DIAG(if (fEntry > iEntry + 1) return false);
@@ -581,6 +581,7 @@ namespace webui {
         for (auto& idWidget: widgets) {
             auto& table(actionTables[idWidget.second->actions]);
             if (!table.checked) {
+                table.checked = true;
                 for (auto action: table.actions)
                     dev &= Context::actions.execute<true>(action, idWidget.second);
             }
@@ -886,6 +887,12 @@ namespace webui {
             LOG("Registered widgets:");
             for (const auto& widget: widgets)
                 widget.second->dump(-1, true);
+            LOG("Action tables");
+            for (const auto& actionTable: actionTables) {
+                LOG("  %ld", &actionTable - actionTables.data());
+                for (auto action: actionTable.actions)
+                    LOG("    %d", action);
+            }
         });
 
 }
