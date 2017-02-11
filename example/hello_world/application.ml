@@ -6,6 +6,7 @@ Application {
     Widget {
         define: ButtonLevel1
         propId: children
+        children: ButtonLevel1
         width: 260
         height: 70
         onRender: [
@@ -28,7 +29,7 @@ Application {
         ]
         onEnter: [ background = #888898c0, text = "in" ]
         onLeave: [ background = #909090c0, text = "out" ]
-        onClick: toggleVisible(children)
+        onClick: children.visible = 1 - children.visible
         foreground: #808080a0
         background: #808080c0
     }
@@ -36,6 +37,7 @@ Application {
     Widget {
         define: ButtonLevel2
         propId: children
+        children: ButtonLevel2
         width: 120
         height: 32
         onRender: [
@@ -56,7 +58,7 @@ Application {
             fillColor(foreground%0),   text(0,  0, text),
             fillColor(foreground%160), text(0, -1, text)
         ]
-        onClick: toggleVisible(children)
+        onClick: children.visible = 1 - children.visible
         foreground: #808080a0
         background: #808080c0
     }

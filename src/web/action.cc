@@ -29,24 +29,17 @@ namespace {
     Type Float6Prototype[] =       { Type::Float,   Type::Float,    Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
     Type ColorPrototype[] =        { Type::Color,   Type::LastType };
     Type StrIdPrototype[] =        { Type::StrId,   Type::LastType };
-    Type IdPrototype[] =           { Type::Id,      Type::LastType };
 
     Type ModPrototype[] =          { Type::Float,   Type::Color,    Type::LastType };
     Type FillVertGradPrototype[] = { Type::Color,   Type::Color,    Type::Float, Type::Float, Type::LastType };
     Type FontPrototype[] =         { Type::Float,   Type::FontIdx,  Type::LastType };
     Type TextPrototype[] =         { Type::StrId,   Type::Float,    Type::Float, Type::LastType };
     Type TextCharPtrPrototype[] =  { Type::Text,    Type::Float,    Type::Float, Type::LastType };
-    Type QueryPrototype[] =        { Type::StrId,   Type::StrId,    Type::LastType };
+    Type QueryPrototype[] =        { Type::Id,      Type::StrId,    Type::LastType };
     Type AssignPrototype[] =       { Type::Unknown, Type::VoidPtr,  Type::LastType };
 
     void FunctionError() {
         DIAG(LOG("error function"));
-    }
-
-    void FunctionToggleVisible() {
-        assert(stack.size() >= 1);
-        Context::app.executeToggleVisible(stack.back().strId);
-        stack.pop_back();
     }
 
     void FunctionBeginPath() {
@@ -252,7 +245,6 @@ namespace {
         Type retType;
     } functionList[] = {
         { Identifier::InvalidId,       FunctionError,          VoidPrototype,         Type::LastType },
-        { Identifier::toggleVisible,   FunctionToggleVisible,  IdPrototype,           Type::LastType },
         { Identifier::beginPath,       FunctionBeginPath,      VoidPrototype,         Type::LastType },
         { Identifier::moveto,          FunctionMoveto,         Float2Prototype,       Type::LastType },
         { Identifier::lineto,          FunctionLineto,         Float2Prototype,       Type::LastType },
@@ -357,6 +349,14 @@ namespace webui {
                 if (DryRun) locations.push_back(iAction);
                 ++iAction;
                 break;
+            case Instruction::PushDoubleProperty: {
+                auto* resolved(resolveDoubleDispatch(actions[iAction + 1].l, widget));
+                DIAG(if (!resolved) { LOG("double dispatch failed"); return false; });
+                stack.push_back(StackFrame(getPropertyData(resolved, action)));
+                if (DryRun) locations.push_back(iAction);
+                iAction += 2;
+                break;
+            }
             case Instruction::PushPropertyPtr:
                 stack.push_back(StackFrame(long(widget) + action.param));
                 if (DryRun) locations.push_back(iAction);
@@ -366,6 +366,14 @@ namespace webui {
                 if (DryRun) locations.push_back(iAction);
                 ++iAction;
                 break;
+            case Instruction::PushDoublePropertyPtr: {
+                auto* resolved(resolveDoubleDispatch(actions[iAction + 1].l, widget));
+                DIAG(if (!resolved) { LOG("double dispatch failed"); return false; });
+                stack.push_back(StackFrame(long(resolved) + action.param));
+                if (DryRun) locations.push_back(iAction);
+                iAction += 2;
+                break;
+            }
             case Instruction::FunctionCall: {
                 auto& func(functionList[action.param]);
                 if (!DryRun) func.func();
@@ -388,7 +396,8 @@ namespace webui {
         int iAction(actions.size());
         actions.push_back(Command(Instruction::PushConstant, Type::Id));
         actions.push_back(Command(propId));
-        const auto* prop(resolveProperty(&actions[iAction], widget, widget));
+        DispatchType dispatchType;
+        const auto* prop(resolveProperty(&actions[iAction], widget, widget, dispatchType));
         if (!prop) {
             DIAG(LOG("no such property in widget: %s", Context::strMng.get(propId)));
             return false;
@@ -491,19 +500,32 @@ namespace webui {
         return true;
     }
 
-    const Property* Actions::resolveProperty(Command* command, Widget* widget, Widget*& propWidget) {
+    const Property* Actions::resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type) {
         StringId propId;
         if (command->param) {
             // x.y => widget.propery
             auto widgetId(command[1].strId);
             assert(widgetId.valid());
             if (!Context::app.getWidgets().count(widgetId)) {
-                DIAG(LOG("unknown widget: %s", Context::strMng.get(widgetId)));
-                return nullptr;
-            }
+                // maybe it's a property of the widget to refer a widget
+                const Property* prop(widget->getProp(Identifier(widgetId.getId())));
+                if (!prop || prop->type != Type::Id || // variable has to be set to a valid widget since the beginning
+                    !Context::app.getWidgets().count(widgetId = reinterpret_cast<StringId*>(widget)[prop->pos])) {
+                    DIAG(LOG("unknown widget: %s resolving property", Context::strMng.get(widgetId)));
+                    type = DispatchUnknown;
+                    return nullptr;
+                }
+                // double dispatch: (variable->widget).property
+                type = DispatchType(prop->pos);
+            } else
+                // foreign
+                type = DispatchForeign;
+
             propWidget = Context::app.getWidgets()[widgetId];
             propId = command[2].strId;
         } else {
+            // normal
+            type = DispatchNormal;
             propWidget = widget;
             propId = command[1].strId;
         }
@@ -511,6 +533,40 @@ namespace webui {
         // property
         const Property* prop(propWidget->getProp(Identifier(propId.getId())));
         return prop;
+    }
+
+    void Actions::resolvePropertyRecode(const Property* prop, Widget* widget, DispatchType dispatchType, Command* command, bool ptr) {
+        auto pos(!ptr && prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : ptr ? prop->pos * prop->size : prop->pos);
+        int instBase = ptr ? int(Instruction::PushPropertyPtr) : int(Instruction::PushProperty);
+        switch (dispatchType) {
+        case DispatchUnknown:
+            DIAG(LOG("bad dispatching"));
+            break;
+        case DispatchNormal:
+            command[0] = Command(Instruction(instBase), prop->type, pos);
+            command[1] = Command(Instruction::Nop);
+            break;
+        case DispatchForeign:
+            command[0] = Command(Instruction(instBase + 1), prop->type, pos);
+            command[1] = Command(widget);
+            command[2] = Command(Instruction::Nop);
+            break;
+        default:
+            command[0] = Command(Instruction(instBase + 2), prop->type, pos);
+            command[1] = Command(long(dispatchType)); // variable id position in widget
+            command[2] = Command(Instruction::Nop);
+            break;
+        }
+    }
+
+    Widget* Actions::resolveDoubleDispatch(int pos, Widget* widget) {
+        auto widgetId(reinterpret_cast<StringId*>(widget)[pos]);
+        assert(widgetId.valid());
+        DIAG(if (!Context::app.getWidgets().count(widgetId)) {
+                LOG("failed double dispatch, cannot find widget: %s", Context::strMng.get(widgetId));
+                return nullptr;
+            });
+        return Context::app.getWidgets()[widgetId];
     }
 
     long Actions::getPropertyData(const void* data, Command command) {
@@ -538,6 +594,7 @@ namespace webui {
     }
 
     bool Actions::checkFunctionParams(int iFunction, int iAction, Widget* widget) {
+        DIAG(int stackSizeOrig(stack.size()));
         const auto& func(functionList[iFunction]);
         assert(stack.size() == locations.size());
         const Type* proto(func.prototype);
@@ -551,16 +608,14 @@ namespace webui {
             }
             auto* command(&actions[locations[iStack]]);
             auto type(command->type());
+            Widget* propWidget;
+            DispatchType dispatchType;
+            const Property* prop(command->inst() == Instruction::PushConstant && type == Type::Id ?
+                                 resolveProperty(command, widget, propWidget, dispatchType) : nullptr);
             if (type != *proto) {
                 // try to do the execution conversion
                 if (*proto == Type::VoidPtr) {
                     // assign or inline expressions
-                    if (command->inst() != Instruction::PushConstant) {
-                        DIAG(LOG("cannot assign to target at %d", locations[iStack]));
-                        return false;
-                    }
-                    Widget* propWidget;
-                    const Property* prop(resolveProperty(command, widget, propWidget));
                     if (!prop) {
                         DIAG(if (!prop) LOG("property id '%s' not available on widget", Context::strMng.get(command[1].strId)));
                         return false;
@@ -584,14 +639,7 @@ namespace webui {
                         valueType = prop->type;
                     }
                     if (prop->type == valueType) {
-                        if (command->param) {
-                            command[0] = Command(Instruction::PushForeignPropertyPtr, Type::VoidPtr, prop->pos * prop->size);
-                            command[1] = Command(propWidget);
-                            command[2] = Command(Instruction::Nop);
-                        } else {
-                            command[0] = Command(Instruction::PushPropertyPtr, Type::VoidPtr, prop->pos * prop->size);
-                            command[1] = Command(Instruction::Nop);
-                        }
+                        resolvePropertyRecode(prop, propWidget, dispatchType, command, true);
                         Function assignFunc;
                         switch (prop->type) {
                         case Type::Bit:          assignFunc = Function(int(Function::AssignBit0) + prop->bit); break;
@@ -613,41 +661,29 @@ namespace webui {
                                  Context::strMng.get(command[1].strId), toString(valueType), toString(prop->type), iAction));
                         return false;
                     }
-                } else if (command->inst() == Instruction::PushConstant && type == Type::Id) {
+                } else if (prop) {
                     // cast push constant id to push property
-                    Widget* propWidget;
-                    const Property* prop(resolveProperty(command, widget, propWidget));
-                    if (prop) {
-                        bool cast(true);
-                        if (prop->type != *proto && *proto != Type::Unknown) {
-                            if (*proto == Type::Float &&
-                                (prop->type == Type::Bit   || prop->type == Type::Uint8 ||
-                                 prop->type == Type::Int16 || prop->type == Type::Int32)) {
-                                // these types are promoted to float, so allow cast
-                            } else if (iFunction == int(Function::Text) && prop->type == Type::Text) {
-                                // change function from text to textCharPtr
-                                actions[iAction].param = int(Function::TextCharPtr);
-                            } else
-                                // no polymorphism found
-                                cast = false;
-                        }
+                    bool cast(true);
+                    if (prop->type != *proto && *proto != Type::Unknown) {
+                        if (*proto == Type::Float &&
+                            (prop->type == Type::Bit   || prop->type == Type::Uint8 ||
+                             prop->type == Type::Int16 || prop->type == Type::Int32)) {
+                            // these types are promoted to float, so allow cast
+                        } else if (iFunction == int(Function::Text) && prop->type == Type::Text) {
+                            // change function from text to textCharPtr
+                            actions[iAction].param = int(Function::TextCharPtr);
+                        } else
+                            // no polymorphism found
+                            cast = false;
+                    }
 
-                        if (cast) {
-                            // conversion of type ok
-                            auto pos(prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : prop->pos);
-                            if (command->param) {
-                                command[0] = Command(Instruction::PushForeignProperty, prop->type, pos);
-                                command[1] = Command(propWidget);
-                                command[2] = Command(Instruction::Nop);
-                            } else {
-                                command[0] = Command(Instruction::PushProperty, prop->type, pos);
-                                command[1] = Command(Instruction::Nop);
-                            }
-                        } else {
-                            DIAG(LOG("cannot cast '%s' from %s to %s in %d",
-                                     Context::strMng.get(command[1].strId), toString(prop->type), toString(*proto), iAction));
-                            return false;
-                        }
+                    if (cast) {
+                        // conversion of type ok
+                        resolvePropertyRecode(prop, propWidget, dispatchType, command, false);
+                    } else {
+                        DIAG(LOG("cannot cast '%s' from %s to %s in %d",
+                                 Context::strMng.get(command[1].strId), toString(prop->type), toString(*proto), iAction));
+                        return false;
                     }
                 } else if (*proto == Type::Unknown) {
                     // assign right hand side
@@ -665,27 +701,15 @@ namespace webui {
                 } else {
                     // cannot cast
                     DIAG(
-                        LOG("expected parameter %lu of type %s, got %s in %s at position %d",
-                            stack.size() - iStack, toString(*proto), toString(type), Context::strMng.get(func.id), locations[iStack]);
+                        LOG("expected parameter %d of type %s, got %s in %s at position %d",
+                            stackSizeOrig - iStack, toString(*proto), toString(type), Context::strMng.get(func.id), locations[iStack]);
                         dumpStack());
                     return false;
                 }
             } else {
                 // type matches proto, but if pushing a constant id and this is a property of type id, then resolve
-                if (command->inst() == Instruction::PushConstant && type == Type::Id) {
-                    Widget* propWidget;
-                    const Property* prop(resolveProperty(command, widget, propWidget));
-                    if (prop && prop->type == Type::Id) {
-                        if (command->param) {
-                            command[0] = Command(Instruction::PushForeignProperty, prop->type, prop->pos);
-                            command[1] = Command(propWidget);
-                            command[2] = Command(Instruction::Nop);
-                        } else {
-                            command[0] = Command(Instruction::PushProperty, prop->type, prop->pos);
-                            command[1] = Command(Instruction::Nop);
-                        }
-                    }
-                }
+                if (prop && prop->type == Type::Id)
+                    resolvePropertyRecode(prop, propWidget, dispatchType, command, false);
             }
             ++proto;
             auto lastLocation(locations.back());
@@ -737,20 +761,28 @@ namespace webui {
                         actions[i+1].widget);
                     i++;
                     break;
+                case Instruction::PushDoubleProperty:
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), variable pos(%ld)",
+                        i, "Push double prop", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
+                    i++;
+                    break;
                 case Instruction::PushPropertyPtr:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d)",
                         i, "Push prop ptr", ::toString(actions[i].type()), actions[i].param);
                     break;
                 case Instruction::PushForeignPropertyPtr:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), widget(%p)",
-                        i, "Push foreign prop ptr", ::toString(actions[i].type()), actions[i].param,
-                        actions[i+1].widget);
+                        i, "Push foreign prop ptr", ::toString(actions[i].type()), actions[i].param, actions[i+1].widget);
+                    i++;
+                    break;
+                case Instruction::PushDoublePropertyPtr:
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), variable pos(%ld)",
+                        i, "Push double prop ptr", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
                     i++;
                     break;
                 case Instruction::FunctionCall:
                     LOG("%6d " GREEN "%-20s " RESET ": func(" CYAN "%s" RESET ") -> %s   type(%s)",
-                        i, "Function call", ::toString(Function(actions[i].param)), toString(functionList[actions[i].param].retType),
-                        toString(com.type()));
+                        i, "Function call", ::toString(Function(actions[i].param)), toString(functionList[actions[i].param].retType), toString(com.type()));
                     break;
                 default:
                     LOG("%6d " RED "%-20s" RESET, i, "internal error");

@@ -164,3 +164,22 @@ TEST_CASE_METHOD(Fixture, "action: assign float promotion from foreign bit", "[a
     CHECK(widget.box.pos.x == 1);
     CHECK(widget.box.pos.y == 0);
 }
+
+TEST_CASE_METHOD(Fixture, "action: change foreign bit", "[action]") {
+    auto& ws(Context::app.getWidgets());
+    ws[Context::strMng.search("alpha")]->visible = 1;
+    CHECK(addAction("alpha.visible = 1 - alpha.visible"));
+    CHECK(executeAction());
+    CHECK(ws[Context::strMng.search("alpha")]->visible == 0);
+    CHECK(addAction("alpha.visible = 1 - alpha.visible"));
+    CHECK(executeAction());
+    CHECK(ws[Context::strMng.search("alpha")]->visible == 1);
+}
+
+TEST_CASE_METHOD(Fixture, "action: assign color with double dispatch", "[action]") {
+    widget.id = Context::strMng.add("alpha");
+    CHECK(addAction("id.background = #00112233"));
+    CHECK(executeAction());
+    auto& ws(Context::app.getWidgets());
+    CHECK(ws[widget.id]->background.rgba() == 0x00112233);
+}

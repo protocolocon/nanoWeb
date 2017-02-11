@@ -99,7 +99,6 @@ namespace webui {
         div              = OffsetEnum(CLast) + 6,  // /
         mod              = OffsetEnum(CLast) + 8,  // %
         assign           = OffsetEnum(CLast) + 10, // =
-        iXor             = OffsetEnum(CLast) + 12, // ^=
         FLast            = OffsetEnum(CLast) + 15,
     };
 

@@ -146,3 +146,22 @@ TEST_CASE("application: property computations", "[application]") {
     CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("xx").getId()), child[0]) == 42);
     CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("yy").getId()), child[0]) == 42 * 42);
 }
+
+TEST_CASE("application: double dispatch", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application {"
+                                  _"  Widget {"
+                                  _"    define: Props"
+                                  _"    propId: widgetId"
+                                  _"    widgetId: Props"
+                                  _"    onRender: [ widgetId.x = 4242 ]"
+                                  _"  }"
+                                  _"  Props { }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 1);
+    CHECK(string(Context::strMng.get(child[0]->type())) == "Props");
+}

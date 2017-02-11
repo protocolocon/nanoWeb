@@ -24,7 +24,7 @@ namespace {
             { Identifier::y,              PROP(Widget, box.pos.y, Float,        4, 0, 0) },
             { Identifier::w,              PROP(Widget, box.size.x,Float,        4, 0, 0) },
             { Identifier::h,              PROP(Widget, box.size.y,Float,        4, 0, 0) },
-            { Identifier::id,             PROP(Widget, id,        StrId,        4, 0, 1) },
+            { Identifier::id,             PROP(Widget, id,        Id,           4, 0, 1) },
             { Identifier::width,          PROP(Widget, size[0],   SizeRelative, 2, 0, 0) },
             { Identifier::height,         PROP(Widget, size[1],   SizeRelative, 2, 0, 0) },
             { Identifier::background,     PROP(Widget, background,Color,        4, 0, 0) },
