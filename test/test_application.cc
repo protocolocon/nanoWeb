@@ -23,6 +23,10 @@ namespace {
         return new RequestXHR(RequestXHR::TypeApplication, StringId(), data, strlen(data));
     }
 
+    RequestXHR* mlTemplate(const char* data, const char* id) {
+        return new RequestXHR(RequestXHR::TypeTemplate, Context::strMng.add(id), data, strlen(data));
+    }
+
 }
 
 TEST_CASE("application: basic", "[application]") {
@@ -70,8 +74,11 @@ TEST_CASE("application: template", "[application]") {
                                   _"  Template {"
                                   _"    id: template"
                                   _"    [ // block"
-                                  _"      Widget { id: a }"
-                                  _"      Widget { id: b }"
+                                  _"      Widget {"
+                                  _"        id: @"
+                                  _"        x: @"
+                                  _"        y: @"
+                                  _"      }"
                                   _"    ]"
                                   _"    width: 100"
                                   _"  }"
@@ -82,6 +89,17 @@ TEST_CASE("application: template", "[application]") {
     auto& child(root->getChildren());
     REQUIRE(child.size() == 1);
     CHECK(child[0]->type() == Identifier::Template);
+    CHECK(child[0]->getChildren().empty());
+    // load template
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [a, 42, 43], [b, -14, x - 1], [c, 7/2, x * 4] ] ]", "template")));
+    auto& tpl(child[0]->getChildren());
+    CHECK(tpl.size() == 3);
+    CHECK(tpl[0]->box.pos.x == 42);
+    CHECK(tpl[0]->box.pos.y == 43);
+    CHECK(tpl[1]->box.pos.x == -14);
+    CHECK(tpl[1]->box.pos.y == -15);
+    CHECK(tpl[2]->box.pos.x == 3.5);
+    CHECK(tpl[2]->box.pos.y == 14);
 }
 
 TEST_CASE("application: actions syntax", "[application]") {

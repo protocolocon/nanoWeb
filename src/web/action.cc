@@ -475,6 +475,13 @@ namespace webui {
                 actions.push_back(Command(entry->pos + 1));
                 actions.push_back(Command(long(parser.size(iEntry) - 2)));
                 break;
+            case MLParser::EntryType::Wildcar: {
+                int iTpl, fTpl;
+                if (!Context::app.startTemplate(iTpl, fTpl) ||
+                    !addRecur(Context::app.getTemplateParser(), iTpl, fTpl) ||
+                    !Context::app.endTemplate()) return false;
+                break;
+            }
             default:
                 DIAG(LOG("invalid ML entry type: %s", MLParser::toString(entry->type())));
                 return false;
@@ -571,7 +578,6 @@ namespace webui {
                         (prop->type == Type::StrId        && valueType == Type::Id))   valueType = prop->type;
                     else if (prop->type == Type::Text && valueType == Type::StrView) {
                         // promote string view to text
-                        LOG("strview to text");
                         value[0].sub = int(Type::Text);
                         value[0].param = 0;
                         value[1].text = strndup(value[1].text, value[2].l);

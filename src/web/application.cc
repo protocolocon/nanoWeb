@@ -37,7 +37,7 @@ namespace {
 
 namespace webui {
 
-    Application::Application(): iTpl(0), fTpl(0), layoutStable(false),
+    Application::Application(): iTpl(0), fTpl(0), startedTpl(false), layoutStable(false),
                                 actionTables(1), root(nullptr), fontValid(false) {
     }
 
@@ -114,6 +114,7 @@ namespace webui {
     }
 
     bool Application::onLoad(RequestXHR* xhr) {
+        DIAG(if (!xhr->getData() || !xhr->getNData()) { LOG("empty xhr response"); return false; });
         bool dev(true);
         switch (xhr->getType()) {
         case RequestXHR::TypeApplication:
@@ -141,25 +142,32 @@ namespace webui {
                 DIAG(LOG("internal: cannot find template %s", Context::strMng.get(xhr->getId())));
                 dev = false;
             } else {
-                auto* tplWidget(it->second);
-                tree.swap(reinterpret_cast<WidgetTemplate*>(tplWidget)->getParser());
-                bool define;
-                if (!tpl.parse(xhr->getData(), xhr->getNData()) ||
-                    (iTpl = 0, fTpl = tpl.size(), !(tplWidget = initializeConstruct(tplWidget, 0, tree.size(), define, true)))) {
-                    LOG("error: update template");
+                if (!tpl.parse(xhr->getData(), xhr->getNData()) || tpl.empty() || tpl[0].type() != MLParser::EntryType::List) {
+                    DIAG(LOG("cannot parse template info or is not a complete list"));
                     dev = false;
                 } else {
-                    tplWidget->setVisible(true);
+                    iTpl = 1;
+                    fTpl = tpl[0].next;
+
+                    auto* tplWidget(it->second);
+                    tree.swap(reinterpret_cast<WidgetTemplate*>(tplWidget)->getParser());
                     DIAG(
                         tree.dumpTree();
                         LOG("----------");
                         tpl.dumpTree();
                         LOG("----------");
                         dump());
+                    bool define;
+                    if (!(tplWidget = initializeConstruct(tplWidget, 0, tree.size(), define, true))) {
+                        LOG("error: update template");
+                        dev = false;
+                    } else {
+                        tplWidget->setVisible(true);
+                        layoutStable = false;
+                        ctx.forceRender();
+                    }
+                    tree.swap(reinterpret_cast<WidgetTemplate*>(it->second)->getParser());
                 }
-                tree.swap(reinterpret_cast<WidgetTemplate*>(it->second)->getParser());
-                layoutStable = false;
-                ctx.forceRender();
             }
             break;
         }
@@ -219,7 +227,7 @@ namespace webui {
             // cases:
             //   1. key : value
             //   2. id { }
-            //   3. { }
+            //   3. [ ] <- block
             auto valEntry(iEntry + 1);
             const auto& entryKey(tree[iEntry]);
             if (entryKey.type() == MLParser::EntryType::Id) { // case 1: key : value
@@ -313,7 +321,7 @@ namespace webui {
                     int fTplSave(fTpl), iIter(iTpl), fIter(iTpl);
                     if (iTpl >= 0) {
                         if (iTpl < fTpl) {
-                            if (*tpl[iTpl].pos == '[') { // list of lists
+                            if (tpl[iTpl].type() == MLParser::EntryType::List) { // list of lists
                                 iIter = iTpl + 1;
                                 fIter = tpl[iTpl].next;
                                 iTpl = fIter; // skip the list of lists
@@ -335,7 +343,7 @@ namespace webui {
                         // template iteration list (widget)
                         int iWidget(-1), fWidget(-1);
                         assert(iIter >= 0);
-                        if (*tpl[iIter].pos == '[') { // widget
+                        if (tpl[iIter].type() == MLParser::EntryType::List) { // widget
                             iWidget = iIter + 1;
                             fWidget = tpl[iIter].next;
                         } else {
@@ -420,6 +428,29 @@ namespace webui {
         return widgetNew;
     }
 
+    bool Application::startTemplate(int& iTpl_, int& fTpl_) {
+        if (startedTpl) {
+            DIAG(LOG("cannot use wildcars in template or previous template failed"));
+            return false;
+        }
+        if (iTpl >= fTpl) {
+            DIAG(LOG("out of template values: %d %d", iTpl, fTpl));
+            return false;
+        }
+        iTpl_ = iTpl;
+        fTpl_ = tpl[iTpl].next;
+        startedTpl = true;
+        return true;
+    }
+
+    bool Application::endTemplate() {
+        assert(startedTpl);
+        iTpl = tpl[iTpl].next;
+        startedTpl = false;
+        return true;
+    }
+
+#if 0
     bool Application::replaceProperty(int iEntry) {
         auto& entry(tree[iEntry]);
         if (entry.type() == MLParser::EntryType::Wildcar) {
@@ -445,6 +476,7 @@ namespace webui {
             iTpl++;
         }
     }
+#endif
 
     bool Application::isWidget(Identifier id) const {
         return id < Identifier::WLast || widgets.find(int(id)) != widgets.end();

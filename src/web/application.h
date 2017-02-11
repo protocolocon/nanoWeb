@@ -72,6 +72,11 @@ namespace webui {
         bool onLoad(RequestXHR* xhr);
         void onError(RequestXHR* xhr);
 
+        // template
+        inline MLParser& getTemplateParser() { return tpl; }
+        bool startTemplate(int& iTpl, int& fTpl);
+        bool endTemplate();
+
         // debug
         DIAG(void dump() const);
         inline auto* getRoot() { return root; }
@@ -83,6 +88,7 @@ namespace webui {
     private:
         MLParser tree, tpl;    // application tree description and template data
         int iTpl, fTpl;
+        bool startedTpl;
 
         // layout
         bool layoutStable;
@@ -107,8 +113,8 @@ namespace webui {
         Widget* createType(Widget* widget, Identifier typeId, int iEntry, int fEntry);
 
         // templates in properties
-        bool replaceProperty(int iEntry);
-        void replaceBackProperty(bool templateReplaced, int iEntry);
+        //bool replaceProperty(int iEntry);
+        //void replaceBackProperty(bool templateReplaced, int iEntry);
 
         // actions
         bool checkActions();
