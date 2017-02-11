@@ -25,8 +25,8 @@ Application {
             fillColor(foreground%0),   text(0, 0,  text),
             fillColor(foreground%160), text(0, -2, text)
         ]
-        onEnter: [ background = #888898c0 ]
-        onLeave: [ background = #909090c0 ]
+        onEnter: [ background = #888898c0, text = "in" ]
+        onLeave: [ background = #909090c0, text = "out" ]
         foreground: #808080a0
         background: #808080c0
     }

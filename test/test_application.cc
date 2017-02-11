@@ -25,7 +25,7 @@ namespace {
 
 }
 
-TEST_CASE("basic", "[application]") {
+TEST_CASE("application: basic", "[application]") {
     ctx.initialize(false, false);
     CHECK(!Context::app.getRoot());
     CHECK(Context::app.onLoad(mlApp("Application{}")));
@@ -33,7 +33,7 @@ TEST_CASE("basic", "[application]") {
     CHECK(Context::app.getRoot()->type() == Identifier::Application);
 }
 
-TEST_CASE("definition", "[application]") {
+TEST_CASE("application: definition", "[application]") {
     ctx.initialize(false, false);
     CHECK(Context::app.onLoad(mlApp(
                                   "Application{"
@@ -61,10 +61,9 @@ TEST_CASE("definition", "[application]") {
     CHECK(child[1]->typeWidget->get(Identifier(Context::strMng.search("property").getId()), child[1]) == 4242);
     CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("width").getId()), child[0]) == 333);
     CHECK(child[1]->typeWidget->get(Identifier(Context::strMng.search("width").getId()), child[1]) == 333);
-
 }
 
-TEST_CASE("template", "[application]") {
+TEST_CASE("application: template", "[application]") {
     ctx.initialize(false, false);
     CHECK(Context::app.onLoad(mlApp(
                                   "Application{"
@@ -85,7 +84,7 @@ TEST_CASE("template", "[application]") {
     CHECK(child[0]->type() == Identifier::Template);
 }
 
-TEST_CASE("actions syntax", "[application]") {
+TEST_CASE("application: actions syntax", "[application]") {
     ctx.initialize(false, false);
     CHECK(Context::app.onLoad(mlApp(
                                   "Application{"
@@ -95,4 +94,37 @@ TEST_CASE("actions syntax", "[application]") {
                                   _"  ]"
                                   _"}")));
     auto root(Context::app.getRoot());
+}
+
+TEST_CASE("application: text", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application{"
+                                  _"   text: \"this is text\""
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    CHECK(!strcmp(root->text, "this is text"));
+}
+
+TEST_CASE("application: property computations", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application {"
+                                  _"  Widget {"
+                                  _"    define: Props"
+                                  _"    propInt16: xx"
+                                  _"    propInt16: yy"
+                                  _"    xx: 42"
+                                  _"    yy: xx * 42"
+                                  _"  }"
+                                  _"  Props { }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 1);
+    CHECK(string(Context::strMng.get(child[0]->type())) == "Props");
+    CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("xx").getId()), child[0]) == 42);
+    CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("yy").getId()), child[0]) == 42 * 42);
 }

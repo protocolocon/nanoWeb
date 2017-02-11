@@ -63,6 +63,7 @@ namespace webui {
             bool checked;
         };
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
+        bool addAction(Identifier actionId, int iAction, Widget* widget); // add action to widget
 
         // fonts
         int getFont(StringId str);
@@ -76,6 +77,7 @@ namespace webui {
         inline auto* getRoot() { return root; }
         inline auto& getWidgets() { return widgets; }
         /*TODO*/bool executeToggleVisible(StringId widgetId); // returns true if something toggled
+        /*TODO*/bool executeQuery(StringId query, StringId widgetId);
         Widget* createWidget(Identifier id, Widget* parent, int objectSize = 0);
 
     private:
@@ -110,10 +112,8 @@ namespace webui {
 
         // actions
         bool checkActions();
-        bool addAction(Identifier actionId, int iEntry, int fEntry, int& widgetActions, Widget* widget); // add action to widget
         bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
         bool executeSet(StringId widgetId, Identifier prop, StringId value, Widget* widget);
-        bool executeQuery(StringId query, StringId widgetId);
 
         // timers
         bool refreshTimers(); // returns true on command execution

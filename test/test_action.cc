@@ -63,8 +63,16 @@ TEST_CASE_METHOD(Fixture, "action: formula", "[action]") {
     dumpStack();
     const auto& stack(getStack());
     CHECK(stack.size() == 1);
-    CHECK(stack[0].type == Type::Float);
     CHECK(stack[0].f == 16.5f);
+}
+
+TEST_CASE_METHOD(Fixture, "action: formula II", "[action]") {
+    CHECK(addAction("(((2 * 3) + 5 + (4 * 5) + 9) / 10) + 1.234"));
+    CHECK(executeAction());
+    dumpStack();
+    const auto& stack(getStack());
+    CHECK(stack.size() == 1);
+    CHECK(stack[0].f == 5.234f);
 }
 
 TEST_CASE_METHOD(Fixture, "action: log", "[action]") {
@@ -73,11 +81,31 @@ TEST_CASE_METHOD(Fixture, "action: log", "[action]") {
     dumpStack();
 }
 
+TEST_CASE_METHOD(Fixture, "action: font", "[action]") {
+    CHECK(addAction("font(\"font.ttf\", 40)"));
+    CHECK(Context::actions.execute<true>(iAction, &widget));
+    dumpStack();
+}
+
 TEST_CASE_METHOD(Fixture, "action: assign float", "[action]") {
     CHECK(addAction("x = 42"));
     CHECK(executeAction());
     dumpStack();
     CHECK(widget.box.pos.x == 42);
+}
+
+TEST_CASE_METHOD(Fixture, "action: assign text", "[action]") {
+    CHECK(addAction("text = \"hello\""));
+    CHECK(executeAction());
+    dumpStack();
+    CHECK(!strcmp(widget.text, "hello"));
+}
+
+TEST_CASE_METHOD(Fixture, "action: assign id", "[action]") {
+    CHECK(addAction("id = SomeString"));
+    CHECK(executeAction());
+    dumpStack();
+    CHECK(widget.id == Context::strMng.search("SomeString"));
 }
 
 TEST_CASE_METHOD(Fixture, "action: assign var float", "[action]") {
@@ -117,4 +145,22 @@ TEST_CASE_METHOD(Fixture, "action: assign foreign float", "[action]") {
     dumpStack();
     CHECK(ws[Context::strMng.search("alpha")]->box.pos.x == 144.0f);
     CHECK(ws[Context::strMng.search("omega")]->box.pos.x == -35.2f);
+}
+
+TEST_CASE_METHOD(Fixture, "action: assign float promotion from bit", "[action]") {
+    CHECK(addAction("[visible = 1, x = visible]"));
+    CHECK(executeAction());
+    dumpStack();
+    CHECK(widget.box.pos.x == 1);
+}
+
+TEST_CASE_METHOD(Fixture, "action: assign float promotion from foreign bit", "[action]") {
+    auto& ws(Context::app.getWidgets());
+    ws[Context::strMng.search("alpha")]->visible = 1;
+    ws[Context::strMng.search("omega")]->visible = 0;
+    CHECK(addAction("[x = alpha.visible, y = omega.visible]"));
+    CHECK(executeAction());
+    dumpStack();
+    CHECK(widget.box.pos.x == 1);
+    CHECK(widget.box.pos.y == 0);
 }

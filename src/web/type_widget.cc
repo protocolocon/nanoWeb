@@ -20,7 +20,7 @@ namespace webui {
                 "Int16",
                 "Int32",
                 "Id",
-                "Str",
+                "StrView",
                 "StrId",
                 "Float",
                 "Color",
@@ -39,15 +39,17 @@ namespace webui {
 
     DIAG(const char* toString(Type t, const void* data, char* buffer, int nBuffer) {
             switch (t) {
-            case Type::Float: snprintf(buffer, nBuffer, "%.4f", *reinterpret_cast<const float*>(data)); break;
-            case Type::Id: snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
-            case Type::StrId: snprintf(buffer, nBuffer, "\"%s\"", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
-            case Type::FontIdx: snprintf(buffer, nBuffer, "%ld", *reinterpret_cast<const long*>(data)); break;
-            case Type::Color: snprintf(buffer, nBuffer, "%08x", *reinterpret_cast<const uint32_t*>(data)); break;
+            case Type::Float:       snprintf(buffer, nBuffer, "%.4f", *reinterpret_cast<const float*>(data)); break;
+            case Type::Int16:       snprintf(buffer, nBuffer, "%d", *reinterpret_cast<const int16_t*>(data)); break;
+            case Type::Id:          snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
+            case Type::StrView:     snprintf(buffer, nBuffer, "\"%.*s\"", int(((long*)data)[1]), ((char* const*)data)[0]); break;
+            case Type::StrId:       snprintf(buffer, nBuffer, "\"%s\"", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
+            case Type::FontIdx:     snprintf(buffer, nBuffer, "%ld", *reinterpret_cast<const long*>(data)); break;
+            case Type::Color:       snprintf(buffer, nBuffer, "%08x", *reinterpret_cast<const uint32_t*>(data)); break;
             case Type::ActionTable: snprintf(buffer, nBuffer, "%d", *reinterpret_cast<const uint32_t*>(data)); break;
-            case Type::Text: snprintf(buffer, nBuffer, "\"%s\"", *reinterpret_cast<char* const*>(data)); break;
-            case Type::VoidPtr: snprintf(buffer, nBuffer, "%p", *reinterpret_cast<void* const*>(data)); break;
-            default: snprintf(buffer, nBuffer, RED "value error" RESET);
+            case Type::Text:        snprintf(buffer, nBuffer, "\"%s\"", *reinterpret_cast<char* const*>(data)); break;
+            case Type::VoidPtr:     snprintf(buffer, nBuffer, "%p", *reinterpret_cast<void* const*>(data)); break;
+            default:                snprintf(buffer, nBuffer, RED "value error" RESET);
             }
             return buffer;
         });

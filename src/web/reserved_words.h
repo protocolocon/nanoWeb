@@ -58,13 +58,16 @@ namespace webui {
         self             = OffsetEnum(define),
         repeat           = OffsetEnum(self),
         delay            = OffsetEnum(repeat),
-        propInt16        = OffsetEnum(delay),
+        ALast            = OffsetEnum(delay),
+
+        // property attribute definition
+        propInt16        = OffsetEnum(ALast),
         propText         = OffsetEnum(propInt16),
         propColor        = OffsetEnum(propText),
-        ALast            = OffsetEnum(propColor),
+        PLast            = OffsetEnum(propColor),
 
         // commands
-        log              = OffsetEnum(ALast),
+        log              = OffsetEnum(PLast),
         toggleVisible    = OffsetEnum(log),
         beginPath        = OffsetEnum(toggleVisible),
         moveto           = OffsetEnum(beginPath),

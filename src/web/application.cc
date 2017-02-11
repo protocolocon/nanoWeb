@@ -24,28 +24,6 @@ using namespace webui;
 
 namespace {
 
-    const Type logParams[] =             { Type::StrId, Type::LastType };
-    const Type toggleVisibleParams[] =   { Type::StrId, Type::LastType };
-    const Type beginPathParams[] =       { Type::LastType };
-    const Type movetoParams[] =          { Type::Coord, Type::Coord, Type::LastType };
-    const Type linetoParams[] =          { Type::Coord, Type::Coord, Type::LastType };
-    const Type beziertoParams[] =        { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
-    const Type closePathParams[] =       { Type::LastType };
-    const Type roundedRectParams[] =     { Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::Coord, Type::LastType };
-    const Type fillColorParams[] =       { Type::ColorModif, Type::LastType };
-    const Type fillVertGradParams[] =    { Type::Coord, Type::Coord, Type::ColorModif, Type::ColorModif, Type::LastType };
-    const Type fillParams[] =            { Type::LastType };
-    const Type strokeWidthParams[] =     { Type::Float, Type::LastType };
-    const Type strokeColorParams[] =     { Type::ColorModif, Type::LastType };
-    const Type strokeParams[] =          { Type::LastType };
-    const Type fontParams[] =            { Type::FontIdx, Type::Float, Type::LastType };
-    const Type textParams[] =            { Type::Coord, Type::Coord, Type::TextPropOrStrId, Type::LastType };
-    const Type translateCenterParams[] = { Type::LastType };
-    const Type scale100Params[] =        { Type::Coord, Type::LastType };
-    const Type resetTransformParams[] =  { Type::LastType };
-    const Type setParams[] =             { Type::StrId, Type::Id, Type::Str, Type::LastType };
-    const Type queryParams[] =           { Type::StrId, Type::StrId, Type::LastType };
-
     template <typename T>
     inline void* getPtr(int objectSize) {
         size_t size(objectSize ? objectSize : sizeof(T));
@@ -179,7 +157,7 @@ namespace webui {
                         LOG("----------");
                         dump());
                 }
-                tree.swap(reinterpret_cast<WidgetTemplate*>(tplWidget)->getParser());
+                tree.swap(reinterpret_cast<WidgetTemplate*>(it->second)->getParser());
                 layoutStable = false;
                 ctx.forceRender();
             }
@@ -247,6 +225,37 @@ namespace webui {
             if (entryKey.type() == MLParser::EntryType::Id) { // case 1: key : value
                 assert(valEntry < fEntry && tree[iEntry].next == valEntry);
                 auto key(tree.asId(iEntry));
+                if (key == Identifier::InvalidId) {
+                    DIAG(LOG("invalid key for widget: %.*s", tree.size(iEntry), entryKey.pos));
+                    return nullptr;
+                }
+                // new widget type definition
+                if (key == Identifier::define) {
+                    key = Identifier::id;
+                    DIAG(if (define) LOG("warning: repeated 'define' attribute inside widget"));
+                    define = true;
+                    // create new type
+                    auto newTypeId(tree.asIdAdd(valEntry));
+                    if (!(widget = createType(widget, newTypeId, iEntryOrig, fEntry))) {
+                        DIAG(LOG("cannot create new type: %s", Context::strMng.get(newTypeId)));
+                        return nullptr;
+                    }
+                }
+                if (int(key) > int(Identifier::ALast) && int(key) <= int(Identifier::PLast)) {
+                    // addition of properties in widget definition
+                    DIAG(if (!define) {
+                            LOG("defining a property for a widget that is not being defined");
+                            tree.error(entryKey.pos, "=>", entryKey.line);
+                            return nullptr;
+                        });
+                } else if(!Context::actions.evalProperty(tree, valEntry, tree[valEntry].next, key, widget)) { // eval property
+                    DIAG(
+                        LOG("warning: unknown attribute %s with value %.*s", Context::strMng.get(key), tree.size(valEntry), tree[valEntry].pos);
+                        tree.error(entryKey.pos, "=>", entryKey.line);
+                        return nullptr);
+                }
+
+#if 0
                 // check for wildcar
                 bool templateReplaced(replaceProperty(valEntry));
                 if (key == Identifier::define) {
@@ -270,6 +279,7 @@ namespace webui {
                         return nullptr);
                 }
                 replaceBackProperty(templateReplaced, valEntry);
+#endif
                 iEntry = tree[valEntry].next;
 
             } else if (entryKey.type() == MLParser::EntryType::Object) { // case 2: object { }
@@ -520,10 +530,6 @@ namespace webui {
             DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asId(iEntry);
             return true;
-        case Type::Str:
-            DIAG(if (fEntry > iEntry + 1) return false);
-            reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asIdAdd(iEntry);
-            return true;
         case Type::StrId:
             DIAG(if (fEntry > iEntry + 1) return false);
             reinterpret_cast<Identifier*>(data)[prop.pos] = tree.asIdAdd(iEntry); // TODO: quotes
@@ -553,7 +559,7 @@ namespace webui {
             reinterpret_cast<int*>(data)[prop.pos] = getFont(StringId(tree.asIdAdd(iEntry)));
             return true;
         case Type::ActionTable:
-            return addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos], widget);
+            return false; //addAction(id, iEntry, fEntry, reinterpret_cast<int*>(data)[prop.pos], widget);
         case Type::Text:
             DIAG(if (fEntry > iEntry + 1) return false);
             free(reinterpret_cast<char**>(data)[prop.pos]);
@@ -589,27 +595,26 @@ namespace webui {
         return dev;
     }
 
-    bool Application::addAction(Identifier actionId, int iEntry, int fEntry, int& widgetActions, Widget* widget) {
-        if (!widgetActions || widget->isSharingActions()) {
-            auto widgetActionsPrev(widgetActions);
-            widgetActions = int(actionTables.size());
+    bool Application::addAction(Identifier actionId, int iAction, Widget* widget) {
+        if (!widget->actions || widget->isSharingActions()) {
+            auto widgetActionsPrev(widget->actions);
+            widget->actions = int(actionTables.size());
             actionTables.resize(actionTables.size() + 1);
             widget->resetSharingActions();
             if (widgetActionsPrev)
-                actionTables[widgetActions] = actionTables[widgetActionsPrev];
+                actionTables[widget->actions] = actionTables[widgetActionsPrev];
         }
-        auto& table(actionTables[widgetActions]);
-        int* tableEntry;
+        auto& table(actionTables[widget->actions]);
         switch (actionId) { // get the table entry to add commands to
         case Identifier::onEnter:
-        case Identifier::onTimeout:      tableEntry = &table.onEnter;        break;
-        case Identifier::onLeave:        tableEntry = &table.onLeave;        break;
-        case Identifier::onClick:        tableEntry = &table.onClick;        break;
-        case Identifier::onRender:       tableEntry = &table.onRender;       break;
-        case Identifier::onRenderActive: tableEntry = &table.onRenderActive; break;
+        case Identifier::onTimeout:      table.onEnter        = iAction; break;
+        case Identifier::onLeave:        table.onLeave        = iAction; break;
+        case Identifier::onClick:        table.onClick        = iAction; break;
+        case Identifier::onRender:       table.onRender       = iAction; break;
+        case Identifier::onRenderActive: table.onRenderActive = iAction; break;
         default: DIAG(LOG("unknown action")); return false;
         }
-        return (*tableEntry = Context::actions.add(tree, iEntry, fEntry));
+        return true;
     }
 
 /*

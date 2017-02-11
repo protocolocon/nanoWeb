@@ -89,7 +89,8 @@ namespace webui {
         int parseNumber(const char*&ml, int prev);
         int parseColor(const char*&ml, int prev);
         int parseString(const char*&ml, int prev);
-        int parseExpression(const char*&ml, int prev, bool op = false);
+        int parseExpression(const char*&ml, int prev);
+        int parseExpressionRecur(const char*&ml, int prev, const char* op = nullptr);
         int parseObject(const char*&ml, int prev, char endChar);
         bool parseList(const char*&ml, char endChar);
 

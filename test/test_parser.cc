@@ -219,3 +219,16 @@ TEST_CASE("parser: assign op", "[parser]") {
     REQUIRE(ml.size() == 3);
     CHECK(ml[1].type() == MLParser::EntryType::Operator);
 }
+
+TEST_CASE("parser: complex object properties", "[parser]") {
+    MLParser ml;
+    const char* str("Object {"
+                    _"  x: y + 1"
+                    _"  y: (x * 5) + 2"
+                    _"}");
+    CHECK(ml.parse(str, strlen(str)));
+    DUMP(ml.dumpTree());
+    REQUIRE(ml.size() == 11);
+    CHECK(ml[2].next == 5);
+    CHECK(ml[6].next == 11);
+}

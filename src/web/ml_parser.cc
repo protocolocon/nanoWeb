@@ -62,6 +62,9 @@ namespace webui {
             char c = skipSpace(ml);
             if (c) return ERROR_FALSE(ml, "expecting EOF");
             fixLevelEndings(0, entries.size());
+            // reserve memory for last entry
+            newEntry(EntryType::Unknown, nullptr, -1);
+            entries.pop_back();
             return true;
         }
         return false;
@@ -77,7 +80,14 @@ namespace webui {
         }
     }
 
-    int MLParser::parseExpression(const char*&ml, int prev, bool op) {
+    int MLParser::parseExpression(const char*&ml, int prev) {
+        int iExpression(entries.size());
+        if ((prev = parseExpressionRecur(ml, prev)) < 0) return -1;
+        entries[iExpression].next = 0; // expression has one entry point, everything else is nested
+        return iExpression;
+    }
+
+    int MLParser::parseExpressionRecur(const char*&ml, int prev, const char* op) {
         // expecting: id, function, formula, list, object, color, number or string
         int prevOrig(prev);
         auto c(skipSpace(ml));
@@ -116,11 +126,11 @@ namespace webui {
         } else if (c =='#') { // color (continue for formula)
             if ((prev = parseColor(ml, prev)) < 0) return -1;
         } else if (c =='"') { // string
-            if (op) return ERROR_INT(ml, "string cannot be used in operation");
+            if (op && *op != '=') return ERROR_INT(ml, "string cannot be used in operation");
             return parseString(ml, prev);
         } else if (c == '(') { // operation parenthesis
             ++ml;
-            if ((prev = parseExpression(ml, prev)) < 0) return -1;
+            if ((prev = parseExpressionRecur(ml, prev)) < 0) return -1;
             c = skipSpace(ml);
             if (c != ')') return ERROR_INT(ml, "expecting ')' in operation");
             ++ml;
@@ -137,7 +147,7 @@ namespace webui {
             if (prev == -1 || entries.empty() || entries.back().type() == EntryType::Operator) return ERROR_INT(ml, "invalid operator position");
             prev = newEntry(EntryType::Operator, ml, prev);
             ml += opSize;
-            if (parseExpression(ml, -1, true) < 0) return -1;
+            if (parseExpressionRecur(ml, -1, ml - opSize) < 0) return -1;
         }
         DIAG(if (!entries.empty() && entries.back().type() == EntryType::Operator) {
                 error(ml, "expression ending in operator", line);
@@ -172,7 +182,7 @@ namespace webui {
                     ++ml;
                     if ((prevInner = parseExpression(ml, prevInner)) < 0) return -1;
                 } else {
-                    return ERROR_INT(ml, "expecting object '{' or key value ':'");
+                    return ERROR_INT(ml, "expecting object '{' or key value expression ':'");
                 }
             } else {
                 return ERROR_INT(ml, "expecting object end '}|]' or block '[' or id");

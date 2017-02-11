@@ -24,7 +24,7 @@ namespace webui {
         Int16,
         Int32,
         Id,
-        Str,
+        StrView,         // stores pointer and size
         StrId,           // removes quotes if any
         Float,
         Color,

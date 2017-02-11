@@ -24,16 +24,16 @@ namespace webui {
 
     struct StackFrame {
         StackFrame() { }
-        StackFrame(long l DIAG(, Type type)): l(l) DIAG(, type(type)) { }
+        StackFrame(long l): l(l) { }
         union {
             float f;
             long l;
+            uint32_t u32;
             StringId strId;
             RGBA color;
             const char* text;
             void* voidPtr;
         };
-        DIAG(Type type);
     };
     typedef std::vector<StackFrame> Stack;
 
@@ -69,8 +69,12 @@ namespace webui {
         Mul,                         // push(pop * pop)
         Div,                         // push(pop / pop)
         Mod,                         // push(pop % pop)
-        AssignFloat,                 //
-        AssignColor,                 //
+        AssignUint32,                //
+        AssignSizeRel,               //
+        AssignUint8,                 //
+        AssignInt16,                 //
+        AssignInt32,                 //
+        AssignText,                  //
         AssignBit0,                  //
         AssignBit1,                  //
         AssignBit2,                  //
@@ -95,15 +99,22 @@ namespace webui {
 
 
     struct Command {
-        Command(Instruction inst, Type type = Type::Unknown, int off = 0): instruction(uint8_t(inst)), sub(int(type)), param(off) { }
-        Command(Instruction inst, Type type, Function func): instruction(uint8_t(inst)), sub(int(type)), param(int(func)) { }
-        Command(float f): f(f) { }
-        Command(StringId strId): strId(strId) { }
-        Command(RGBA color): color(color) { }
-        Command(Widget* widget): widget(widget) { }
-        Command(void* voidPtr): voidPtr(voidPtr) { }
+        Command() { }
+        inline Command(Instruction inst, Type type = Type::Unknown, int off = 0):
+            instruction(uint8_t(inst)), sub(int(type)), param(off) { DIAG(zero(sizeof(uint32_t))); }
+        inline Command(Instruction inst, Type type, Function func):
+            instruction(uint8_t(inst)), sub(int(type)), param(int(func)) { DIAG(zero(sizeof(uint32_t))); }
+        inline Command(float f): f(f) { DIAG(zero(sizeof(float))); }
+        inline Command(long l): l(l) { }
+        inline Command(StringId strId): strId(strId) { DIAG(zero(sizeof(StringId))); }
+        inline Command(RGBA color): color(color) { DIAG(zero(sizeof(RGBA))); }
+        inline Command(Widget* widget): widget(widget) { }
+        inline Command(const char* text): text(text) { }
+        inline Command(void* voidPtr): voidPtr(voidPtr) { }
         inline Instruction inst() const { return Instruction(instruction); }
         inline Type type() const { return Type(sub); }
+
+        DIAG(void zero(int s) { memset((char*)this + s, 0, sizeof(Command) - s); });
 
         union {
             struct {
@@ -116,6 +127,7 @@ namespace webui {
             StringId strId;
             RGBA color;
             Widget* widget;
+            const char* text;
             void* voidPtr;
         };
     };
@@ -132,6 +144,9 @@ namespace webui {
         template <bool DryRun = false>
         bool execute(int iAction, Widget* widget);
 
+        // evaluate property: executes an action and sets corresponding value to property
+        bool evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget);
+
         // dump action and stack
         DIAG(void dump(int i) const);
         DIAG(static void dumpStack());
@@ -143,8 +158,7 @@ namespace webui {
 
         bool addRecur(MLParser& parser, int iEntry, int fEntry);
         bool checkFunctionParams(int iFunction, int iAction, Widget* widget);
-        static long getPropertyData(const void* data, int offSz);
-        static int getSizeEncoding(int size);
+        static long getPropertyData(const void* data, Command command);
         const Property* resolveProperty(Command* command, Widget* widget, Widget*& propWidget);
 
         DIAG(const char* valueToString(Type type, const Command& action, char* buffer, int nBuffer) const);

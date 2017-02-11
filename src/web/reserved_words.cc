@@ -51,10 +51,12 @@ namespace {
         "self" _
         "repeat" _
         "delay" _
+        "ALast" _
+
         "propInt16" _
         "propText" _
         "propColor" _
-        "ALast" _
+        "PLast" _
 
         "log" _
         "toggleVisible" _

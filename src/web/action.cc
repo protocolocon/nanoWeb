@@ -36,6 +36,7 @@ namespace {
     Type FontPrototype[] = { Type::Float, Type::FontIdx, Type::LastType };
     Type TextPrototype[] = { Type::StrId, Type::Float, Type::Float, Type::LastType };
     Type TextCharPtrPrototype[] = { Type::Text, Type::Float, Type::Float, Type::LastType };
+    Type QueryPrototype[] = { Type::StrId, Type::StrId, Type::LastType };
     Type AssignPrototype[] = { Type::Unknown, Type::VoidPtr, Type::LastType };
 
     void FunctionError() {
@@ -75,6 +76,30 @@ namespace {
 
     void FunctionClosePath() {
         Context::render.beginPath();
+    }
+
+    void FunctionRoundedRect() {
+        assert(stack.size() >= 5);
+        auto* s(&stack.back() - 4);
+        Context::render.roundedRect(s[0].f, s[1].f, s[2].f, s[3].f, s[4].f);
+        stack.resize(stack.size() - 5);
+    }
+
+    void FunctionFillColor() {
+        assert(stack.size() >= 1);
+        Context::render.fillColor(stack.back().color);
+        stack.pop_back();
+    }
+
+    void FunctionFillVertGrad() {
+        assert(stack.size() >= 4);
+        auto* s(&stack.back() - 3);
+        Context::render.fillVertGrad(s[0].f, s[1].f, s[2].color, s[3].color);
+        stack.resize(stack.size() - 4);
+    }
+
+    void FunctionFill() {
+        Context::render.fill();
     }
 
     void FunctionStrokeWidth() {
@@ -122,28 +147,12 @@ namespace {
         stack.resize(stack.size() - 3);
     }
 
-    void FunctionRoundedRect() {
-        assert(stack.size() >= 5);
-        auto* s(&stack.back() - 4);
-        Context::render.roundedRect(s[0].f, s[1].f, s[2].f, s[3].f, s[4].f);
-        stack.resize(stack.size() - 5);
-    }
-
-    void FunctionFillColor() {
-        assert(stack.size() >= 1);
-        Context::render.fillColor(stack.back().color);
-        stack.pop_back();
-    }
-
-    void FunctionFillVertGrad() {
-        assert(stack.size() >= 4);
-        auto* s(&stack.back() - 3);
-        Context::render.fillVertGrad(s[0].f, s[1].f, s[2].color, s[3].color);
-        stack.resize(stack.size() - 4);
-    }
-
-    void FunctionFill() {
-        Context::render.fill();
+    void FunctionQuery() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        if (!Context::app.executeQuery(s[0].strId, s[1].strId))
+            DIAG(LOG("error executing query"));
+        stack.clear(); // template execution could be messing with the stack: stack.resize(stack.size() - 2);
     }
 
     void FunctionLog() {
@@ -181,17 +190,47 @@ namespace {
         stack.back().color.multRGB(f * 2.56f);
     }
 
-    void FunctionAssignFloat() {
+    void FunctionAssignUint32() {
         assert(stack.size() >= 2);
         auto* s(&stack.back() - 1);
-        *reinterpret_cast<float*>(s[0].voidPtr) = s[1].f;
+        *reinterpret_cast<uint32_t*>(s[0].voidPtr) = s[1].u32;
         stack.resize(stack.size() - 2);
     }
 
-    void FunctionAssignColor() {
+    void FunctionAssignSizeRel() {
         assert(stack.size() >= 2);
         auto* s(&stack.back() - 1);
-        *reinterpret_cast<RGBA*>(s[0].voidPtr) = s[1].color;
+        *reinterpret_cast<SizeRelative*>(s[0].voidPtr) = SizeRelative(s[1].f < 0 ? -s[1].f : s[1].f, s[1].f < 0);
+        stack.resize(stack.size() - 2);
+    }
+
+    void FunctionAssignUint8() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        *reinterpret_cast<uint8_t*>(s[0].voidPtr) = uint8_t(s[1].f);
+        stack.resize(stack.size() - 2);
+    }
+
+    void FunctionAssignInt16() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        *reinterpret_cast<int16_t*>(s[0].voidPtr) = int16_t(s[1].f);
+        stack.resize(stack.size() - 2);
+    }
+
+    void FunctionAssignInt32() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        *reinterpret_cast<int32_t*>(s[0].voidPtr) = int32_t(s[1].f);
+        stack.resize(stack.size() - 2);
+    }
+
+    void FunctionAssignText() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        char*& text(*reinterpret_cast<char**>(s[0].voidPtr));
+        free(text);
+        text = strdup(s[1].text);
         stack.resize(stack.size() - 2);
     }
 
@@ -235,15 +274,19 @@ namespace {
         { Identifier::scale100,        Function::Scale100,        FunctionError,        VoidPrototype,         Type::LastType },
         { Identifier::resetTransform,  Function::ResetTransform,  FunctionError,        VoidPrototype,         Type::LastType },
         { Identifier::set,             Function::Set,             FunctionError,        VoidPrototype,         Type::LastType },
-        { Identifier::query,           Function::Query,           FunctionError,        VoidPrototype,         Type::LastType },
+        { Identifier::query,           Function::Query,           FunctionQuery,        QueryPrototype,        Type::LastType },
         { Identifier::log,             Function::Log,             FunctionLog,          StrIdPrototype,        Type::LastType },
         { Identifier::add,             Function::Add,             FunctionAdd,          Float2Prototype,       Type::Float },
         { Identifier::sub,             Function::Sub,             FunctionSub,          Float2Prototype,       Type::Float },
         { Identifier::mul,             Function::Mul,             FunctionMul,          Float2Prototype,       Type::Float },
         { Identifier::div,             Function::Div,             FunctionDiv,          Float2Prototype,       Type::Float },
         { Identifier::mod,             Function::Mod,             FunctionMod,          ModPrototype,          Type::Color },
-        { Identifier::assign,          Function::AssignFloat,     FunctionAssignFloat,  AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignColor,     FunctionAssignColor,  AssignPrototype,       Type::LastType },
+        { Identifier::assign,          Function::AssignUint32,    FunctionAssignUint32, AssignPrototype,       Type::LastType },
+        { Identifier::assign,          Function::AssignSizeRel,   FunctionAssignSizeRel,AssignPrototype,       Type::LastType },
+        { Identifier::assign,          Function::AssignUint8,     FunctionAssignUint8,  AssignPrototype,       Type::LastType },
+        { Identifier::assign,          Function::AssignInt16,     FunctionAssignInt16,  AssignPrototype,       Type::LastType },
+        { Identifier::assign,          Function::AssignInt32,     FunctionAssignInt32,  AssignPrototype,       Type::LastType },
+        { Identifier::assign,          Function::AssignText,      FunctionAssignText,   AssignPrototype,       Type::LastType },
         { Identifier::assign,          Function::AssignBit0,      FunctionAssignBit<0>, AssignPrototype,       Type::LastType },
         { Identifier::assign,          Function::AssignBit1,      FunctionAssignBit<1>, AssignPrototype,       Type::LastType },
         { Identifier::assign,          Function::AssignBit2,      FunctionAssignBit<2>, AssignPrototype,       Type::LastType },
@@ -297,30 +340,30 @@ namespace webui {
             case Instruction::Nop:
                 break;
             case Instruction::PushConstant:
-                stack.push_back(StackFrame(actions[iAction + 1].l DIAG(, action.type())));
+                stack.push_back(StackFrame(actions[iAction + 1].l));
                 if (DryRun) locations.push_back(iAction);
                 if (action.param) {
-                    stack.push_back(StackFrame(actions[iAction + 2].l DIAG(, action.type())));
+                    stack.push_back(StackFrame(actions[iAction + 2].l));
                     if (DryRun) locations.push_back(iAction);
                     ++iAction;
                 }
                 ++iAction;
                 break;
             case Instruction::PushProperty:
-                stack.push_back(StackFrame(getPropertyData(widget, action.param) DIAG(, action.type())));
+                stack.push_back(StackFrame(getPropertyData(widget, action)));
                 if (DryRun) locations.push_back(iAction);
                 break;
             case Instruction::PushForeignProperty:
-                stack.push_back(StackFrame(getPropertyData(actions[iAction + 1].widget, action.param) DIAG(, action.type())));
+                stack.push_back(StackFrame(getPropertyData(actions[iAction + 1].widget, action)));
                 if (DryRun) locations.push_back(iAction);
                 ++iAction;
                 break;
             case Instruction::PushPropertyPtr:
-                stack.push_back(StackFrame(long(widget) + action.param DIAG(, action.type())));
+                stack.push_back(StackFrame(long(widget) + action.param));
                 if (DryRun) locations.push_back(iAction);
                 break;
             case Instruction::PushForeignPropertyPtr:
-                stack.push_back(StackFrame(actions[iAction + 1].l + action.param DIAG(, action.type())));
+                stack.push_back(StackFrame(actions[iAction + 1].l + action.param));
                 if (DryRun) locations.push_back(iAction);
                 ++iAction;
                 break;
@@ -341,10 +384,56 @@ namespace webui {
         }
     }
 
+    bool Actions::evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget) {
+        // creating actions: prop = expression
+        int iAction(actions.size());
+        actions.push_back(Command(Instruction::PushConstant, Type::Id));
+        actions.push_back(Command(propId));
+        const auto* prop(resolveProperty(&actions[iAction], widget, widget));
+        if (!prop) {
+            DIAG(LOG("no such property in widget: %s", Context::strMng.get(propId)));
+            return false;
+        }
+        if (prop->type == Type::ActionTable) actions.resize(iAction); // action
+        if (!add(parser, iEntry, fEntry)) {
+            DIAG(LOG("evaluating property"));
+            return false;
+        }
+        if (prop->type == Type::ActionTable) {
+            // action
+            Context::app.addAction(Identifier(propId.getId()), iAction, widget);
+        } else {
+            actions.pop_back(); // remove return
+            actions.push_back(Command(Instruction::FunctionCall, Type::LastType, Function::AssignUint32));
+            actions.push_back(Command(Instruction::Return));
+            // prepare expression
+            if (!execute<true>(iAction, widget)) {
+                DIAG(LOG("preparing evaluation of property"));
+                return false;
+            }
+            if (prop->type == Type::Text) { // special case text
+                // as text cannot be operated with, just set the value and exit
+                // this avoids a strdup
+                auto* com(&actions[iAction]);
+                *(const char**)((char*)widget + com[0].param) = com[3].text;
+            } else {
+                // execution
+                if (!execute(iAction, widget)) {
+                    DIAG(LOG("executing evaluation of property"));
+                    return false;
+                }
+            }
+            // remove operation
+            actions.resize(iAction);
+        }
+        return true;
+    }
+
     bool Actions::addRecur(MLParser& parser, int iEntry, int fEntry) {
         bool attr;
         while (iEntry < fEntry) {
             // function, expression or assignment expected
+            bool recur(true);
             const auto* entry(&parser[iEntry]);
             switch (entry->type()) {
             case MLParser::EntryType::Id:
@@ -353,17 +442,18 @@ namespace webui {
                 actions.push_back(Command(Instruction::PushConstant, Type::Id, attr));
                 actions.push_back(Command(Context::strMng.add(entry->pos, parser.size(iEntry))));
                 if (attr) {
-                    entry = &parser[iEntry + 1];
-                    actions.push_back(Command(Context::strMng.add(entry->pos, parser.size(iEntry + 1))));
+                    entry = &parser[++iEntry];
+                    actions.push_back(Command(Context::strMng.add(entry->pos, parser.size(iEntry))));
                 }
                 break;
             case MLParser::EntryType::Number:
                 // just push it
                 actions.push_back(Command(Instruction::PushConstant, Type::Float));
-                actions.push_back(Command(atof(entry->pos)));
+                actions.push_back(Command(float(atof(entry->pos))));
                 break;
             case MLParser::EntryType::Operator:
             case MLParser::EntryType::Function:
+                recur = false;
                 if (!addRecur(parser, iEntry + 1, entry->next)) return false;
                 else {
                     auto func(funcById(Context::strMng.search(entry->pos, parser.size(iEntry)).getId()));
@@ -381,13 +471,15 @@ namespace webui {
                 break;
             case MLParser::EntryType::String:
                 // just push it
-                actions.push_back(Command(Instruction::PushConstant, Type::StrId));
-                actions.push_back(Command(Context::strMng.add(entry->pos + 1, parser.size(iEntry) - 2)));
+                actions.push_back(Command(Instruction::PushConstant, Type::StrView, 1));
+                actions.push_back(Command(entry->pos + 1));
+                actions.push_back(Command(long(parser.size(iEntry) - 2)));
                 break;
             default:
                 DIAG(LOG("invalid ML entry type: %s", MLParser::toString(entry->type())));
                 return false;
             }
+            if (recur && !addRecur(parser, iEntry + 1, entry->next)) return false;
             iEntry = entry->next;
         }
         return true;
@@ -409,34 +501,34 @@ namespace webui {
             propWidget = widget;
             propId = command[1].strId;
         }
-        assert(propId.valid());
+        DIAG(if (!propId.valid()) LOG("invalid property id"));
         // property
         const Property* prop(propWidget->getProp(Identifier(propId.getId())));
-        DIAG(if (!prop) LOG("property id '%s' not available on widget", Context::strMng.get(propId)));
         return prop;
     }
 
-    long Actions::getPropertyData(const void* data, int offSz) {
-        int size(offSz & 3);
-        offSz >>= 2;
-        switch (size) {
-        case 0: return unsigned( reinterpret_cast<const uint8_t *>(data)[offSz]);
-        case 1: return           reinterpret_cast<const  int16_t*>(data)[offSz];
-        case 2: return           reinterpret_cast<const  int32_t*>(data)[offSz];
-        case 3: return           reinterpret_cast<const  int64_t*>(data)[offSz];
-        default: LOG("internal error"); return 0;
+    long Actions::getPropertyData(const void* data, Command command) {
+        float f;
+        switch (command.type()) {
+        case Type::Bit:      f = (reinterpret_cast<const uint8_t*>(data)[command.param >> 3] >> (command.param & 7)) & 1; break;
+        case Type::Uint8:    f = reinterpret_cast<const uint8_t*>(data)[command.param]; break;
+        case Type::Int16:    f = reinterpret_cast<const int16_t*>(data)[command.param]; break;
+        case Type::Int32:    f = reinterpret_cast<const int32_t*>(data)[command.param]; break;
+        case Type::Id:
+        case Type::StrId:
+        case Type::Float:
+        case Type::Color:
+        case Type::FontIdx:
+                             return reinterpret_cast<const uint32_t*>(data)[command.param];
+        case Type::Text:
+        case Type::VoidPtr:
+                             return reinterpret_cast<const long*>(data)[command.param];
+        default:
+            DIAG(LOG("unmanaged property type for reading"));
+            abort();
         }
-    }
-
-    int Actions::getSizeEncoding(int size) {
-        switch (size) {
-        case 0:
-        case 1: return 0;
-        case 2: return 1;
-        case 4: return 2;
-        case 8: return 3;
-        default: LOG("internal error"); return 0;
-        }
+        // promotion to float
+        return *reinterpret_cast<const uint32_t*>(&f);
     }
 
     bool Actions::checkFunctionParams(int iFunction, int iAction, Widget* widget) {
@@ -463,10 +555,29 @@ namespace webui {
                     }
                     Widget* propWidget;
                     const Property* prop(resolveProperty(command, widget, propWidget));
-                    if (!prop) return false;
+                    if (!prop) {
+                        DIAG(if (!prop) LOG("property id '%s' not available on widget", Context::strMng.get(command[1].strId)));
+                        return false;
+                    }
                     // upgrade value types
-                    auto valueType(actions[locations[iStack + 1]].type());
-                    if (valueType == Type::Float && prop->type == Type::Bit) valueType = prop->type;
+                    auto* value(&actions[locations[iStack + 1]]);
+                    auto valueType(value[0].type());
+                    if ((prop->type == Type::Bit          && valueType == Type::Float) ||
+                        (prop->type == Type::Uint8        && valueType == Type::Float) ||
+                        (prop->type == Type::Int16        && valueType == Type::Float) ||
+                        (prop->type == Type::Int32        && valueType == Type::Float) ||
+                        (prop->type == Type::SizeRelative && valueType == Type::Float) ||
+                        (prop->type == Type::Float        && valueType == Type::Bit)   ||
+                        (prop->type == Type::StrId        && valueType == Type::Id))   valueType = prop->type;
+                    else if (prop->type == Type::Text && valueType == Type::StrView) {
+                        // promote string view to text
+                        LOG("strview to text");
+                        value[0].sub = int(Type::Text);
+                        value[0].param = 0;
+                        value[1].text = strndup(value[1].text, value[2].l);
+                        value[2] = Command(Instruction::Nop);
+                        valueType = prop->type;
+                    }
                     if (prop->type == valueType) {
                         if (command->param) {
                             command[0] = Command(Instruction::PushForeignPropertyPtr, Type::VoidPtr, prop->pos * prop->size);
@@ -476,14 +587,24 @@ namespace webui {
                             command[0] = Command(Instruction::PushPropertyPtr, Type::VoidPtr, prop->pos * prop->size);
                             command[1] = Command(Instruction::Nop);
                         }
+                        Function assignFunc;
                         switch (prop->type) {
-                        case Type::Float: actions[iAction] = Command(Instruction::FunctionCall, Type::Float, Function::AssignFloat); break;
-                        case Type::Color: actions[iAction] = Command(Instruction::FunctionCall, Type::Color, Function::AssignColor); break;
-                        case Type::Bit:   actions[iAction] = Command(Instruction::FunctionCall, Type::Bit,   Function(int(Function::AssignBit0) + prop->bit)); break;
+                        case Type::Bit:          assignFunc = Function(int(Function::AssignBit0) + prop->bit); break;
+                        case Type::SizeRelative: assignFunc = Function::AssignSizeRel; break;
+                        case Type::Uint8:        assignFunc = Function::AssignUint8; break;
+                        case Type::Int16:        assignFunc = Function::AssignInt16; break;
+                        case Type::Int32:        assignFunc = Function::AssignInt32; break;
+                        case Type::Text:         assignFunc = Function::AssignText; break;
+                        case Type::Float:
+                        case Type::Color:
+                        case Type::Id:
+                        case Type::StrId:
+                                                 assignFunc = Function::AssignUint32; break;
                         default: DIAG(LOG("unknown assignment")); return false;
                         }
+                        actions[iAction] = Command(Instruction::FunctionCall, prop->type, assignFunc);
                     } else {
-                        DIAG(LOG("cannot cast '%s' from %s to %s in %d",
+                        DIAG(LOG("cannot cast '%s' from %s to %s in %d (assignment)",
                                  Context::strMng.get(command[1].strId), toString(valueType), toString(prop->type), iAction));
                         return false;
                     }
@@ -491,38 +612,51 @@ namespace webui {
                     // cast push constant id to push property
                     Widget* propWidget;
                     const Property* prop(resolveProperty(command, widget, propWidget));
-                    if (!prop) return false;
-                    bool cast(true);
-                    if (prop->type != *proto && *proto != Type::Unknown) {
-                        // property type does not match prototype, try by changing prototype
-                        if (iFunction == int(Function::Text) && prop->type == Type::Text) {
-                            // change function from text to textCharPtr
-                            actions[iAction].param = int(Function::TextCharPtr);
-                        } else
-                            // no polymorphism found
-                            cast = false;
-                    }
-
-                    if (cast) {
-                        // conversion of type ok
-                        if (command->param) {
-                            command[0] = Command(Instruction::PushForeignProperty, prop->type, prop->pos << 2 | getSizeEncoding(prop->size));
-                            command[1] = Command(propWidget);
-                            command[2] = Command(Instruction::Nop);
-                        } else {
-                            command[0] = Command(Instruction::PushProperty, prop->type, prop->pos << 2 | getSizeEncoding(prop->size));
-                            command[1] = Command(Instruction::Nop);
+                    if (prop) {
+                        bool cast(true);
+                        if (prop->type != *proto && *proto != Type::Unknown) {
+                            if (*proto == Type::Float &&
+                                (prop->type == Type::Bit   || prop->type == Type::Uint8 ||
+                                 prop->type == Type::Int16 || prop->type == Type::Int32)) {
+                                // these types are promoted to float, so allow cast
+                            } else if (iFunction == int(Function::Text) && prop->type == Type::Text) {
+                                // change function from text to textCharPtr
+                                actions[iAction].param = int(Function::TextCharPtr);
+                            } else
+                                // no polymorphism found
+                                cast = false;
                         }
-                    } else {
-                        DIAG(LOG("cannot cast '%s' from %s to %s in %d",
-                                 Context::strMng.get(command[1].strId), toString(prop->type), toString(*proto), iAction));
-                        return false;
+
+                        if (cast) {
+                            // conversion of type ok
+                            auto pos(prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : prop->pos);
+                            if (command->param) {
+                                command[0] = Command(Instruction::PushForeignProperty, prop->type, pos);
+                                command[1] = Command(propWidget);
+                                command[2] = Command(Instruction::Nop);
+                            } else {
+                                command[0] = Command(Instruction::PushProperty, prop->type, pos);
+                                command[1] = Command(Instruction::Nop);
+                            }
+                        } else {
+                            DIAG(LOG("cannot cast '%s' from %s to %s in %d",
+                                     Context::strMng.get(command[1].strId), toString(prop->type), toString(*proto), iAction));
+                            return false;
+                        }
                     }
-                } else if (command->inst() == Instruction::PushConstant && type == Type::StrId && *proto == Type::FontIdx) {
-                    // cast font name to font index
-                    command->sub = int(Type::FontIdx);
-                    command[1].l = Context::app.getFont(command[1].strId);
                 } else if (*proto == Type::Unknown) {
+                    // assign right hand side
+                } else if (command->inst() == Instruction::PushConstant && type == Type::StrView) {
+                    // cast to strId
+                    command[0].sub = int(Type::StrId);
+                    command[0].param = 0;
+                    command[1].l = int(Context::strMng.add(command[1].text, command[2].l).getId());
+                    command[2] = Command(Instruction::Nop);
+                    if (*proto == Type::FontIdx) {
+                        // cast font name to font index
+                        command[0].sub = int(Type::FontIdx);
+                        command[1].l = Context::app.getFont(command[1].strId);
+                    }
                 } else {
                     // cannot cast
                     DIAG(
@@ -541,7 +675,7 @@ namespace webui {
             } while (!locations.empty() && locations.back() == lastLocation);
         }
         if (func.retType != Type::LastType) {
-            stack.push_back(StackFrame(0.0f DIAG(, actions[iAction].type())));
+            stack.push_back(StackFrame(0.0f));
             locations.push_back(iAction);
         }
         return true;
@@ -568,16 +702,17 @@ namespace webui {
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), value(%s) elems(%s)", i, "Push constant",
                         ::toString(actions[i].type()),
                         ::toString(actions[i].type(), &actions[i + 1], buffer, sizeof(buffer)),
-                        actions[i].param ? ::toString(actions[i].type(), &actions[i + 2], buffer2, sizeof(buffer2)) : "");
+                        actions[i].param && actions[i].type() != Type::StrView ?
+                        ::toString(actions[i].type(), &actions[i + 2], buffer2, sizeof(buffer2)) : "");
                     i += 1 + actions[i].param;
                     break;
                 case Instruction::PushProperty:
-                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), size(%d)",
-                        i, "Push prop", ::toString(actions[i].type()), actions[i].param >> 2, 1 << (actions[i].param & 3));
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d)",
+                        i, "Push prop", ::toString(actions[i].type()), actions[i].param);
                     break;
                 case Instruction::PushForeignProperty:
-                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), size(%d), widget(%p)",
-                        i, "Push foreign prop", ::toString(actions[i].type()), actions[i].param >> 2, 1 << (actions[i].param & 3),
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), widget(%p)",
+                        i, "Push foreign prop", ::toString(actions[i].type()), actions[i].param,
                         actions[i+1].widget);
                     i++;
                     break;
@@ -606,10 +741,9 @@ namespace webui {
 
     DIAG(void Actions::dumpStack() {
             LOG("stack: %zu", stack.size());
-            char buffer[128];
             for (int i = 0; i < int(stack.size()); i++)
-                LOG("%4d " GREEN "%20s " RESET "%s",
-                    i, toString(stack[i].type), toString(stack[i].type, &stack[i].l, buffer, sizeof(buffer)));
+                LOG("%4d " GREEN "float(%f), uint32_t(%ld), ptr(%p)" RESET,
+                    i, stack[i].f, stack[i].l, stack[i].voidPtr);
         });
 
     // explicit template instantiations
