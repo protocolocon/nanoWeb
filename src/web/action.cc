@@ -22,22 +22,22 @@ namespace {
     vector<int> locations;
     Widget* execWidget;
 
-    Type VoidPrototype[] = { Type::LastType };
-    Type FloatPrototype[] = { Type::Float, Type::LastType };
-    Type Float2Prototype[] = { Type::Float, Type::Float, Type::LastType };
-    Type Float5Prototype[] = { Type::Float, Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
-    Type Float6Prototype[] = { Type::Float, Type::Float, Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
-    Type ColorPrototype[] = { Type::Color, Type::LastType };
-    Type StrIdPrototype[] = { Type::StrId, Type::LastType };
-    Type IdPrototype[] = { Type::Id, Type::LastType };
+    Type VoidPrototype[] =         { Type::LastType };
+    Type FloatPrototype[] =        { Type::Float,   Type::LastType };
+    Type Float2Prototype[] =       { Type::Float,   Type::Float,    Type::LastType };
+    Type Float5Prototype[] =       { Type::Float,   Type::Float,    Type::Float, Type::Float, Type::Float, Type::LastType };
+    Type Float6Prototype[] =       { Type::Float,   Type::Float,    Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
+    Type ColorPrototype[] =        { Type::Color,   Type::LastType };
+    Type StrIdPrototype[] =        { Type::StrId,   Type::LastType };
+    Type IdPrototype[] =           { Type::Id,      Type::LastType };
 
-    Type ModPrototype[] = { Type::Float, Type::Color, Type::LastType };
-    Type FillVertGradPrototype[] = { Type::Color, Type::Color, Type::Float, Type::Float, Type::LastType };
-    Type FontPrototype[] = { Type::Float, Type::FontIdx, Type::LastType };
-    Type TextPrototype[] = { Type::StrId, Type::Float, Type::Float, Type::LastType };
-    Type TextCharPtrPrototype[] = { Type::Text, Type::Float, Type::Float, Type::LastType };
-    Type QueryPrototype[] = { Type::StrId, Type::StrId, Type::LastType };
-    Type AssignPrototype[] = { Type::Unknown, Type::VoidPtr, Type::LastType };
+    Type ModPrototype[] =          { Type::Float,   Type::Color,    Type::LastType };
+    Type FillVertGradPrototype[] = { Type::Color,   Type::Color,    Type::Float, Type::Float, Type::LastType };
+    Type FontPrototype[] =         { Type::Float,   Type::FontIdx,  Type::LastType };
+    Type TextPrototype[] =         { Type::StrId,   Type::Float,    Type::Float, Type::LastType };
+    Type TextCharPtrPrototype[] =  { Type::Text,    Type::Float,    Type::Float, Type::LastType };
+    Type QueryPrototype[] =        { Type::StrId,   Type::StrId,    Type::LastType };
+    Type AssignPrototype[] =       { Type::Unknown, Type::VoidPtr,  Type::LastType };
 
     void FunctionError() {
         DIAG(LOG("error function"));
@@ -247,54 +247,53 @@ namespace {
 
     const struct FunctionList {
         Identifier id;
-        Function funcIdx;
         FunctionProto func;
         Type* prototype;
         Type retType;
     } functionList[] = {
-        { Identifier::InvalidId,       Function::Error,           FunctionError,        VoidPrototype,         Type::LastType },
-        { Identifier::toggleVisible,   Function::ToggleVisible,   FunctionToggleVisible,IdPrototype,           Type::LastType },
-        { Identifier::beginPath,       Function::BeginPath,       FunctionBeginPath,    VoidPrototype,         Type::LastType },
-        { Identifier::moveto,          Function::Moveto,          FunctionMoveto,       Float2Prototype,       Type::LastType },
-        { Identifier::lineto,          Function::Lineto,          FunctionLineto,       Float2Prototype,       Type::LastType },
-        { Identifier::bezierto,        Function::Bezierto,        FunctionBezierto,     Float6Prototype,       Type::LastType },
-        { Identifier::closePath,       Function::ClosePath,       FunctionClosePath,    VoidPrototype,         Type::LastType },
-        { Identifier::roundedRect,     Function::RoundedRect,     FunctionRoundedRect,  Float5Prototype,       Type::LastType },
-        { Identifier::fillColor,       Function::FillColor,       FunctionFillColor,    ColorPrototype,        Type::LastType },
-        { Identifier::fillVertGrad,    Function::FillVertGrad,    FunctionFillVertGrad, FillVertGradPrototype, Type::LastType },
-        { Identifier::fill,            Function::Fill,            FunctionFill,         VoidPrototype,         Type::LastType },
-        { Identifier::strokeWidth,     Function::StrokeWidth,     FunctionStrokeWidth,  FloatPrototype,        Type::LastType },
-        { Identifier::strokeColor,     Function::StrokeColor,     FunctionStrokeColor,  ColorPrototype,        Type::LastType },
-        { Identifier::stroke,          Function::Stroke,          FunctionStroke,       VoidPrototype,         Type::LastType },
-        { Identifier::font,            Function::Font,            FunctionFont,         FontPrototype,         Type::LastType },
-        { Identifier::text,            Function::Text,            FunctionText,         TextPrototype,         Type::LastType },
-        { Identifier::text,            Function::TextCharPtr,     FunctionTextCharPtr,  TextCharPtrPrototype,  Type::LastType },
-        { Identifier::textLeft,        Function::TextLeft,        FunctionError,        VoidPrototype,         Type::LastType },
-        { Identifier::translateCenter, Function::TranslateCenter, FunctionError,        VoidPrototype,         Type::LastType },
-        { Identifier::scale100,        Function::Scale100,        FunctionError,        VoidPrototype,         Type::LastType },
-        { Identifier::resetTransform,  Function::ResetTransform,  FunctionError,        VoidPrototype,         Type::LastType },
-        { Identifier::set,             Function::Set,             FunctionError,        VoidPrototype,         Type::LastType },
-        { Identifier::query,           Function::Query,           FunctionQuery,        QueryPrototype,        Type::LastType },
-        { Identifier::log,             Function::Log,             FunctionLog,          StrIdPrototype,        Type::LastType },
-        { Identifier::add,             Function::Add,             FunctionAdd,          Float2Prototype,       Type::Float },
-        { Identifier::sub,             Function::Sub,             FunctionSub,          Float2Prototype,       Type::Float },
-        { Identifier::mul,             Function::Mul,             FunctionMul,          Float2Prototype,       Type::Float },
-        { Identifier::div,             Function::Div,             FunctionDiv,          Float2Prototype,       Type::Float },
-        { Identifier::mod,             Function::Mod,             FunctionMod,          ModPrototype,          Type::Color },
-        { Identifier::assign,          Function::AssignUint32,    FunctionAssignUint32, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignSizeRel,   FunctionAssignSizeRel,AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignUint8,     FunctionAssignUint8,  AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignInt16,     FunctionAssignInt16,  AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignInt32,     FunctionAssignInt32,  AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignText,      FunctionAssignText,   AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit0,      FunctionAssignBit<0>, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit1,      FunctionAssignBit<1>, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit2,      FunctionAssignBit<2>, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit3,      FunctionAssignBit<3>, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit4,      FunctionAssignBit<4>, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit5,      FunctionAssignBit<5>, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit6,      FunctionAssignBit<6>, AssignPrototype,       Type::LastType },
-        { Identifier::assign,          Function::AssignBit7,      FunctionAssignBit<7>, AssignPrototype,       Type::LastType },
+        { Identifier::InvalidId,       FunctionError,          VoidPrototype,         Type::LastType },
+        { Identifier::toggleVisible,   FunctionToggleVisible,  IdPrototype,           Type::LastType },
+        { Identifier::beginPath,       FunctionBeginPath,      VoidPrototype,         Type::LastType },
+        { Identifier::moveto,          FunctionMoveto,         Float2Prototype,       Type::LastType },
+        { Identifier::lineto,          FunctionLineto,         Float2Prototype,       Type::LastType },
+        { Identifier::bezierto,        FunctionBezierto,       Float6Prototype,       Type::LastType },
+        { Identifier::closePath,       FunctionClosePath,      VoidPrototype,         Type::LastType },
+        { Identifier::roundedRect,     FunctionRoundedRect,    Float5Prototype,       Type::LastType },
+        { Identifier::fillColor,       FunctionFillColor,      ColorPrototype,        Type::LastType },
+        { Identifier::fillVertGrad,    FunctionFillVertGrad,   FillVertGradPrototype, Type::LastType },
+        { Identifier::fill,            FunctionFill,           VoidPrototype,         Type::LastType },
+        { Identifier::strokeWidth,     FunctionStrokeWidth,    FloatPrototype,        Type::LastType },
+        { Identifier::strokeColor,     FunctionStrokeColor,    ColorPrototype,        Type::LastType },
+        { Identifier::stroke,          FunctionStroke,         VoidPrototype,         Type::LastType },
+        { Identifier::font,            FunctionFont,           FontPrototype,         Type::LastType },
+        { Identifier::text,            FunctionText,           TextPrototype,         Type::LastType },
+        { Identifier::text,            FunctionTextCharPtr,    TextCharPtrPrototype,  Type::LastType },
+        { Identifier::textLeft,        FunctionError,          VoidPrototype,         Type::LastType },
+        { Identifier::translateCenter, FunctionError,          VoidPrototype,         Type::LastType },
+        { Identifier::scale100,        FunctionError,          VoidPrototype,         Type::LastType },
+        { Identifier::resetTransform,  FunctionError,          VoidPrototype,         Type::LastType },
+        { Identifier::set,             FunctionError,          VoidPrototype,         Type::LastType },
+        { Identifier::query,           FunctionQuery,          QueryPrototype,        Type::LastType },
+        { Identifier::log,             FunctionLog,            StrIdPrototype,        Type::LastType },
+        { Identifier::add,             FunctionAdd,            Float2Prototype,       Type::Float },
+        { Identifier::sub,             FunctionSub,            Float2Prototype,       Type::Float },
+        { Identifier::mul,             FunctionMul,            Float2Prototype,       Type::Float },
+        { Identifier::div,             FunctionDiv,            Float2Prototype,       Type::Float },
+        { Identifier::mod,             FunctionMod,            ModPrototype,          Type::Color },
+        { Identifier::assign,          FunctionAssignUint32,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignSizeRel,  AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignUint8,    AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignInt16,    AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignInt32,    AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignText,     AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<0>,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<1>,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<2>,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<3>,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<4>,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<5>,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<6>,   AssignPrototype,       Type::LastType },
+        { Identifier::assign,          FunctionAssignBit<7>,   AssignPrototype,       Type::LastType },
     };
 
     DIAG(const char* toString(Function func) {
@@ -304,7 +303,7 @@ namespace {
     inline Function funcById(Identifier id) {
         // TODO: do binary search
         for (const auto& f: functionList)
-            if (f.id == id) return f.funcIdx;
+            if (f.id == id) return Function(&f - functionList);
         return Function::Error;
     }
 }
@@ -670,6 +669,22 @@ namespace webui {
                             stack.size() - iStack, toString(*proto), toString(type), Context::strMng.get(func.id), locations[iStack]);
                         dumpStack());
                     return false;
+                }
+            } else {
+                // type matches proto, but if pushing a constant id and this is a property of type id, then resolve
+                if (command->inst() == Instruction::PushConstant && type == Type::Id) {
+                    Widget* propWidget;
+                    const Property* prop(resolveProperty(command, widget, propWidget));
+                    if (prop && prop->type == Type::Id) {
+                        if (command->param) {
+                            command[0] = Command(Instruction::PushForeignProperty, prop->type, prop->pos);
+                            command[1] = Command(propWidget);
+                            command[2] = Command(Instruction::Nop);
+                        } else {
+                            command[0] = Command(Instruction::PushProperty, prop->type, prop->pos);
+                            command[1] = Command(Instruction::Nop);
+                        }
+                    }
                 }
             }
             ++proto;

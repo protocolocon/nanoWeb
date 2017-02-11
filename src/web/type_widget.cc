@@ -20,17 +20,14 @@ namespace webui {
                 "Int16",
                 "Int32",
                 "Id",
-                "StrView",
                 "StrId",
+                "StrView",
                 "Float",
                 "Color",
-                "ColorModif",
                 "SizeRelative",
-                "Coord",
                 "FontIdx",
                 "ActionTable",
                 "Text",
-                "TextPropOrStrId",
                 "VoidPtr",
                 "Void", // last
             };
@@ -42,8 +39,8 @@ namespace webui {
             case Type::Float:       snprintf(buffer, nBuffer, "%.4f", *reinterpret_cast<const float*>(data)); break;
             case Type::Int16:       snprintf(buffer, nBuffer, "%d", *reinterpret_cast<const int16_t*>(data)); break;
             case Type::Id:          snprintf(buffer, nBuffer, "%s", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
-            case Type::StrView:     snprintf(buffer, nBuffer, "\"%.*s\"", int(((long*)data)[1]), ((char* const*)data)[0]); break;
             case Type::StrId:       snprintf(buffer, nBuffer, "\"%s\"", Context::strMng.get(*reinterpret_cast<const StringId*>(data))); break;
+            case Type::StrView:     snprintf(buffer, nBuffer, "\"%.*s\"", int(((long*)data)[1]), ((char* const*)data)[0]); break;
             case Type::FontIdx:     snprintf(buffer, nBuffer, "%ld", *reinterpret_cast<const long*>(data)); break;
             case Type::Color:       snprintf(buffer, nBuffer, "%08x", *reinterpret_cast<const uint32_t*>(data)); break;
             case Type::ActionTable: snprintf(buffer, nBuffer, "%d", *reinterpret_cast<const uint32_t*>(data)); break;

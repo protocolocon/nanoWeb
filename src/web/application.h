@@ -43,10 +43,6 @@ namespace webui {
         // render
         void render();
 
-        // add/set generic properties
-        bool setProp(Identifier id, Widget* widget, int iEntry, int fEntry);
-        bool setProp(const Property& prop, Identifier id, void* data, int iEntry, int fEntry, Widget* widget);
-
         // actions
         struct ActionTable {
             inline ActionTable(): onEnter(0), onLeave(0), onClick(0), onRender(0), onRenderActive(0) { }
@@ -101,7 +97,6 @@ namespace webui {
 
         // fonts
         std::vector<std::pair<StringId, char*>> fonts;
-        bool fontValid;
 
         Widget* initializeConstruct();
         Widget* initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
@@ -112,21 +107,13 @@ namespace webui {
         int getWidgetRange(StringId widgetId) const;
         Widget* createType(Widget* widget, Identifier typeId, int iEntry, int fEntry);
 
-        // templates in properties
-        //bool replaceProperty(int iEntry);
-        //void replaceBackProperty(bool templateReplaced, int iEntry);
-
         // actions
         bool checkActions();
-        bool addCommandGeneric(Identifier name, int iEntry, int fEntry, const Type* params, Widget* widget);
-        bool executeSet(StringId widgetId, Identifier prop, StringId value, Widget* widget);
 
         // timers
         bool refreshTimers(); // returns true on command execution
 
         bool parseId(Widget* widget, const char*& str, const Property*& prop) const;
-        int parseCoord(int iEntry, Widget* widget) const;
-        RGBAref parseColorModif(int iEntry, Widget* widget) const;
         static inline float getCoord(int c, Widget* widget) {
             int x(short(c & 0xffff));
             if (c >= 0) x += ((short*)widget)[c >> 16] << 2;

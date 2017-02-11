@@ -64,7 +64,8 @@ namespace webui {
         propInt16        = OffsetEnum(ALast),
         propText         = OffsetEnum(propInt16),
         propColor        = OffsetEnum(propText),
-        PLast            = OffsetEnum(propColor),
+        propId           = OffsetEnum(propColor),
+        PLast            = OffsetEnum(propId),
 
         // commands
         log              = OffsetEnum(PLast),

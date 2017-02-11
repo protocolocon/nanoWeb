@@ -56,6 +56,7 @@ namespace {
         "propInt16" _
         "propText" _
         "propColor" _
+        "propId" _
         "PLast" _
 
         "log" _

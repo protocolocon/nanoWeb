@@ -5,6 +5,7 @@ Application {
     // define a widget button to be used later
     Widget {
         define: ButtonLevel1
+        propId: children
         width: 260
         height: 70
         onRender: [
@@ -27,12 +28,14 @@ Application {
         ]
         onEnter: [ background = #888898c0, text = "in" ]
         onLeave: [ background = #909090c0, text = "out" ]
+        onClick: toggleVisible(children)
         foreground: #808080a0
         background: #808080c0
     }
 
     Widget {
         define: ButtonLevel2
+        propId: children
         width: 120
         height: 32
         onRender: [
@@ -53,6 +56,7 @@ Application {
             fillColor(foreground%0),   text(0,  0, text),
             fillColor(foreground%160), text(0, -1, text)
         ]
+        onClick: toggleVisible(children)
         foreground: #808080a0
         background: #808080c0
     }
@@ -88,7 +92,7 @@ Application {
                     ButtonLevel1 {
                         id: @
                         text: @
-                        onClick: toggleVisible(@)
+                        children: @
                     }
                     LayoutVer {
                         id: @
@@ -99,7 +103,7 @@ Application {
                                 ButtonLevel2 {
                                     id: @
                                     text: @
-                                    onClick: toggleVisible(@)
+                                    children: @
                                 }
                                 LayoutVer {
                                     id: @
@@ -124,7 +128,7 @@ Application {
         ButtonLevel1 {
             id: but1
             text: "level 1 first"
-            onClick: toggleVisible(lay1)
+            children: lay1
         }
         LayoutVer {
             id: lay1
@@ -132,7 +136,7 @@ Application {
             ButtonLevel2 {
                 id: but1_1
                 text: "level 2 first"
-                onClick: toggleVisible(lay1_1)
+                children: lay1_1
             }
             LayoutVer {
                 id: lay1_1
@@ -144,7 +148,7 @@ Application {
             ButtonLevel2 {
                 id: but1_2
                 text: "level 2 second"
-                onClick: toggleVisible(lay1_2)
+                children: lay1_2
             }
             LayoutVer {
                 id: lay1_2
@@ -156,7 +160,7 @@ Application {
             ButtonLevel2 {
                 id: but1_3
                 text: "level 2 third"
-                onClick: toggleVisible(lay1_3)
+                children: lay1_3
             }
             LayoutVer {
                 id: lay1_3
@@ -169,7 +173,7 @@ Application {
         ButtonLevel1 {
             id: but2
             text: "level 1 second"
-            onClick: toggleVisible(lay2)
+            children: lay2
         }
         LayoutVer {
             id: lay2
@@ -177,7 +181,7 @@ Application {
             ButtonLevel2 {
                 id: but2_1
                 text: "level 2 first"
-                onClick: toggleVisible(lay2_1)
+                children: lay2_1
             }
             LayoutVer {
                 id: lay2_1
@@ -190,7 +194,7 @@ Application {
         ButtonLevel1 {
             id: but3
             text: "level 1 third"
-            onClick: toggleVisible(lay3)
+            children: lay3
         }
         LayoutVer {
             id: lay3
@@ -198,7 +202,7 @@ Application {
             ButtonLevel2 {
                 id: but3_1
                 text: "level 2 first"
-                onClick: toggleVisible(lay3_1)
+                children: lay3_1
             }
             LayoutVer {
                 id: lay3_1
@@ -210,7 +214,7 @@ Application {
             ButtonLevel2 {
                 id: but3_2
                 text: "level 2 second"
-                onClick: toggleVisible(lay3_2)
+                children: lay3_2
             }
             LayoutVer {
                 id: lay3_2
@@ -222,7 +226,7 @@ Application {
             ButtonLevel2 {
                 id: but3_3
                 text: "level 2 third"
-                onClick: toggleVisible(lay3_3)
+                children: lay3_3
             }
             LayoutVer {
                 id: lay3_3

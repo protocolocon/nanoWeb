@@ -58,18 +58,6 @@ namespace webui {
     };
 
 
-    class RGBAref: public RGBA {
-    public:
-        RGBAref(): RGBA() { }
-        RGBAref(uint32_t c): RGBA(c) { }
-        RGBAref(RGBA rgba): RGBA(rgba.rgba() & -2) { }
-        RGBAref(const char* str): RGBA(str) { c &= -2; }
-        RGBAref(int ref, float value) { assign(ref, value); }
-        void assign(int ref, float value);
-        RGBA get(const Widget* widget) const;
-    };
-
-
     class SizeRelative {
     public:
         inline SizeRelative(float x, bool rel) { assign(x, rel); }
@@ -83,24 +71,6 @@ namespace webui {
         uint16_t size:14;
         uint16_t relative:1;
         uint16_t adapt:1;
-    };
-
-
-    class TextPropOrStrId {
-    public:
-        TextPropOrStrId(StringId id): off(int(id.getId())), prop(false) { }
-        TextPropOrStrId(int propPos): off(propPos), prop(true) { }
-        const char* get(Widget* w, StringManager& strMng) {
-            if (prop) {
-                const char* str(reinterpret_cast<const char**>(w)[off]);
-                return str ? str : "";
-            } else
-                return strMng.get(StringId(off));
-        }
-
-    private:
-        uint32_t off:31;
-        uint32_t prop:1;  // 0: strId   1: Text property
     };
 
 }
