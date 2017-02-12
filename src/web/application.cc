@@ -18,6 +18,7 @@
 #include <cassert>
 #include <cstring>
 #include <algorithm>
+#include <unordered_set>
 
 using namespace std;
 using namespace webui;
@@ -81,21 +82,19 @@ namespace webui {
 
     DIAG(void Application::clear() {
             root = nullptr;
-            // delete new types
+            // get all new types for removal
+            unordered_set<TypeWidget*> types;
             for (auto& widget: widgets) {
                 auto* type(widget.second->typeWidget);
-                if (type && type->type > Identifier::WLast) {
-                    // dynamic type
-                    for (auto& widget: widgets)
-                        if (widget.second->typeWidget == type)
-                            widget.second->typeWidget = nullptr;
-                    delete type;
-                }
+                if (type && type->type > Identifier::WLast) types.insert(type);
             }
-
+            // delete widgets
             for (auto& widget: widgets)
                 delete widget.second;
             widgets.clear();
+            // delete new types
+            for (auto type: types)
+                delete type;
         });
 
     void Application::resize(int width, int height) {

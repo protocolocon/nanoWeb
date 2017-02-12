@@ -18,7 +18,9 @@ using namespace webui;
 namespace {
 
     TypeWidget widgetApplicationType = {
-        Identifier::Application, sizeof(WidgetApplication), { }
+        Identifier::Application, sizeof(WidgetApplication), {
+            { Identifier::background,     PROP(WidgetApplication, background, Color,        4, 0, 0) },
+        }
     };
 
 }

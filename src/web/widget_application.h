@@ -22,6 +22,9 @@ namespace webui {
         // polymorphic interface
         virtual Identifier baseType() const final override { return Identifier::Application; }
         virtual void render(int alphaMult) final override;
+
+    public:
+        RGBA background;
     };
 
 }

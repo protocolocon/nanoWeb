@@ -18,13 +18,43 @@ using namespace webui;
 
 namespace {
 
+    // create widget with certain properties to test
+    class WidgetTest: public Widget {
+    public:
+        WidgetTest();
+
+    public:
+        char* text;
+        RGBA background;
+    };
+
+    TypeWidget widgetTest = {
+        Identifier::Timer, sizeof(WidgetTest), {
+            { Identifier::text,         PROP(WidgetTest, text,       Text,   sizeof(void*), 0, 0) },
+            { Identifier::background,   PROP(WidgetTest, background, Color,  4, 0, 0) },
+        }
+    };
+
+    WidgetTest::WidgetTest(): Widget(nullptr), text(nullptr) {
+        typeWidget = &widgetTest;
+    }
+
+}
+
+namespace {
+
     class Fixture {
     public:
-        Fixture(): widget(nullptr) {
+        Fixture(): widget() {
             ctx.initialize(false, false);
             auto& ws(Context::app.getWidgets());
             ws[Context::strMng.add("alpha")] = Context::app.createWidget(Identifier::Widget, nullptr);
             ws[Context::strMng.add("omega")] = Context::app.createWidget(Identifier::Widget, nullptr);
+
+            // inheritance for widget test
+            auto begin(Widget::getType().begin());
+            auto end(Widget::getType().end());
+            widgetTest.insert(begin, end);
         }
 
         bool addAction(const char* str) {
@@ -50,7 +80,7 @@ namespace {
         }
 
     protected:
-        Widget widget;
+        WidgetTest widget;
         MLParser ml;
         int iAction;
     };
@@ -95,7 +125,7 @@ TEST_CASE_METHOD(Fixture, "action: assign float", "[action]") {
 }
 
 TEST_CASE_METHOD(Fixture, "action: assign text", "[action]") {
-    CHECK(addAction("text = \"hello\""));
+    CHECK(addAction("text = \"hello\"")); // TODO: this hello string is leaked
     CHECK(executeAction());
     dumpStack();
     CHECK(!strcmp(widget.text, "hello"));
@@ -176,12 +206,12 @@ TEST_CASE_METHOD(Fixture, "action: change foreign bit", "[action]") {
     CHECK(ws[Context::strMng.search("alpha")]->visible == 1);
 }
 
-TEST_CASE_METHOD(Fixture, "action: assign color with double dispatch", "[action]") {
+TEST_CASE_METHOD(Fixture, "action: assign prop with double dispatch", "[action]") {
     widget.id = Context::strMng.add("alpha");
-    CHECK(addAction("id.background = #00112233"));
+    CHECK(addAction("id.x = 3318"));
     CHECK(executeAction());
     auto& ws(Context::app.getWidgets());
-    CHECK(ws[widget.id]->background.rgba() == 0x00112233);
+    CHECK(ws[widget.id]->box.pos.x == 3318);
 }
 
 TEST_CASE_METHOD(Fixture, "action: assign id from foreign", "[action]") {

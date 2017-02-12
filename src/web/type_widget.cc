@@ -51,8 +51,8 @@ namespace webui {
             return buffer;
         });
 
-    long TypeWidget::get(Identifier id, const void* data) const {
-        auto it(find(id));
+    long TypeWidget::get(StringId id, const void* data) const {
+        auto it(find(Identifier(id.getId())));
         if (it == end()) {
             LOG("unknown property in get");
             return 0;
@@ -68,8 +68,8 @@ namespace webui {
         }
     }
 
-    void TypeWidget::set(Identifier id, void* data, long value) const {
-        auto it(find(id));
+    void TypeWidget::set(StringId id, void* data, long value) const {
+        auto it(find(Identifier(id.getId())));
         if (it == end()) {
             LOG("unknown property in set");
             return;

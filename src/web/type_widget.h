@@ -66,8 +66,8 @@ namespace webui {
         int size;
 
         // generic interface
-        long get(Identifier id, const void* data) const;
-        void set(Identifier id, void* data, long value) const;
+        long get(StringId id, const void* data) const;
+        void set(StringId id, void* data, long value) const;
 
         DIAG(void dump(int indent, const void* widget) const);
     };

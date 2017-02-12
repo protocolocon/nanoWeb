@@ -61,10 +61,10 @@ TEST_CASE("application: definition", "[application]") {
     REQUIRE(child.size() == 2);
     CHECK(string(Context::strMng.get(child[0]->type())) == "Definition");
     CHECK(string(Context::strMng.get(child[1]->type())) == "Definition");
-    CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("property").getId()), child[0]) == 256);
-    CHECK(child[1]->typeWidget->get(Identifier(Context::strMng.search("property").getId()), child[1]) == 4242);
-    CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("width").getId()), child[0]) == 333);
-    CHECK(child[1]->typeWidget->get(Identifier(Context::strMng.search("width").getId()), child[1]) == 333);
+    CHECK(child[0]->typeWidget->get(Context::strMng.search("property").getId(), child[0]) == 256);
+    CHECK(child[1]->typeWidget->get(Context::strMng.search("property").getId(), child[1]) == 4242);
+    CHECK(child[0]->typeWidget->get(Context::strMng.search("width").getId(), child[0]) == 333);
+    CHECK(child[1]->typeWidget->get(Context::strMng.search("width").getId(), child[1]) == 333);
 }
 
 TEST_CASE("application: template", "[application]") {
@@ -118,11 +118,18 @@ TEST_CASE("application: text", "[application]") {
     ctx.initialize(false, false);
     CHECK(Context::app.onLoad(mlApp(
                                   "Application{"
-                                  _"   text: \"this is text\""
+                                  _"  Widget {"
+                                  _"    define: Test"
+                                  _"    propText: text"
+                                  _"    text: \"this is text\""
+                                  _"  }"
+                                  _"  Test { }"
                                   _"}")));
     auto root(Context::app.getRoot());
     REQUIRE(root);
-    CHECK(!strcmp(root->text, "this is text"));
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 1);
+    CHECK(!strcmp((char*)child[0]->typeWidget->get(Context::strMng.search("text").getId(), child[0]), "this is text"));
 }
 
 TEST_CASE("application: property computations", "[application]") {
@@ -143,8 +150,8 @@ TEST_CASE("application: property computations", "[application]") {
     auto& child(root->getChildren());
     REQUIRE(child.size() == 1);
     CHECK(string(Context::strMng.get(child[0]->type())) == "Props");
-    CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("xx").getId()), child[0]) == 42);
-    CHECK(child[0]->typeWidget->get(Identifier(Context::strMng.search("yy").getId()), child[0]) == 42 * 42);
+    CHECK(child[0]->typeWidget->get(Context::strMng.search("xx").getId(), child[0]) == 42);
+    CHECK(child[0]->typeWidget->get(Context::strMng.search("yy").getId(), child[0]) == 42 * 42);
 }
 
 TEST_CASE("application: double dispatch", "[application]") {

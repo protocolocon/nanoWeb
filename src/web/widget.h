@@ -43,7 +43,7 @@ namespace webui {
         virtual bool layout(const Box4f& box); // returns true if stable
 
         // get a property or null
-        const Property* getProp(Identifier id) const;
+        const Property* getProp(StringId id) const;
 
         // copy properties from provided widget
         void copyFrom(const Widget* widget);
@@ -51,15 +51,10 @@ namespace webui {
         // update widget status
         bool update(); // returns true if actions were executed (affecting application)
 
-        // animations
-        bool animeAlpha();
-
         // getters
         inline const StringId getId() const { return id; }
         inline V2s getSizeTarget(V2s s) const { return V2s(size[0].get(s.x), size[1].get(s.y)); }
         inline bool isVisible() const { return visible; }
-        inline RGBA getBackground() const { return background; }
-        inline RGBA getForeground() const { return foreground; }
         inline bool isSharingActions() const { return sharedActions; }
         inline void resetSharingActions() { sharedActions = 0; }
 
@@ -70,6 +65,7 @@ namespace webui {
 
         // utils
         void translate(V2f t);
+        bool animeAlpha();
 
         // debug
         DIAG(void dump(int level = 0, bool props = false) const);
@@ -79,13 +75,11 @@ namespace webui {
         Box4f box;          // bounding box: absolute position
 
         // static part
+        SizeRelative size[2];
         TypeWidget* typeWidget;
         Widget* parent;
-        char* text;
         StringId id;
         std::vector<Widget*> children;
-        SizeRelative size[2];
-        RGBA background, foreground;
         union {
             uint32_t all;
             struct {

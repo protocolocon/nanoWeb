@@ -2,8 +2,16 @@
 Application {
     background: #4d4d4d
 
-    // define a widget button to be used later
+    // define a widget with text, background and foreground (tests inheritance)
     Widget {
+        define: WidgetProps
+        propText: text
+        propColor: foreground
+        propColor: background
+    }
+
+    // define a widget button to be used later
+    WidgetProps {
         define: ButtonLevel1
         propId: children
         children: ButtonLevel1
@@ -34,7 +42,7 @@ Application {
         background: #808080c0
     }
 
-    Widget {
+    WidgetProps {
         define: ButtonLevel2
         propId: children
         children: ButtonLevel2

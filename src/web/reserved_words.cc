@@ -33,7 +33,6 @@ namespace {
         "width" _
         "height" _
         "background" _
-        "foreground" _
         "all" _
         "visible" _
         "inside" _
