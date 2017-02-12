@@ -125,7 +125,7 @@ namespace webui {
             return parseList(ml, ']') ? prev : -1;
         } else if (c =='#') { // color (continue for formula)
             if ((prev = parseColor(ml, prev)) < 0) return -1;
-        } else if (c =='"') { // string
+        } else if (c == '"' || c == '\'') { // string
             if (op && *op != '=') return ERROR_INT(ml, "string cannot be used in operation");
             return parseString(ml, prev);
         } else if (c == '(') { // operation parenthesis
@@ -254,12 +254,13 @@ namespace webui {
     }
 
     bool MLParser::skipString(const char*&ml) const {
-        if (*ml != '"') return ERROR_FALSE(ml, "expecting '\"' for string");
+        if (*ml != '"' && *ml != '\'') return ERROR_FALSE(ml, "expecting '\"' or '\'' for string");
+        char end(*ml);
         ++ml;
         while (true) {
             char c = get(ml);
-            if (c == '"') { ++ml; return true; }
-            if (!c) return ERROR_FALSE(ml, "expection '\"' but found EOF");
+            if (c == end) { ++ml; return true; }
+            if (!c) return ERROR_FALSE(ml, "expection '\"' or '\'' but found EOF");
             ++ml;
         }
     }

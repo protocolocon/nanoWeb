@@ -165,7 +165,7 @@ namespace {
     void FunctionTranslate() {
         assert(stack.size() >= 2);
         auto* s(&stack.back() - 1);
-        Context::render.translate(s[0].f, s[0].f);
+        Context::render.translate(s[0].f, s[1].f);
         stack.resize(stack.size() - 2);
         LOG("hello");
     }
@@ -657,6 +657,7 @@ namespace webui {
                 if (*proto == Type::VoidPtr) {
                     // assign or inline expressions
                     if (!prop) {
+                        if (command->inst() != Instruction::PushConstant) return true; // already recoded: second pass
                         DIAG(if (!prop) LOG("property id '%s' not available on widget", Context::strMng.get(command[1].strId)));
                         return false;
                     }
