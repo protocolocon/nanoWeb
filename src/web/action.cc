@@ -167,7 +167,6 @@ namespace {
         auto* s(&stack.back() - 1);
         Context::render.translate(s[0].f, s[1].f);
         stack.resize(stack.size() - 2);
-        LOG("hello");
     }
 
     void FunctionScale() {
