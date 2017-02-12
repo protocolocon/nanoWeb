@@ -540,6 +540,7 @@ namespace webui {
     }
 
     const Property* Actions::resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type) {
+        assert(command->inst() == Instruction::PushConstant && command->type() == Type::Id);
         StringId propId;
         if (command->param) {
             // x.y => widget.propery
@@ -550,7 +551,10 @@ namespace webui {
                 const Property* prop(widget->getProp(Identifier(widgetId.getId())));
                 if (!prop || prop->type != Type::Id || // variable has to be set to a valid widget since the beginning
                     !Context::app.getWidgets().count(widgetId = reinterpret_cast<StringId*>(widget)[prop->pos])) {
-                    DIAG(LOG("unknown widget: %s resolving property", Context::strMng.get(widgetId)));
+                    DIAG(LOG("unknown widget: %s.%s resolving property (%s = %s [%d])",
+                             Context::strMng.get(command[1].strId), Context::strMng.get(command[2].strId),
+                             Context::strMng.get(command[1].strId), Context::strMng.get(reinterpret_cast<StringId*>(widget)[prop->pos]),
+                             reinterpret_cast<int*>(widget)[prop->pos]));
                     type = DispatchUnknown;
                     return nullptr;
                 }
@@ -657,7 +661,8 @@ namespace webui {
                     // assign or inline expressions
                     if (!prop) {
                         if (command->inst() != Instruction::PushConstant) return true; // already recoded: second pass
-                        DIAG(if (!prop) LOG("property id '%s' not available on widget", Context::strMng.get(command[1].strId)));
+                        DIAG(if (!prop) LOG("property id '%s' not available on widget at %d",
+                                            Context::strMng.get(command[1].strId), locations[iStack]));
                         return false;
                     }
                     // upgrade value types

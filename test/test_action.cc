@@ -183,3 +183,41 @@ TEST_CASE_METHOD(Fixture, "action: assign color with double dispatch", "[action]
     auto& ws(Context::app.getWidgets());
     CHECK(ws[widget.id]->background.rgba() == 0x00112233);
 }
+
+TEST_CASE_METHOD(Fixture, "action: assign id from foreign", "[action]") {
+    auto id(Context::strMng.add("someId"));
+    auto& ws(Context::app.getWidgets());
+    ws[Context::strMng.search("alpha")]->id = id;
+    CHECK(addAction("id = alpha.id"));
+    CHECK(executeAction());
+    CHECK(widget.id == id);
+}
+
+TEST_CASE_METHOD(Fixture, "action: assign id to foreign", "[action]") {
+    auto id(Context::strMng.add("anotherRandomId"));
+    widget.id = id;
+    CHECK(addAction("alpha.id = id"));
+    CHECK(executeAction());
+    auto& ws(Context::app.getWidgets());
+    CHECK(ws[Context::strMng.search("alpha")]->id == id);
+}
+
+TEST_CASE_METHOD(Fixture, "action: assign id to and from foreign", "[action]") {
+    auto id(Context::strMng.add("anotherRandomIdMore"));
+    auto& ws(Context::app.getWidgets());
+    ws[Context::strMng.search("alpha")]->id = id;
+    CHECK(addAction("omega.id=alpha.id"));
+    CHECK(executeAction());
+    CHECK(ws[Context::strMng.search("omega")]->id == id);
+}
+
+TEST_CASE_METHOD(Fixture, "action: triple dispatch", "[action]") {
+    // in alpha we store the reference of the widget (omega) to change a parameter
+    auto& ws(Context::app.getWidgets());
+    widget.id = Context::strMng.search("alpha");
+    LOG("widget %p   alpha %p   omefa %p", &widget, ws[Context::strMng.search("alpha")], ws[Context::strMng.search("omega")]);
+    ws[Context::strMng.search("alpha")]->id = Context::strMng.add("omega");
+    CHECK(addAction("[id = alpha.id, id.x = 4490]"));
+    CHECK(executeAction());
+    CHECK(ws[Context::strMng.search("omega")]->box.pos.x == 4490);
+}
