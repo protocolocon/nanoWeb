@@ -65,7 +65,7 @@ namespace webui {
         alphaMult = Context::render.multAlpha(alphaMult, alpha);
 
         const auto& actionTable(Context::app.getActionTable(actions));
-        if (active || (Input::mouseButtonWidget == this && inside))
+        if (actionTable.onRenderActive && (active || (Input::mouseButtonWidget == this && inside)))
             Context::actions.execute(actionTable.onRenderActive, this);
         else
             Context::actions.execute(actionTable.onRender, this);
