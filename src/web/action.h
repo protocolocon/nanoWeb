@@ -57,10 +57,10 @@ namespace webui {
         Text,
         TextCharPtr,
         TextLeft,
-        TranslateCenter,
-        Scale100,
+        TextLeftCharPtr,
+        Translate,
+        Scale,
         ResetTransform,
-        Set,
         Query,
         Log,                         // log(StringId)
         Add,                         // push(pop + pop)

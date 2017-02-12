@@ -140,6 +140,46 @@ namespace {
         stack.resize(stack.size() - 3);
     }
 
+    inline void FunctionTextLeftCommon(float x, float y, const char* text) {
+        V2f pos(x, y);
+        pos += execWidget->box.pos;
+        pos.y += execWidget->box.size.y * 0.5f;
+        Context::render.textAlign(NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+        Context::render.text(pos.x, pos.y, text);
+    }
+
+    void FunctionTextLeft() {
+        assert(stack.size() >= 3);
+        auto* s(&stack.back() - 2);
+        FunctionTextLeftCommon(s[0].f, s[1].f, Context::strMng.get(s[2].l));
+        stack.resize(stack.size() - 3);
+    }
+
+    void FunctionTextLeftCharPtr() {
+        assert(stack.size() >= 3);
+        auto* s(&stack.back() - 2);
+        FunctionTextLeftCommon(s[0].f, s[1].f, s[2].text);
+        stack.resize(stack.size() - 3);
+    }
+
+    void FunctionTranslate() {
+        assert(stack.size() >= 2);
+        auto* s(&stack.back() - 1);
+        Context::render.translate(s[0].f, s[0].f);
+        stack.resize(stack.size() - 2);
+        LOG("hello");
+    }
+
+    void FunctionScale() {
+        assert(stack.size() >= 1);
+        Context::render.scale(stack.back().f, stack.back().f);
+        stack.pop_back();
+    }
+
+    void FunctionResetTransform() {
+        Context::render.resetTransform();
+    }
+
     void FunctionQuery() {
         assert(stack.size() >= 2);
         auto* s(&stack.back() - 1);
@@ -260,11 +300,11 @@ namespace {
         { Identifier::font,            FunctionFont,           FontPrototype,         Type::LastType },
         { Identifier::text,            FunctionText,           TextPrototype,         Type::LastType },
         { Identifier::text,            FunctionTextCharPtr,    TextCharPtrPrototype,  Type::LastType },
-        { Identifier::textLeft,        FunctionError,          VoidPrototype,         Type::LastType },
-        { Identifier::translateCenter, FunctionError,          VoidPrototype,         Type::LastType },
-        { Identifier::scale100,        FunctionError,          VoidPrototype,         Type::LastType },
-        { Identifier::resetTransform,  FunctionError,          VoidPrototype,         Type::LastType },
-        { Identifier::set,             FunctionError,          VoidPrototype,         Type::LastType },
+        { Identifier::textLeft,        FunctionTextLeft,       TextPrototype,         Type::LastType },
+        { Identifier::textLeft,        FunctionTextLeftCharPtr,TextCharPtrPrototype,  Type::LastType },
+        { Identifier::translate,       FunctionTranslate,      Float2Prototype,       Type::LastType },
+        { Identifier::scale,           FunctionScale,          FloatPrototype,        Type::LastType },
+        { Identifier::resetTransform,  FunctionResetTransform, VoidPrototype,         Type::LastType },
         { Identifier::query,           FunctionQuery,          QueryPrototype,        Type::LastType },
         { Identifier::log,             FunctionLog,            StrIdPrototype,        Type::LastType },
         { Identifier::add,             FunctionAdd,            Float2Prototype,       Type::Float },
@@ -672,6 +712,9 @@ namespace webui {
                         } else if (iFunction == int(Function::Text) && prop->type == Type::Text) {
                             // change function from text to textCharPtr
                             actions[iAction].param = int(Function::TextCharPtr);
+                        } else if (iFunction == int(Function::TextLeft) && prop->type == Type::Text) {
+                            // change function from text to textCharPtr
+                            actions[iAction].param = int(Function::TextLeftCharPtr);
                         } else
                             // no polymorphism found
                             cast = false;

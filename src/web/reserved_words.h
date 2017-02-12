@@ -69,8 +69,7 @@ namespace webui {
 
         // commands
         log              = OffsetEnum(PLast),
-        toggleVisible    = OffsetEnum(log),
-        beginPath        = OffsetEnum(toggleVisible),
+        beginPath        = OffsetEnum(log),
         moveto           = OffsetEnum(beginPath),
         lineto           = OffsetEnum(moveto),
         bezierto         = OffsetEnum(lineto),
@@ -85,9 +84,9 @@ namespace webui {
         font             = OffsetEnum(stroke),
         text             = OffsetEnum(font),
         textLeft         = OffsetEnum(text),
-        translateCenter  = OffsetEnum(textLeft),
-        scale100         = OffsetEnum(translateCenter),
-        resetTransform   = OffsetEnum(scale100),
+        translate        = OffsetEnum(textLeft),
+        scale            = OffsetEnum(translate),
+        resetTransform   = OffsetEnum(scale),
         set              = OffsetEnum(resetTransform),
         query            = OffsetEnum(set),
         CLast            = OffsetEnum(query),

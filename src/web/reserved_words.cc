@@ -60,7 +60,6 @@ namespace {
         "PLast" _
 
         "log" _
-        "toggleVisible" _
         "beginPath" _
         "moveto" _
         "lineto" _
@@ -76,8 +75,8 @@ namespace {
         "font" _
         "text" _
         "textLeft" _
-        "translateCenter" _
-        "scale100" _
+        "translate" _
+        "scale" _
         "resetTransform" _
         "set" _
         "query" _
