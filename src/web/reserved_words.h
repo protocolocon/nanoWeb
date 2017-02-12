@@ -61,7 +61,8 @@ namespace webui {
 
         // property attribute definition
         propInt16        = OffsetEnum(ALast),
-        propText         = OffsetEnum(propInt16),
+        propFloat        = OffsetEnum(propInt16),
+        propText         = OffsetEnum(propFloat),
         propColor        = OffsetEnum(propText),
         propId           = OffsetEnum(propColor),
         PLast            = OffsetEnum(propId),

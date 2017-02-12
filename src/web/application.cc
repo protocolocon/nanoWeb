@@ -127,10 +127,7 @@ namespace webui {
             } else
                 resize(Context::render.getWidth(), Context::render.getHeight());
 
-            DIAG(
-                tree.dumpTree();
-                dump()
-            );
+            //DIAG(tree.dumpTree(); dump());
             tree.clear();
             ctx.forceRender();
             break;
@@ -368,6 +365,7 @@ namespace webui {
                 Identifier key = tree.asId(iEntry);
                 switch (key) {
                 case Identifier::propInt16: prop.type = Type::Int16; prop.size = 2; break;
+                case Identifier::propFloat: prop.type = Type::Float; prop.size = 4; break;
                 case Identifier::propText:  prop.type = Type::Text;  prop.size = sizeof(void*); break;
                 case Identifier::propColor: prop.type = Type::Color; prop.size = 4; break;
                 case Identifier::propId:    prop.type = Type::Id;    prop.size = 4; break;

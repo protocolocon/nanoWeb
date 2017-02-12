@@ -53,6 +53,7 @@ namespace {
         "ALast" _
 
         "propInt16" _
+        "propFloat" _
         "propText" _
         "propColor" _
         "propId" _
