@@ -23,7 +23,6 @@ namespace {
 namespace webui {
 
     WidgetTemplate::WidgetTemplate(Widget* parent): Widget(parent) {
-        visible = false;
         typeWidget = &widgetTemplateType;
     }
 

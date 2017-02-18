@@ -14,6 +14,7 @@
 #include "widget_layout.h"
 #include "widget_template.h"
 #include "widget_application.h"
+#include <queue>
 #include <cstdlib>
 #include <cassert>
 #include <cstring>
@@ -33,6 +34,8 @@ namespace {
         memset(ptr, 0, size); // so that default value of properties is reset
         return ptr;
     }
+
+    priority_queue<WidgetTimer*, vector<WidgetTimer*>, WidgetTimerSorter> timers;
 
 }
 
@@ -69,9 +72,23 @@ namespace webui {
 
     bool Application::refreshTimers() {
         bool dev(false);
-        for (auto child: root->getChildren())
-            if (child->type() == Identifier::Timer)
-                dev |= reinterpret_cast<WidgetTimer*>(child)->refreshTimer();
+        auto now(ctx.getTimeMs());
+        while (!timers.empty()) {
+            auto* timer(timers.top());
+            if (timer->nextExecutionMs  <= now) {
+                // execute
+                DIAG(LOG("executing timer: %s", Context::strMng.get(timer->getId())));
+                dev |= timer->refreshTimer();
+                // take out from timers
+                timers.pop();
+                if (timer->repeat) {
+                    // add it again
+                    timer->nextExecutionMs += timer->delay;
+                    timers.push(timer);
+                }
+            } else
+                break;
+        }
         return dev;
     }
 
@@ -191,7 +208,6 @@ namespace webui {
             DIAG(LOG("error: update template"));
             dev = false;
         } else {
-            tplWidget->setVisible(true);
             layoutStable = false;
             ctx.forceRender();
         }
@@ -281,6 +297,13 @@ namespace webui {
                     if (isTemplate) {
                         auto* tpl(reinterpret_cast<WidgetTemplate*>(widgetChild));
                         tree.copyTo(tpl->getParser(), valEntry, tree[iEntry].next);
+                    }
+                    if (widgetChild->baseType() == Identifier::Timer) {
+                        // add to list of timers
+                        auto* timer(reinterpret_cast<WidgetTimer*>(widgetChild));
+                        timer->nextExecutionMs = ctx.getTimeMs();
+                        if (!timer->repeat) timer->nextExecutionMs += timer->delay;
+                        timers.push(timer);
                     }
                 }
                 iEntry = tree[iEntry].next;
@@ -531,13 +554,11 @@ namespace webui {
     }
 
     bool Application::executeQuery(StringId query, StringId widgetId) {
-        // execute only in visible widgets
-        auto it(widgets.find(widgetId));
-        DIAG(
-            if (it == widgets.end())
-                LOG("internal: cannot find widget %s to send query", Context::strMng.get(widgetId)));
-        if (it->second->visible)
-            new RequestXHR(widgetId, query);
+        DIAG(if (widgets.find(widgetId) == widgets.end()) {
+                LOG("internal: cannot find widget %s to send query", Context::strMng.get(widgetId));
+                return false;
+            });
+        new RequestXHR(widgetId, query);
         return true;
     }
 

@@ -58,6 +58,7 @@ namespace webui {
         inline bool isVisible() const { return visible; }
         inline bool isSharingActions() const { return sharedActions; }
         inline void resetSharingActions() { sharedActions = 0; }
+        bool isGloballyVisible() const; // checks visibility of path up to root
 
         // setters
         inline void setId(StringId id_) { id = id_; }

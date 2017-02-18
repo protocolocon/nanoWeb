@@ -20,16 +20,21 @@ namespace webui {
 
         static TypeWidget& getType();
 
-        bool refreshTimer(); // returns true on command execution
+        bool refreshTimer();
 
         // polymorphic interface
         virtual Identifier baseType() const final override { return Identifier::Timer; }
 
     public:
-        int curDelay;
+        int nextExecutionMs; // when next execution will occur
 
-        int delay;
-        uint8_t repeat;
+        int delay;           // time between executions
+        bool repeat;
+    };
+
+    class WidgetTimerSorter {
+    public:
+        bool operator()(WidgetTimer* a, WidgetTimer* b) { return a->nextExecutionMs > b->nextExecutionMs; }
     };
 
 }

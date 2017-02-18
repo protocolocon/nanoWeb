@@ -27,7 +27,7 @@ namespace {
 
 namespace webui {
 
-    WidgetTimer::WidgetTimer(Widget* parent): Widget(parent), curDelay(0x7fffffff), delay(1000), repeat(1) {
+    WidgetTimer::WidgetTimer(Widget* parent): Widget(parent), delay(1000), repeat(1) {
         size[0].assign(0, false);
         size[1].assign(0, false);
         visible = 0;
@@ -39,16 +39,11 @@ namespace webui {
     }
 
     bool WidgetTimer::refreshTimer() {
-        if (repeat < 2) {
-            if (curDelay > delay) curDelay = repeat ? 0 : delay; // if repeated, do first trigger immediately
-            curDelay -= ctx.getTimeDiffMs();
-            if (curDelay <= 0) {
-                curDelay += delay;
-                // triggered
-                const auto& actionTable(Context::app.getActionTable(actions));
-                Context::actions.execute(actionTable.onEnter, this);
-                if (!repeat) repeat = 2; // disable timer
-            }
+        // check visibility
+        if (parent->isGloballyVisible()) {
+            const auto& actionTable(Context::app.getActionTable(actions));
+            Context::actions.execute(actionTable.onEnter, this);
+            return true;
         }
         return false;
     }

@@ -158,6 +158,15 @@ namespace webui {
         for (auto* child: children) child->translate(t);
     }
 
+    bool Widget::isGloballyVisible() const {
+        auto *w(this);
+        do {
+            if (!w->visible) return false;
+            w = w->parent;
+        } while(w);
+        return true;
+    }
+
     DIAG(
         void Widget::dump(int level, bool props) const {
             bool recur(level >= 0);
