@@ -17,8 +17,8 @@ namespace webui {
     class Widget;
 
     struct Input {
-        static void init(GLFWwindow* win);
-        static bool refresh(GLFWwindow* win); // returns true if input did potential changes in application
+        static void init();
+        static bool refresh(); // returns true if input did potential changes in application
         static bool refreshStack(Widget* widget);
 
         static V2f cursor;                 // mouse cursor position

@@ -61,7 +61,7 @@ namespace webui {
     }
 
     void Application::refresh() {
-        if (root && ((Input::refresh(Context::render.getWin()) | refreshTimers()) || !layoutStable)) {
+        if (root && ((Input::refresh() | refreshTimers()) || !layoutStable)) {
             layoutStable = root->layout(Box4f(0.f, 0.f, float(Context::render.getWidth()), float(Context::render.getHeight())));
             ctx.forceRender();
         }
@@ -164,8 +164,11 @@ namespace webui {
                 if (!tpl.parse(xhr->getData(), xhr->getNData()) || tpl.empty() || tpl[0].type() != MLParser::EntryType::List) {
                     DIAG(LOG("cannot parse template info or is not a complete list"));
                     dev = false;
-                } else
+                } else {
+                    DIAG(LOG("adding data to widget: %s", Context::strMng.get(xhr->getId()));
+                         tpl.dumpTree());
                     dev = it->second->setData();
+                }
             break;
         }
         }
@@ -180,10 +183,8 @@ namespace webui {
 
         tree.swap(tplWidget->getParser());
         DIAG(
+            LOG("template with description:");
             tree.dumpTree();
-            LOG("----------");
-            tpl.dumpTree();
-            LOG("----------");
             dump());
         bool define;
         if (!initializeConstruct(tplWidget, 0, tree.size(), define, true)) {

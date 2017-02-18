@@ -17,7 +17,8 @@ using namespace webui;
 
 namespace webui {
 
-    void Input::init(GLFWwindow* win) {
+    void Input::init() {
+        auto* win(Context::render.getWin());
         glfwPollEvents();
         glfwSetMouseButtonCallback(win, [](GLFWwindow* win, int button, int action, int mods) {
                 mouseButtonAction = true;
@@ -41,7 +42,9 @@ namespace webui {
             });
     }
 
-    bool Input::refresh(GLFWwindow* win) {
+    bool Input::refresh() {
+        auto* win(Context::render.getWin());
+
         // poll events
         glfwPollEvents(); // in the browser this does nothing, as events are processed asynchronously
 

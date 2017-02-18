@@ -36,7 +36,7 @@ namespace webui {
                 LOG("cannot initialize render");
                 assert(false && "cannot initialize render");
             }
-            Input::init(render.getWin());
+            Input::init();
         }
         addReservedWords();
         updateTime();

@@ -351,15 +351,17 @@ namespace webui {
     }
 
     void MLParser::copyTo(MLParser& dst, int iEntry, int jEntry) const {
-        int size( (jEntry < int(entries.size()) ? entries[jEntry].pos : mlEnd) - entries[iEntry].pos );
-        dst.mlOrig = strndup(entries[iEntry].pos, size);
-        dst.mlEnd = dst.mlOrig + size;
-        dst.ownOrig = true;
-        dst.entries.assign(entries.begin() + iEntry, entries.begin() + jEntry);
-        // fix next indices and text positions in dst parser
-        for (auto& entry: dst.entries) {
-            entry.pos += dst.mlOrig - entries[iEntry].pos;
-            entry.next = entry.next ? entry.next - iEntry : 0;
+        if (iEntry < jEntry) {
+            int size( (jEntry < int(entries.size()) ? entries[jEntry].pos : mlEnd) - entries[iEntry].pos );
+            dst.mlOrig = strndup(entries[iEntry].pos, size);
+            dst.mlEnd = dst.mlOrig + size;
+            dst.ownOrig = true;
+            dst.entries.assign(entries.begin() + iEntry, entries.begin() + jEntry);
+            // fix next indices and text positions in dst parser
+            for (auto& entry: dst.entries) {
+                entry.pos += dst.mlOrig - entries[iEntry].pos;
+                entry.next = entry.next ? entry.next - iEntry : 0;
+            }
         }
     }
 
