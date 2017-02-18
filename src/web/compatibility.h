@@ -59,12 +59,10 @@ namespace webui {
     // XHR
     class RequestXHR {
     public:
-        enum Type { TypeApplication, TypeTemplate, TypeFont, TypeLast };
-
-        RequestXHR(Type type, StringId id, const char* req);
-        RequestXHR(Type type, StringId id, const char* data, int nData);
+        RequestXHR(StringId id, StringId req);
+        RequestXHR(StringId id, StringId req, const char* data, int nData);
         ~RequestXHR();
-        void query(const char* req);
+        void query();
         void makeCString();
 
         // getters
@@ -72,8 +70,8 @@ namespace webui {
         inline const char* getData() const { return data; }
         inline const int getNData() const { return nData; }
         inline char operator[](int i) const { return data[i]; }
-        inline Type getType() const { return type; }
         inline StringId getId() const { return id; }
+        inline StringId getReq() const { return req; }
 
     private:
         static void onLoadStatic(void* ctx, void* buffer, int nBuffer);
@@ -83,8 +81,8 @@ namespace webui {
         void onError();
         size_t onAddData(char* data, size_t size, size_t nmemb);
 
-        Type type;
         StringId id;
+        StringId req;
         char* data;
         int nData;
     };

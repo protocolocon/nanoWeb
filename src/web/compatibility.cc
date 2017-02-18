@@ -20,9 +20,9 @@
 namespace webui {
 
     // class RequestXHR common part
-    RequestXHR::RequestXHR(Type type, StringId id, const char* req):
-        type(type), id(id), data(nullptr), nData(0) {
-        query(req);
+    RequestXHR::RequestXHR(StringId id, StringId req):
+        id(id), req(req), data(nullptr), nData(0) {
+        query();
     }
 
     void RequestXHR::onLoadStatic(void* ctx, void* buffer, int nBuffer) {

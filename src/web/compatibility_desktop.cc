@@ -67,8 +67,8 @@ namespace webui {
 
 
     // class RequestXHR
-    RequestXHR::RequestXHR(Type type, StringId id, const char* data_, int nData):
-        type(type), id(id), data(nullptr), nData(nData) {
+    RequestXHR::RequestXHR(StringId id, StringId req, const char* data_, int nData):
+        id(id), req(req), data(nullptr), nData(nData) {
         if (nData && data_) {
             data = (char*)malloc(nData);
             memcpy(data, data_, nData);
@@ -79,7 +79,8 @@ namespace webui {
         free(data);
     }
 
-    void RequestXHR::query(const char* req) {
+    void RequestXHR::query() {
+        const char* req(Context::strMng.get(this->req));
         // perform the request synchronously
         CURL *conn(curl_easy_init());
         if (!conn) {

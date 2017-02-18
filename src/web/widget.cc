@@ -99,6 +99,11 @@ namespace webui {
         return animeAlpha() && stable;
     }
 
+    bool Widget::setData() {
+        DIAG(LOG("widget does not implement setData()"));
+        return false;
+    }
+
     const Property* Widget::getProp(StringId id) const {
         auto it(typeWidget->find(Identifier(id.getId())));
         if (it == typeWidget->end()) return nullptr;

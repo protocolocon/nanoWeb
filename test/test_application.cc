@@ -20,11 +20,11 @@ using namespace webui;
 namespace {
 
     RequestXHR* mlApp(const char* data) {
-        return new RequestXHR(RequestXHR::TypeApplication, StringId(), data, strlen(data));
+        return new RequestXHR(Identifier::Application, StringId(), data, strlen(data));
     }
 
     RequestXHR* mlTemplate(const char* data, const char* id) {
-        return new RequestXHR(RequestXHR::TypeTemplate, Context::strMng.add(id), data, strlen(data));
+        return new RequestXHR(Context::strMng.add(id), StringId(), data, strlen(data));
     }
 
 }

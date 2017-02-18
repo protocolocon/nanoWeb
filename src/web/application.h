@@ -23,6 +23,7 @@ namespace webui {
     class Widget;
     class MLParser;
     struct Property;
+    class WidgetTemplate;
 
     class Application {
     public:
@@ -69,6 +70,7 @@ namespace webui {
         void onError(RequestXHR* xhr);
 
         // template
+        bool updateTemplate(WidgetTemplate* widget);
         inline MLParser& getTemplateParser() { return tpl; }
         bool startTemplate(int& iTpl, int& fTpl);
         bool endTemplate();

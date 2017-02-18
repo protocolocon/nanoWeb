@@ -43,7 +43,7 @@ namespace webui {
         app.initialize();
 
         DIAG(if (requestAppDescription))
-            new RequestXHR(RequestXHR::TypeApplication, StringId(), "application.ml");
+            new RequestXHR(Identifier::Application, strMng.add("application.ml"));
     }
 
     void Context::mainIteration() {

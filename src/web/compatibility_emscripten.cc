@@ -41,15 +41,15 @@ namespace webui {
 
 
     // class RequestXHR
-    RequestXHR::RequestXHR(Type type, StringId id, const char* data, int nData):
-        type(type), id(id), data(nullptr), nData(0) {
+    RequestXHR::RequestXHR(StringId id, StringId req, const char* data, int nData):
+        id(id), req(req), data(nullptr), nData(0) {
     }
 
     RequestXHR::~RequestXHR() {
     }
 
-    void RequestXHR::query(const char* req) {
-        emscripten_async_wget_data(req, this, onLoadStatic, onErrorStatic);
+    void RequestXHR::query() {
+        emscripten_async_wget_data(Context::strMng.get(req), this, onLoadStatic, onErrorStatic);
     }
 
 }

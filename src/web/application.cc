@@ -115,8 +115,9 @@ namespace webui {
     bool Application::onLoad(RequestXHR* xhr) {
         DIAG(if (!xhr->getData() || !xhr->getNData()) { LOG("empty xhr response"); return false; });
         bool dev(true);
-        switch (xhr->getType()) {
-        case RequestXHR::TypeApplication:
+        switch (Identifier(xhr->getId().getId())) {
+        case Identifier::Application:
+            // main application definition
             assert(!root);
             if (!tree.parse(xhr->getData(), xhr->getNData()) || !(root = initializeConstruct()) || !checkActions()) {
                 DIAG(
@@ -131,46 +132,10 @@ namespace webui {
             tree.clear();
             ctx.forceRender();
             break;
-        case RequestXHR::TypeTemplate: {
-            // get template widget
-            auto it(widgets.find(xhr->getId()));
-            if (it == widgets.end()) {
-                DIAG(LOG("internal: cannot find template %s", Context::strMng.get(xhr->getId())));
-                dev = false;
-            } else {
-                if (!tpl.parse(xhr->getData(), xhr->getNData()) || tpl.empty() || tpl[0].type() != MLParser::EntryType::List) {
-                    DIAG(LOG("cannot parse template info or is not a complete list"));
-                    dev = false;
-                } else {
-                    iTpl = 1;
-                    fTpl = tpl[0].next;
-
-                    auto* tplWidget(it->second);
-                    tree.swap(reinterpret_cast<WidgetTemplate*>(tplWidget)->getParser());
-                    DIAG(
-                        tree.dumpTree();
-                        LOG("----------");
-                        tpl.dumpTree();
-                        LOG("----------");
-                        dump());
-                    bool define;
-                    if (!(tplWidget = initializeConstruct(tplWidget, 0, tree.size(), define, true))) {
-                        LOG("error: update template");
-                        dev = false;
-                    } else {
-                        tplWidget->setVisible(true);
-                        layoutStable = false;
-                        ctx.forceRender();
-                    }
-                    tree.swap(reinterpret_cast<WidgetTemplate*>(it->second)->getParser());
-                }
-            }
-            break;
-        }
-        case RequestXHR::TypeFont: {
+        case Identifier::font: {
             // check that font id matches in font list
             bool ok(false);
-            StringId id(xhr->getId());
+            StringId id(xhr->getReq());
             for (auto& font: fonts)
                 if (font.first == id) {
                     assert(!font.second);
@@ -189,13 +154,47 @@ namespace webui {
             ctx.forceRender();
             break;
         }
-        default:
-            DIAG(
-                xhr->makeCString();
-                LOG("internal error: unknown query: %s %s", Context::strMng.get(xhr->getId()), xhr->getData()));
+        default: {
+            // pass directly to the widget
+            auto it(widgets.find(xhr->getId()));
+            if (it == widgets.end()) {
+                DIAG(LOG("internal: cannot find template %s", Context::strMng.get(xhr->getId())));
+                dev = false;
+            } else
+                if (!tpl.parse(xhr->getData(), xhr->getNData()) || tpl.empty() || tpl[0].type() != MLParser::EntryType::List) {
+                    DIAG(LOG("cannot parse template info or is not a complete list"));
+                    dev = false;
+                } else
+                    dev = it->second->setData();
             break;
         }
+        }
         delete xhr;
+        return dev;
+    }
+
+    bool Application::updateTemplate(WidgetTemplate* tplWidget) {
+        bool dev(true);
+        iTpl = 1;
+        fTpl = tpl[0].next;
+
+        tree.swap(tplWidget->getParser());
+        DIAG(
+            tree.dumpTree();
+            LOG("----------");
+            tpl.dumpTree();
+            LOG("----------");
+            dump());
+        bool define;
+        if (!initializeConstruct(tplWidget, 0, tree.size(), define, true)) {
+            DIAG(LOG("error: update template"));
+            dev = false;
+        } else {
+            tplWidget->setVisible(true);
+            layoutStable = false;
+            ctx.forceRender();
+        }
+        tree.swap(tplWidget->getParser());
         return dev;
     }
 
@@ -513,7 +512,7 @@ namespace webui {
             if (font.first == str) return &font - fonts.data();
         // add font
         fonts.push_back(make_pair(str, nullptr));
-        new RequestXHR(RequestXHR::TypeFont, str, Context::strMng.get(str));
+        new RequestXHR(Identifier::font, str);
         return fonts.size() - 1;
     }
 
@@ -537,7 +536,7 @@ namespace webui {
             if (it == widgets.end())
                 LOG("internal: cannot find widget %s to send query", Context::strMng.get(widgetId)));
         if (it->second->visible)
-            new RequestXHR(RequestXHR::TypeTemplate, widgetId, Context::strMng.get(query));
+            new RequestXHR(widgetId, query);
         return true;
     }
 

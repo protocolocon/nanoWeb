@@ -7,6 +7,7 @@
 */
 
 #include "widget_template.h"
+#include "context.h"
 
 using namespace std;
 using namespace webui;
@@ -28,6 +29,10 @@ namespace webui {
 
     TypeWidget& WidgetTemplate::getType() {
         return widgetTemplateType;
+    }
+
+    bool WidgetTemplate::setData() {
+        return Context::app.updateTemplate(this);
     }
 
 }
