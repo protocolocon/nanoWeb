@@ -80,6 +80,7 @@ namespace {
         "resetTransform" _
         "set" _
         "query" _
+        "triggerTimers" _
         "CLast" _
 
         "+" _

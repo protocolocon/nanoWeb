@@ -92,6 +92,14 @@ namespace webui {
         return dev;
     }
 
+    void Application::triggerTimers() {
+        auto t(timers);
+        while (!t.empty()) {
+            t.top()->refreshTimer();
+            t.pop();
+        }
+    }
+
     bool Application::update() {
         assert(root);
         return root->update();
@@ -552,13 +560,14 @@ namespace webui {
 
     bool Application::checkActions() {
         bool dev(true);
-        for (auto& table: actionTables) table.checked = false;
+        unordered_set<int> iActions;
         for (auto& idWidget: widgets) {
             auto& table(actionTables[idWidget.second->actions]);
-            if (!table.checked) {
-                table.checked = true;
-                for (auto action: table.actions)
+            for (auto action: table.actions) {
+                if (!iActions.count(action)) {
+                    iActions.insert(action);
                     dev &= Context::actions.execute<true>(action, idWidget.second);
+                }
             }
         }
         return dev;

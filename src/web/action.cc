@@ -187,6 +187,10 @@ namespace {
         stack.clear(); // template execution could be messing with the stack: stack.resize(stack.size() - 2);
     }
 
+    void FunctionTriggerTimers() {
+        Context::app.triggerTimers();
+    }
+
     void FunctionLog() {
         LOG("%s", Context::strMng.get(stack.back().strId));
         stack.pop_back();
@@ -305,6 +309,7 @@ namespace {
         { Identifier::scale,           FunctionScale,          FloatPrototype,        Type::LastType },
         { Identifier::resetTransform,  FunctionResetTransform, VoidPrototype,         Type::LastType },
         { Identifier::query,           FunctionQuery,          QueryPrototype,        Type::LastType },
+        { Identifier::triggerTimers,   FunctionTriggerTimers,  VoidPrototype,         Type::LastType },
         { Identifier::log,             FunctionLog,            StrIdPrototype,        Type::LastType },
         { Identifier::add,             FunctionAdd,            Float2Prototype,       Type::Float },
         { Identifier::sub,             FunctionSub,            Float2Prototype,       Type::Float },

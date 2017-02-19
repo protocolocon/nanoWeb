@@ -62,6 +62,7 @@ namespace webui {
         Scale,
         ResetTransform,
         Query,
+        TriggerTimers,
         Log,                         // log(StringId)
         Add,                         // push(pop + pop)
         Sub,                         // push(pop - pop)

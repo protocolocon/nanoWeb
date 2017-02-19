@@ -57,7 +57,6 @@ namespace webui {
                 };
                 int actions[5];
             };
-            bool checked;
         };
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }
         bool addAction(Identifier actionId, int iAction, Widget* widget); // add action to widget
@@ -74,6 +73,9 @@ namespace webui {
         inline MLParser& getTemplateParser() { return tpl; }
         bool startTemplate(int& iTpl, int& fTpl);
         bool endTemplate();
+
+        // timers
+        void triggerTimers();
 
         // debug
         DIAG(void dump(bool detail = false, bool actions = false) const);
