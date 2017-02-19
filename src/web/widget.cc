@@ -177,8 +177,8 @@ namespace webui {
         void Widget::dump(int level, bool props) const {
             bool recur(level >= 0);
             if (level < 0) level = 1;
-            LOG("%*s%-*s: %-15s %7.1f %7.1f - %7.1f %7.1f (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s",
-                level * 2, "", 32 - level*2, Context::strMng.get(id),
+            LOG("%*s%-*s: %-24s %7.1f %7.1f - %7.1f %7.1f (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s",
+                level * 2, "", 64 - level*2, Context::strMng.get(id),
                 Context::strMng.get(type()),
                 box.pos.x, box.pos.y, box.size.x, box.size.y,
                 size[0].dumpValue(), size[0].dumpFlags(),
