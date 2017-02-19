@@ -201,13 +201,13 @@ namespace webui {
         tree.swap(tplWidget->getParser());
         DIAG(
             LOG("template with description:");
-            tree.dumpTree();
-            dump());
-        bool define;
-        if (!initializeConstruct(tplWidget, 0, tree.size(), define, true)) {
+            tree.dumpTree());
+        Construct cons(tplWidget, 0, tree.size(), true, false);
+        if (!initializeConstructCheckUpdate(cons)) {
             DIAG(LOG("error: update template"));
             dev = false;
         } else {
+            DIAG(dump());
             layoutStable = false;
             ctx.forceRender();
         }
@@ -223,80 +223,136 @@ namespace webui {
     Widget* Application::initializeConstruct() {
         DIAG(tree.dumpTree());
         if (!tree.empty() && tree[0].type() == MLParser::EntryType::Object) {
-            bool define;
             auto* widget(createWidget(tree.asId(0), nullptr));
             iTpl = fTpl = -1;
-            if (widget && (widget = initializeConstruct(widget, 1, tree.size(), define, true)) && registerWidget(widget))
+            Construct cons(widget, 1, tree.size(), true, false);
+            if (widget && (widget = initializeConstructCheckUpdate(cons)) && registerWidget(widget))
                 return widget;
         } DIAG(else LOG("expecting object as root of application"));
         return nullptr;
     }
 
-    Widget* Application::initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse) {
-        define = false;
-        auto iEntryOrig(iEntry);
-        while (iEntry < fEntry) {
+    Widget* Application::initializeConstructCheckUpdate(Construct& cons) {
+        cons.constUpdatedOrig = cons.widget->constUpdated;
+        cons.widget->constUpdated = 1;
+        for (auto child: cons.widget->getChildren()) child->constUpdated = 0;
+        auto widget(initializeConstructRecur(cons));
+        if (widget) {
+            // remove non-updated children
+            auto& children(widget->getChildren());
+            for (auto it = children.begin(); it != children.end(); )
+                if (!(*it)->constUpdated)
+                    it = children.erase(it);
+                else
+                    ++it;
+        }
+        return widget;
+    }
+
+    Widget* Application::initializeConstructRecur(Construct& cons) {
+        auto iEntryOrig(cons.iEntry);
+        while (cons.iEntry < cons.fEntry) {
             // cases:
             //   1. key : value
             //   2. id { }
             //   3. [ ] <- block
-            auto valEntry(iEntry + 1);
-            const auto& entryKey(tree[iEntry]);
+            auto valEntry(cons.iEntry + 1);
+            const auto& entryKey(tree[cons.iEntry]);
             if (entryKey.type() == MLParser::EntryType::Id) { // case 1: key : value
-                assert(valEntry < fEntry && tree[iEntry].next == valEntry);
-                auto key(tree.asId(iEntry));
+                assert(valEntry < cons.fEntry && tree[cons.iEntry].next == valEntry);
+                auto key(tree.asId(cons.iEntry));
                 if (key == Identifier::InvalidId) {
-                    DIAG(LOG("invalid key for widget: %.*s", tree.size(iEntry), entryKey.pos));
+                    DIAG(LOG("invalid key for widget: %.*s", tree.size(cons.iEntry), entryKey.pos));
                     return nullptr;
                 }
                 // new widget type definition
                 if (key == Identifier::define) {
                     key = Identifier::id;
-                    DIAG(if (define) LOG("warning: repeated 'define' attribute inside widget"));
-                    define = true;
+                    DIAG(if (cons.update) LOG("no definitions allowed inside templates"));
+                    DIAG(if (cons.define) LOG("warning: repeated 'define' attribute inside widget"));
+                    cons.define = true;
                     // create new type
                     auto newTypeId(tree.asIdAdd(valEntry));
-                    if (!(widget = createType(widget, newTypeId, iEntryOrig, fEntry))) {
+                    if (!(cons.widget = createType(cons.widget, newTypeId, iEntryOrig, cons.fEntry))) {
                         DIAG(LOG("cannot create new type: %s", Context::strMng.get(newTypeId)));
                         return nullptr;
                     }
                 }
                 if (int(key) > int(Identifier::ALast) && int(key) <= int(Identifier::PLast)) {
                     // addition of properties in widget definition
-                    DIAG(if (!define) {
+                    DIAG(if (!cons.define) {
                             LOG("defining a property for a widget that is not being defined");
                             tree.error(entryKey.pos, "=>", entryKey.line);
                             return nullptr;
                         });
-                } else if(!Context::actions.evalProperty(tree, valEntry, tree[valEntry].next, key, widget)) { // eval property
-                    DIAG(
-                        LOG("warning: unknown attribute %s with value %.*s", Context::strMng.get(key), tree.size(valEntry), tree[valEntry].pos);
-                        tree.error(entryKey.pos, "=>", entryKey.line);
-                        return nullptr);
+                } else {
+                    auto id(cons.widget->id);
+                    if(!Context::actions.evalProperty(tree, valEntry, tree[valEntry].next, key, cons.widget, cons.update)) { // eval property
+                        DIAG(
+                            LOG("warning: unknown attribute %s with value %.*s", Context::strMng.get(key), tree.size(valEntry), tree[valEntry].pos);
+                            tree.error(entryKey.pos, "=>", entryKey.line);
+                            return nullptr);
+                    }
+                    if (key == Identifier::id && id.getId() != cons.widget->id.getId()) {
+                        // updating id of widget:
+                        // - if the id already exists, update that one instead
+                        // - if not, and this is an update operation, create a new widget
+                        auto origWidget(cons.widget);
+                        auto it(widgets.find(cons.widget->id));
+                        if (it != widgets.end()) {
+                            DIAG(LOG("move from widget %s to %s", Context::strMng.get(id), Context::strMng.get(cons.widget->id)));
+                            DIAG(if (cons.widget->parent != it->second->parent) LOG("modifying some wrong widget in the application"));
+                            cons.widget = it->second;
+                            cons.widget->constUpdated = 1;
+                            origWidget->id = id; // restore previous id for original widget
+                            origWidget->constUpdated = cons.constUpdatedOrig;
+                            cons.update = true;
+                        } else if (cons.update) {
+                            DIAG(LOG("creating new widget for id: %s", Context::strMng.get(cons.widget->id)));
+                            cons.widget = createWidget(cons.widget->type(), cons.widget->parent);
+                            cons.widget->id = origWidget->id;
+                            cons.widget->constUpdated = 1;
+                            origWidget->id = id; // restore previous id for original widget
+                            origWidget->constUpdated = cons.constUpdatedOrig;
+                            cons.update = false;
+                        }
+                    }
                 }
-                iEntry = tree[valEntry].next;
+                cons.iEntry = tree[valEntry].next;
 
             } else if (entryKey.type() == MLParser::EntryType::Object) { // case 2: object { }
-                auto key(tree.asId(iEntry));
+                auto key(tree.asId(cons.iEntry));
                 DIAG(if (!isWidget(key)) {
                          LOG("expecting object id");
                          tree.error(entryKey.pos, "=>", entryKey.line);
                     });
-                if (recurse) {
+                if (cons.recurse) {
                     // child widget
-                    Widget* widgetChild(createWidget(key, widget/*parent*/));
-                    assert(widgetChild);
-                    bool defineChild(false);
-                    bool isTemplate(key == Identifier::Template);
-                    if (!(widgetChild = initializeConstruct(widgetChild, valEntry, tree[iEntry].next, defineChild, !isTemplate)) ||
-                        !registerWidget(widgetChild)) {
-                        delete widgetChild;
-                        return nullptr;
+                    bool update(false);
+                    Widget* widgetChild;
+                    while (cons.iChild < cons.widget->getChildren().size()) {
+                        if (cons.widget->getChildren()[cons.iChild]->type() == key) {
+                            widgetChild = cons.widget->getChildren()[cons.iChild]; // reuse child from current widget
+                            DIAG(LOG("reusing widget: %s", Context::strMng.get(widgetChild->getId())));
+                            update = true;
+                            break;
+                        }
+                        cons.iChild++;
                     }
-                    if (!defineChild) widget->addChild(widgetChild);
+                    if (!update)
+                        widgetChild = createWidget(key, cons.widget/*parent*/);
+                    assert(widgetChild);
+                    bool isTemplate(key == Identifier::Template);
+                    Construct consChild(widgetChild, valEntry, tree[cons.iEntry].next, !isTemplate, update);
+                    if (!(widgetChild = initializeConstructCheckUpdate(consChild)) || (!consChild.update && !registerWidget(widgetChild)))
+                        return nullptr;
+                    if (!consChild.define) {
+                        if (!consChild.update) cons.widget->addChild(widgetChild);
+                        cons.iChild++;
+                    }
                     if (isTemplate) {
                         auto* tpl(reinterpret_cast<WidgetTemplate*>(widgetChild));
-                        tree.copyTo(tpl->getParser(), valEntry, tree[iEntry].next);
+                        tree.copyTo(tpl->getParser(), valEntry, tree[cons.iEntry].next);
                     }
                     if (widgetChild->baseType() == Identifier::Timer) {
                         // add to list of timers
@@ -306,10 +362,10 @@ namespace webui {
                         timers.push(timer);
                     }
                 }
-                iEntry = tree[iEntry].next;
+                cons.iEntry = tree[cons.iEntry].next;
 
             } else if (entryKey.type() == MLParser::EntryType::Block) { // case 3: block
-                if (recurse) {
+                if (cons.recurse) {
                     // template iteration
                     int fTplSave(fTpl), iIter(iTpl), fIter(iTpl);
                     if (iTpl >= 0) {
@@ -325,13 +381,15 @@ namespace webui {
                             }
                         } else {
                             DIAG(LOG("run out of template values while preparing template loop %d %d", iTpl, fTpl));
-                            delete widget;
+                            delete cons.widget;
                             return nullptr;
                         }
                     } else
                         DIAG(LOG("error: template iteration, but no template data"));
 
                     //LOG("ITERATION: %d %d", iIter, fIter);
+                    int iEntry(cons.iEntry);
+                    int fEntry(cons.fEntry);
                     while (iIter < fIter) {
                         // template iteration list (widget)
                         int iWidget(-1), fWidget(-1);
@@ -344,16 +402,16 @@ namespace webui {
                                 LOG("expected widget []");
                                 tpl.error(tpl[iIter].pos, "=>", tpl[iIter].line));
                         }
-                        bool defineChild(false);
                         //LOG("   WIDGET: %d %d", iWidget, fWidget);
                         iTpl = iWidget;
                         fTpl = fWidget;
-                        if (!(widget = initializeConstruct(widget, valEntry, tree[valEntry].next, defineChild, true))) {
+                        cons.iEntry = valEntry;
+                        cons.fEntry = tree[valEntry].next;
+                        if (!initializeConstructRecur(cons)) {
                             DIAG(LOG("template loop initialize construct"));
-                            delete widget;
                             return nullptr;
                         }
-                        DIAG(if (defineChild) LOG("error: definition inside loop"));
+                        DIAG(if (cons.define) LOG("error: definition inside loop"));
                         DIAG(
                             if (iTpl < fTpl)
                                 LOG("trailing template values after widget: %d %d", iTpl, fTpl));
@@ -362,11 +420,13 @@ namespace webui {
                     }
                     iTpl = fIter;
                     fTpl = fTplSave;
+                    cons.iEntry = iEntry;
+                    cons.fEntry = fEntry;
                 }
-                iEntry = tree[iEntry].next;
+                cons.iEntry = tree[cons.iEntry].next;
             }
         }
-        return widget;
+        return cons.widget;
     }
 
     Widget* Application::createType(Widget* widget, Identifier typeId, int iEntry, int fEntry) {
@@ -540,19 +600,6 @@ namespace webui {
         return fonts.size() - 1;
     }
 
-    bool Application::executeToggleVisible(StringId widgetId) {
-        auto len(getWidgetRange(widgetId));
-        const char* idSearch(Context::strMng.get(widgetId));
-        bool toggled(false);
-        for (auto& widget: widgets) {
-            if (!memcmp(Context::strMng.get(widget.first), idSearch, len)) {
-                widget.second->toggleVisible();
-                toggled = true;
-            }
-        }
-        return toggled;
-    }
-
     bool Application::executeQuery(StringId query, StringId widgetId) {
         DIAG(if (widgets.find(widgetId) == widgets.end()) {
                 LOG("internal: cannot find widget %s to send query", Context::strMng.get(widgetId));
@@ -570,19 +617,23 @@ namespace webui {
     }
 
     DIAG(
-        void Application::dump() const {
+        void Application::dump(bool detail, bool actions) const {
             if (root) {
                 LOG("Application tree");
                 root->dump();
             }
-            LOG("Registered widgets:");
-            for (const auto& widget: widgets)
-                widget.second->dump(-1, true);
-            LOG("Action tables");
-            for (const auto& actionTable: actionTables) {
-                LOG("  %ld", &actionTable - actionTables.data());
-                for (auto action: actionTable.actions)
-                    LOG("    %d", action);
+            if (detail) {
+                LOG("Registered widgets:");
+                for (const auto& widget: widgets)
+                    widget.second->dump(-1, true);
+            }
+            if (actions) {
+                LOG("Action tables");
+                for (const auto& actionTable: actionTables) {
+                    LOG("  %ld", &actionTable - actionTables.data());
+                    for (auto action: actionTable.actions)
+                        LOG("    %d", action);
+                }
             }
         });
 

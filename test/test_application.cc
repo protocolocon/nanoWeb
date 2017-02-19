@@ -102,6 +102,175 @@ TEST_CASE("application: template", "[application]") {
     CHECK(tpl[2]->box.pos.y == 14);
 }
 
+TEST_CASE("application: template reload no blocks", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application{"
+                                  _"  Template {"
+                                  _"    id: template"
+                                  _"    Widget {"
+                                  _"      x: @"
+                                  _"      Widget {"
+                                  _"        w: @"
+                                  _"      }"
+                                  _"    }"
+                                  _"    Widget {"
+                                  _"      y: @"
+                                  _"    }"
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    CHECK(root->type() == Identifier::Application);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 1);
+    CHECK(child[0]->type() == Identifier::Template);
+    // load template
+    CHECK(Context::app.onLoad(mlTemplate("[ -66, 1234, -77 ]", "template")));
+    auto tpl(child[0]->getChildren());
+    REQUIRE(tpl.size() == 2);
+    auto tpl2(tpl[0]->getChildren());
+    REQUIRE(tpl2.size() == 1);
+    CHECK(tpl[0]->box.pos.x == -66);
+    CHECK(tpl[1]->box.pos.y == -77);
+    CHECK(tpl2[0]->box.size.x == 1234);
+    // reload template (children are the same, as they are reused)
+    CHECK(Context::app.onLoad(mlTemplate("[ -67, 4321, -76 ]", "template")));
+    CHECK(tpl[0]->box.pos.x == -67);
+    CHECK(tpl[1]->box.pos.y == -76);
+    CHECK(tpl2[0]->box.size.x == 4321);
+}
+
+TEST_CASE("application: template reload blocks no ids", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application{"
+                                  _"  Template {"
+                                  _"    id: template"
+                                  _"    ["
+                                  _"      Widget {"
+                                  _"        x: @"
+                                  _"      }"
+                                  _"    ]"
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    // load template
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 73 ], [ 84 ], [ 93 ] ] ]", "template")));
+    auto tpl(root->getChildren()[0]->getChildren());
+    REQUIRE(tpl.size() == 3);
+    CHECK(tpl[0]->box.pos.x == 73);
+    CHECK(tpl[1]->box.pos.x == 84);
+    CHECK(tpl[2]->box.pos.x == 93);
+    // reload with same number of children
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 8732 ], [ 9843 ], [ 1932 ] ] ]", "template")));
+    REQUIRE(tpl.size() == 3); // reused widgets
+    CHECK(tpl[0]->box.pos.x == 8732);
+    CHECK(tpl[1]->box.pos.x == 9843);
+    CHECK(tpl[2]->box.pos.x == 1932);
+    // reload adding one more
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 1 ], [ 2 ], [ 3 ], [ 4 ] ] ]", "template")));
+    CHECK(tpl[0]->box.pos.x == 1);
+    CHECK(tpl[1]->box.pos.x == 2);
+    CHECK(tpl[2]->box.pos.x == 3);
+    tpl = root->getChildren()[0]->getChildren(); // need to get new children for the last one
+    CHECK(tpl[3]->box.pos.x == 4);
+    // reload with less widgets
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 2 ], [ 1 ] ] ]", "template")));
+    tpl = root->getChildren()[0]->getChildren();
+    REQUIRE(tpl.size() == 2);
+    CHECK(tpl[0]->box.pos.x == 2);
+    CHECK(tpl[1]->box.pos.x == 1);
+}
+
+TEST_CASE("application: template reload blocks with ids", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application{"
+                                  _"  Template {"
+                                  _"    id: template"
+                                  _"    ["
+                                  _"      Widget {"
+                                  _"        id: @"
+                                  _"        x: @"
+                                  _"      }"
+                                  _"    ]"
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    // load template
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ id10, 10 ], [ id20, 20 ] ] ]", "template")));
+    auto& tpl(root->getChildren()[0]->getChildren());
+    REQUIRE(tpl.size() == 2);
+    CHECK(tpl[0]->id == Context::strMng.add("id10"));
+    CHECK(tpl[0]->box.pos.x == 10);
+    CHECK(tpl[1]->id == Context::strMng.add("id20"));
+    CHECK(tpl[1]->box.pos.x == 20);
+    // mark some widgets properties
+    tpl[0]->box.pos.y = 100;
+    tpl[1]->box.pos.y = 200;
+    // reload
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ another, 99 ], [ id10, 11 ], [ id20, 22 ] ] ]", "template")));
+    REQUIRE(tpl.size() == 3);
+    CHECK(tpl[0]->id == Context::strMng.add("id10"));
+    CHECK(tpl[0]->box.pos.x == 11);
+    CHECK(tpl[0]->box.pos.y == 100);
+    CHECK(tpl[1]->id == Context::strMng.add("id20"));
+    CHECK(tpl[1]->box.pos.x == 22);
+    CHECK(tpl[1]->box.pos.y == 200);
+    CHECK(tpl[2]->id == Context::strMng.add("another"));
+    CHECK(tpl[2]->box.pos.x == 99);
+    // reload updating just one (others dissapear)
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ id20, 24 ] ] ]", "template")));
+    REQUIRE(tpl.size() == 1);
+    CHECK(tpl[0]->id == Context::strMng.add("id20"));
+    CHECK(tpl[0]->box.pos.x == 24);
+    CHECK(tpl[0]->box.pos.y == 200);
+}
+
+TEST_CASE("application: template reload block sequences", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application{"
+                                  _"  Template {"
+                                  _"    id: template"
+                                  _"    ["
+                                  _"      LayoutHor {"
+                                  _"        x: @"
+                                  _"      }"
+                                  _"    ]"
+                                  _"    ["
+                                  _"      LayoutVer {"
+                                  _"        x: @"
+                                  _"      }"
+                                  _"    ]"
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    // load template
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 55 ], [ 66 ] ], [ [ 77 ], [ 88 ] ] ]", "template")));
+    auto& tpl(root->getChildren()[0]->getChildren());
+    REQUIRE(tpl.size() == 4);
+    CHECK(tpl[0]->type() == Identifier::LayoutHor);
+    CHECK(tpl[0]->box.pos.x == 55);
+    CHECK(tpl[1]->type() == Identifier::LayoutHor);
+    CHECK(tpl[1]->box.pos.x == 66);
+    CHECK(tpl[2]->type() == Identifier::LayoutVer);
+    CHECK(tpl[2]->box.pos.x == 77);
+    CHECK(tpl[3]->type() == Identifier::LayoutVer);
+    CHECK(tpl[3]->box.pos.x == 88);
+    // reload template with different proportion of types
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 11 ] ], [ [ 22 ] ] ]", "template")));
+    REQUIRE(tpl.size() == 2);
+    CHECK(tpl[0]->type() == Identifier::LayoutHor);
+    CHECK(tpl[0]->box.pos.x == 11);
+    CHECK(tpl[1]->type() == Identifier::LayoutVer);
+    CHECK(tpl[1]->box.pos.x == 22);
+}
+
 TEST_CASE("application: actions syntax", "[application]") {
     ctx.initialize(false, false);
     CHECK(Context::app.onLoad(mlApp(

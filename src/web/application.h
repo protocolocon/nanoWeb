@@ -76,10 +76,9 @@ namespace webui {
         bool endTemplate();
 
         // debug
-        DIAG(void dump() const);
+        DIAG(void dump(bool detail = false, bool actions = false) const);
         inline auto* getRoot() { return root; }
         inline auto& getWidgets() { return widgets; }
-        /*TODO*/bool executeToggleVisible(StringId widgetId); // returns true if something toggled
         /*TODO*/bool executeQuery(StringId query, StringId widgetId);
         Widget* createWidget(Identifier id, Widget* parent, int objectSize = 0);
 
@@ -100,8 +99,20 @@ namespace webui {
         // fonts
         std::vector<std::pair<StringId, char*>> fonts;
 
+        struct Construct {
+            Construct(Widget* widget, int iEntry, int fEntry, bool recurse, bool update):
+                widget(widget), iEntry(iEntry), fEntry(fEntry), define(false), recurse(recurse), update(update), iChild(0) { }
+            Widget* widget;
+            int iEntry, fEntry;
+            bool define;    // if a definition in this object is found, is set to true
+            bool recurse;   // whether to get into children or not
+            bool update;    // object has to update only his templatized attributes
+            bool constUpdatedOrig;
+            size_t iChild;
+        };
         Widget* initializeConstruct();
-        Widget* initializeConstruct(Widget* widget, int iEntry, int fEntry, bool& define, bool recurse);
+        Widget* initializeConstructRecur(Construct& cons);
+        Widget* initializeConstructCheckUpdate(Construct& cons);
 
         // widget factory and registration
         bool isWidget(Identifier id) const;

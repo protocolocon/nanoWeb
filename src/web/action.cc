@@ -430,7 +430,7 @@ namespace webui {
         }
     }
 
-    bool Actions::evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget) {
+    bool Actions::evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget, bool onlyIfTemplated) {
         // creating actions: prop = expression
         int iAction(actions.size());
         actions.push_back(Command(Instruction::PushConstant, Type::Id));
@@ -442,34 +442,40 @@ namespace webui {
             return false;
         }
         if (prop->type == Type::ActionTable) actions.resize(iAction); // action
+        templateFound = false;
         if (!add(parser, iEntry, fEntry)) {
             DIAG(LOG("evaluating property"));
             return false;
         }
-        if (prop->type == Type::ActionTable) {
-            // action
-            Context::app.addAction(Identifier(propId.getId()), iAction, widget);
-        } else {
-            actions.pop_back(); // remove return
-            actions.push_back(Command(Instruction::FunctionCall, Type::LastType, Function::AssignUint32));
-            actions.push_back(Command(Instruction::Return));
-            // prepare expression
-            if (!execute<true>(iAction, widget)) {
-                DIAG(LOG("preparing evaluation of property"));
-                return false;
-            }
-            if (prop->type == Type::Text) { // special case text
-                // as text cannot be operated with, just set the value and exit
-                // this avoids a strdup
-                auto* com(&actions[iAction]);
-                *(const char**)((char*)widget + com[0].param) = com[3].text;
+        if (!onlyIfTemplated || templateFound) {
+            if (prop->type == Type::ActionTable) {
+                // action
+                Context::app.addAction(Identifier(propId.getId()), iAction, widget);
             } else {
-                // execution
-                if (!execute(iAction, widget)) {
-                    DIAG(LOG("executing evaluation of property"));
+                actions.pop_back(); // remove return
+                actions.push_back(Command(Instruction::FunctionCall, Type::LastType, Function::AssignUint32));
+                actions.push_back(Command(Instruction::Return));
+                // prepare expression
+                if (!execute<true>(iAction, widget)) {
+                    DIAG(LOG("preparing evaluation of property"));
                     return false;
                 }
+                if (prop->type == Type::Text) { // special case text
+                    // as text cannot be operated with, just set the value and exit
+                    // this avoids a strdup
+                    auto* com(&actions[iAction]);
+                    *(const char**)((char*)widget + com[0].param) = com[3].text;
+                } else {
+                    // execution
+                    if (!execute(iAction, widget)) {
+                        DIAG(LOG("executing evaluation of property"));
+                        return false;
+                    }
+                }
+                // remove operation
+                actions.resize(iAction);
             }
+        } else {
             // remove operation
             actions.resize(iAction);
         }
@@ -527,6 +533,7 @@ namespace webui {
                 if (!Context::app.startTemplate(iTpl, fTpl) ||
                     !addRecur(Context::app.getTemplateParser(), iTpl, fTpl) ||
                     !Context::app.endTemplate()) return false;
+                templateFound = true;
                 break;
             }
             default:
