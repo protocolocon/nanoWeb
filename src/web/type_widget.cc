@@ -29,6 +29,7 @@ namespace webui {
                 "ActionTable",
                 "Text",
                 "VoidPtr",
+                "Parser",
                 "Void", // last
             };
             return strs[int(t)];

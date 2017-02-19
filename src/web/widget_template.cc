@@ -15,7 +15,9 @@ using namespace webui;
 namespace {
 
     TypeWidget widgetTemplateType = {
-        Identifier::Template, sizeof(WidgetTemplate), { }
+        Identifier::Template, sizeof(WidgetTemplate), {
+            { Identifier::InvalidId,      PROP(WidgetTemplate, parser,  Parser,        1, 0, 0) },
+        }
     };
 
 }

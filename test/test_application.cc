@@ -341,3 +341,53 @@ TEST_CASE("application: double dispatch", "[application]") {
     REQUIRE(child.size() == 1);
     CHECK(string(Context::strMng.get(child[0]->type())) == "Props");
 }
+
+TEST_CASE("application: failing case", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application {"
+                                  _"  Template {"
+                                  _"    define: Tree"
+                                  _"    LayoutVer {"
+                                  _"    }"
+                                  _"  }"
+                                  _"}")));
+}
+
+TEST_CASE("application: template definition", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application {"
+                                  _"  Template {"
+                                  _"    define: Tree"
+                                  _"    ["
+                                  _"      Widget {"
+                                  _"        x: @"
+                                  _"      }"
+                                  _"    ]"
+                                  _"  }"
+                                  _"  Tree {"
+                                  _"    id: tree"
+                                  _"  }"
+                                  _"  Tree {"
+                                  _"    id: tree2"
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 2);
+    // load template
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 111 ], [ 222 ] ] ]", "tree")));
+    auto& tpl(root->getChildren()[0]->getChildren());
+    auto& tp2(root->getChildren()[1]->getChildren());
+    REQUIRE(tpl.size() == 2);
+    CHECK(tpl[0]->box.pos.x == 111);
+    CHECK(tpl[1]->box.pos.x == 222);
+    REQUIRE(tp2.size() == 0);
+    CHECK(Context::app.onLoad(mlTemplate("[ [ [ 333 ], [ 444 ], [ 555] ] ]", "tree2")));
+    REQUIRE(tp2.size() == 3);
+    CHECK(tp2[0]->box.pos.x == 333);
+    CHECK(tp2[1]->box.pos.x == 444);
+    CHECK(tp2[2]->box.pos.x == 555);
+}

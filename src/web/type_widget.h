@@ -33,6 +33,7 @@ namespace webui {
         ActionTable,
         Text,            // char*
         VoidPtr,         // void*
+        Parser,          // to be able to copy template widgets (definitions)
         LastType
     };
 

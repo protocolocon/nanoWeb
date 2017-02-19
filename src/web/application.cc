@@ -341,18 +341,23 @@ namespace webui {
                     }
                     if (!update)
                         widgetChild = createWidget(key, cons.widget/*parent*/);
-                    assert(widgetChild);
+                    DIAG(if (!widgetChild) {
+                            LOG("unknown widget type: %.*s", tree.size(cons.iEntry), entryKey.pos);
+                            return nullptr;
+                        });
                     bool isTemplate(key == Identifier::Template);
+                    if (isTemplate) {
+                        auto* tpl(reinterpret_cast<WidgetTemplate*>(widgetChild));
+                        // omit definition inside template
+                        int omitDefine(valEntry < cons.fEntry && tree.asId(valEntry) == Identifier::define ? 2 : 0);
+                        tree.copyTo(tpl->getParser(), valEntry + omitDefine, tree[cons.iEntry].next);
+                    }
                     Construct consChild(widgetChild, valEntry, tree[cons.iEntry].next, !isTemplate, update);
                     if (!(widgetChild = initializeConstructCheckUpdate(consChild)) || (!consChild.update && !registerWidget(widgetChild)))
                         return nullptr;
                     if (!consChild.define) {
                         if (!consChild.update) cons.widget->addChild(widgetChild);
                         cons.iChild++;
-                    }
-                    if (isTemplate) {
-                        auto* tpl(reinterpret_cast<WidgetTemplate*>(widgetChild));
-                        tree.copyTo(tpl->getParser(), valEntry, tree[cons.iEntry].next);
                     }
                     if (widgetChild->baseType() == Identifier::Timer) {
                         // add to list of timers
@@ -438,7 +443,7 @@ namespace webui {
             if (entryKey.type() == MLParser::EntryType::Block) { // case 3: template loop
                 iEntry = entryKey.next;
             } else { // cases 1 & 2: key: value or class {
-                DIAG(if (iEntry + 1 >= fEntry || entryKey.next != iEntry + 1) {
+                DIAG(if (entryKey.type() != MLParser::EntryType::Object && entryKey.type() != MLParser::EntryType::Id) {
                         LOG("expected key: value or class {");
                         tree.error(entryKey.pos, "=>", entryKey.line);
                         return nullptr;
@@ -465,8 +470,10 @@ namespace webui {
                     DIAG(LOG("adding property: %s.%s at %d+%d of type %s",
                              Context::strMng.get(typeId), Context::strMng.get(propId), prop.pos * prop.size, prop.size, toString(prop.type)));
                 }
-                const auto& entryVal(tree[iEntry + 1]);
-                iEntry = entryVal.next;
+                if (entryKey.type() == MLParser::EntryType::Object)
+                    iEntry = entryKey.next;
+                else
+                    iEntry = tree[iEntry + 1].next;
             }
         }
         // create new widget with correct size to hold new properties

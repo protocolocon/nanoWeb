@@ -113,8 +113,14 @@ namespace webui {
     void Widget::copyFrom(const Widget* widget) {
         const auto& props = *typeWidget;
         for (const auto& prop: props)
-            if (!prop.second.redundant)
-                props.set(prop.first, this, props.get(prop.first, widget));
+            if (!prop.second.redundant) {
+                if (prop.second.type == Type::Parser) {
+                    auto* parserWidget(reinterpret_cast<MLParser*>((char*)widget + prop.second.pos));
+                    auto* parser(reinterpret_cast<MLParser*>((char*)this + prop.second.pos));
+                    parserWidget->copyTo(*parser, 0, parserWidget->size());
+                } else
+                    props.set(prop.first, this, props.get(prop.first, widget));
+            }
         actions = widget->actions;
         sharedActions = 1;
     }

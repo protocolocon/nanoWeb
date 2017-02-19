@@ -560,8 +560,9 @@ namespace webui {
                     !Context::app.getWidgets().count(widgetId = reinterpret_cast<StringId*>(widget)[prop->pos])) {
                     DIAG(LOG("unknown widget: %s.%s resolving property (%s = %s [%d])",
                              Context::strMng.get(command[1].strId), Context::strMng.get(command[2].strId),
-                             Context::strMng.get(command[1].strId), Context::strMng.get(reinterpret_cast<StringId*>(widget)[prop->pos]),
-                             reinterpret_cast<int*>(widget)[prop->pos]));
+                             Context::strMng.get(command[1].strId),
+                             prop ? Context::strMng.get(reinterpret_cast<StringId*>(widget)[prop->pos]) : "error",
+                             prop ? reinterpret_cast<int*>(widget)[prop->pos] : -1));
                     type = DispatchUnknown;
                     return nullptr;
                 }
@@ -631,12 +632,13 @@ namespace webui {
         case Type::Float:
         case Type::Color:
         case Type::FontIdx:
+        case Type::SizeRelative:
                              return reinterpret_cast<const uint32_t*>(data)[command.param];
         case Type::Text:
         case Type::VoidPtr:
                              return reinterpret_cast<const long*>(data)[command.param];
         default:
-            DIAG(LOG("unmanaged property type for reading"));
+            DIAG(LOG("unmanaged property type for reading: %s", toString(command.type())));
             abort();
         }
         // promotion to float
