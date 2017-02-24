@@ -249,7 +249,7 @@ namespace webui {
             // remove non-updated children
             auto& children(widget->getChildren());
             for (auto it = children.begin(); it != children.end(); )
-                if (!(*it)->constUpdated)
+                if (!(*it)->constUpdated && !(*it)->constStructural)
                     it = children.erase(it);
                 else
                     ++it;
@@ -279,6 +279,7 @@ namespace webui {
                     DIAG(if (cons.update) LOG("no definitions allowed inside templates"));
                     DIAG(if (cons.define) LOG("warning: repeated 'define' attribute inside widget"));
                     cons.define = true;
+                    cons.widget->parent = nullptr;
                     // create new type
                     auto newTypeId(tree.asIdAdd(valEntry));
                     if (!(cons.widget = createType(cons.widget, newTypeId, iEntryOrig, cons.fEntry))) {
@@ -637,6 +638,12 @@ namespace webui {
             if (root) {
                 LOG("Application tree");
                 root->dump();
+                LOG("Definitions");
+                for (auto idWidget: widgets) {
+                    auto* widget(idWidget.second);
+                    if (widget != root && !widget->parent)
+                        widget->dump(1);
+                }
             }
             if (detail) {
                 LOG("Registered widgets:");

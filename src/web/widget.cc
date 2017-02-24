@@ -10,6 +10,7 @@
 #include "input.h"
 #include "nanovg.h"
 #include "context.h"
+#include <cassert>
 #include <cstdlib>
 #include <cstddef>
 
@@ -123,6 +124,14 @@ namespace webui {
             }
         actions = widget->actions;
         sharedActions = 1;
+        // copy also children
+        for (auto child: widget->children) {
+            auto* c(Context::app.createWidget(child->type(), this));
+            assert(c);
+            c->copyFrom(child);
+            c->constStructural = 1;
+            children.push_back(c);
+        }
     }
 
     bool Widget::animeAlpha() {

@@ -98,7 +98,7 @@ namespace webui {
                 uint8_t active:1;         // if widget is in it's active status (like a pressed button)
                 uint8_t draggable:1;      // if widget is draggable
                 uint8_t constUpdated:1;   // used during construction to mark updated widgets
-                uint8_t reserved:1;
+                uint8_t constStructural:1;// indicates this widget is part of the construction structure and should not be deleted
                 uint8_t zoom;
                 uint8_t alpha;
                 uint8_t reserved2;
