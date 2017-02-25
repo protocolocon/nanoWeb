@@ -391,3 +391,30 @@ TEST_CASE("application: template definition", "[application]") {
     CHECK(tp2[1]->box.pos.x == 444);
     CHECK(tp2[2]->box.pos.x == 555);
 }
+
+TEST_CASE("application: hierarchy properties", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application {"
+                                  _"  Widget {"
+                                  _"    define: Composite"
+                                  _"    propInt16: value"
+                                  _"    value: 724"
+                                  _"    Widget { }"
+                                  _"    Widget {"
+                                  _"      x: value"
+                                  _"      value: 725"
+                                  _"    }"
+                                  _"    Widget { }"
+                                  _"  }"
+                                  _"  Composite {"
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 1);
+    auto& chil2(child[0]->getChildren());
+    REQUIRE(chil2.size() == 3);
+    CHECK(child[0]->typeWidget->get(Context::strMng.search("value").getId(), child[0]) == 725);
+}

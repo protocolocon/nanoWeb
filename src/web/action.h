@@ -92,18 +92,21 @@ namespace webui {
         PushConstant,                // [ ins, type, elems  ] [ value]
         PushProperty,                // [ ins, type, offset ]
         PushForeignProperty,         // [ ins, type, offset ] [ widget* ]
-        PushDoubleProperty,          // [ ins, type, offset ] [ id ] [ widget* ]
+        PushDoubleProperty,          // [ ins, type, offset ] [ variable prop position ]
+        PushParentProperty,          // [ ins, type, offset ] [ ancestor level ]
         PushPropertyPtr,             // [ ins, type, offset ]
         PushForeignPropertyPtr,      // [ ins, type, offset ] [ widget* ]
-        PushDoublePropertyPtr,       // [ ins, type, offset ] [ id ] [ widget* ]
+        PushDoublePropertyPtr,       // [ ins, type, offset ] [ variable prop position ]
+        PushParentPropertyPtr,       // [ ins, type, offset ] [ ancestor level ]
         FunctionCall,                // [ ins, type, func   ]
     };
 
     enum DispatchType {
-        DispatchUnknown  = -3,
-        DispatchNormal   = -2,
-        DispatchForeign  = -1,
-        DispatchDouble   =  0        // and everything after, stores id prop position
+        DispatchUnknown  = -4,
+        DispatchNormal   = -3,
+        DispatchForeign  = -2,
+        DispatchDouble   = -1,
+        DispatchParent   =  0,       // and everything after, stores id prop position
     };
 
 
@@ -169,8 +172,8 @@ namespace webui {
         bool addRecur(MLParser& parser, int iEntry, int fEntry);
         bool checkFunctionParams(int iFunction, int iAction, Widget* widget);
         static long getPropertyData(const void* data, Command command);
-        const Property* resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type);
-        void resolvePropertyRecode(const Property* prop, Widget* widget, DispatchType dispatchType, Command* command, bool ptr);
+        const Property* resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type, long& param);
+        void resolvePropertyRecode(const Property* prop, Widget* widget, DispatchType type, long param, Command* command, bool ptr);
         static Widget* resolveDoubleDispatch(int pos, Widget* widget);
 
         DIAG(const char* valueToString(Type type, const Command& action, char* buffer, int nBuffer) const);

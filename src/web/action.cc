@@ -362,7 +362,7 @@ namespace webui {
     bool Actions::execute(int iAction, Widget* widget) {
         if (!iAction) return true;
         DIAG(int iActionOrig(iAction));
-        //DIAG(LOG("execute: %s", DryRun ? "dry run" : "for real"); dump(iAction));
+        //DIAG(LOG("execute on %p: %s", widget, DryRun ? "dry run" : "for real"); dump(iAction));
         stack.clear();
         execWidget = widget;
         if (DryRun) locations.clear();
@@ -370,7 +370,7 @@ namespace webui {
             const auto& action(actions[iAction]);
             switch (action.inst()) {
             case Instruction::Return:
-                //DIAG(if (DryRun) { LOG("after dry run"); dump(iActionOrig); });
+                //DIAG(if (!DryRun) LOG(""));
                 return true;
             case Instruction::Nop:
                 break;
@@ -401,6 +401,17 @@ namespace webui {
                 iAction += 2;
                 break;
             }
+            case Instruction::PushParentProperty: {
+                auto* parent(widget);
+                auto countParent(actions[iAction + 1].l);
+                while (countParent--) {
+                    parent = parent->parent;
+                    DIAG(if (!parent) LOG("internal: run out of parents while resoling parent property"));
+                }
+                stack.push_back(StackFrame(getPropertyData(parent, action)));
+                if (DryRun) locations.push_back(iAction);
+                break;
+            }
             case Instruction::PushPropertyPtr:
                 stack.push_back(StackFrame(long(widget) + action.param));
                 if (DryRun) locations.push_back(iAction);
@@ -416,6 +427,17 @@ namespace webui {
                 stack.push_back(StackFrame(long(resolved) + action.param));
                 if (DryRun) locations.push_back(iAction);
                 iAction += 2;
+                break;
+            }
+            case Instruction::PushParentPropertyPtr: {
+                auto* parent(widget);
+                auto countParent(actions[iAction + 1].l);
+                while (countParent--) {
+                    parent = parent->parent;
+                    DIAG(if (!parent) LOG("internal: run out of parents while resoling parent property ptr"));
+                }
+                stack.push_back(StackFrame(long(parent) + action.param));
+                if (DryRun) locations.push_back(iAction);
                 break;
             }
             case Instruction::FunctionCall: {
@@ -440,8 +462,10 @@ namespace webui {
         int iAction(actions.size());
         actions.push_back(Command(Instruction::PushConstant, Type::Id));
         actions.push_back(Command(propId));
+        Widget* propWidget;
+        long dispatchParam;
         DispatchType dispatchType;
-        const auto* prop(resolveProperty(&actions[iAction], widget, widget, dispatchType));
+        const auto* prop(resolveProperty(&actions[iAction], widget, propWidget, dispatchType, dispatchParam));
         if (!prop) {
             DIAG(LOG("no such property in widget: %s", Context::strMng.get(propId)));
             return false;
@@ -551,7 +575,7 @@ namespace webui {
         return true;
     }
 
-    const Property* Actions::resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type) {
+    const Property* Actions::resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type, long& param) {
         assert(command->inst() == Instruction::PushConstant && command->type() == Type::Id);
         StringId propId;
         if (command->param) {
@@ -579,22 +603,37 @@ namespace webui {
 
             propWidget = Context::app.getWidgets()[widgetId];
             propId = command[2].strId;
+            DIAG(if (!propId.valid()) LOG("invalid property id"));
+            // property
+            return propWidget->getProp(Identifier(propId.getId()));
         } else {
             // normal
             type = DispatchNormal;
             propWidget = widget;
             propId = command[1].strId;
+            DIAG(if (!propId.valid()) LOG("invalid property id"));
+            // property
+            const Property* prop(propWidget->getProp(Identifier(propId.getId())));
+            Widget* parent(propWidget);
+            param = 0;
+            while (!prop && parent->parent) { // try to find the property in hierarchy
+                parent = parent->parent;
+                param++;
+                prop = parent->getProp(Identifier(propId.getId()));
+            }
+            if (param && parent) {
+                // parent property
+                type = DispatchParent;
+                propWidget = parent;
+            }
+            return prop;
         }
-        DIAG(if (!propId.valid()) LOG("invalid property id"));
-        // property
-        const Property* prop(propWidget->getProp(Identifier(propId.getId())));
-        return prop;
     }
 
-    void Actions::resolvePropertyRecode(const Property* prop, Widget* widget, DispatchType dispatchType, Command* command, bool ptr) {
+    void Actions::resolvePropertyRecode(const Property* prop, Widget* widget, DispatchType type, long param, Command* command, bool ptr) {
         auto pos(!ptr && prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : ptr ? prop->pos * prop->size : prop->pos);
         int instBase = ptr ? int(Instruction::PushPropertyPtr) : int(Instruction::PushProperty);
-        switch (dispatchType) {
+        switch (type) {
         case DispatchUnknown:
             DIAG(LOG("bad dispatching"));
             break;
@@ -607,9 +646,13 @@ namespace webui {
             command[1] = Command(widget);
             command[2] = Command(Instruction::Nop);
             break;
+        case DispatchParent:
+            command[0] = Command(Instruction(instBase + 3), prop->type, pos);
+            command[1] = Command(param); // ancestor level
+            break;
         default:
             command[0] = Command(Instruction(instBase + 2), prop->type, pos);
-            command[1] = Command(long(dispatchType)); // variable id position in widget
+            command[1] = Command(long(type)); // variable id position in widget
             command[2] = Command(Instruction::Nop);
             break;
         }
@@ -666,9 +709,10 @@ namespace webui {
             auto* command(&actions[locations[iStack]]);
             auto type(command->type());
             Widget* propWidget;
+            long dispatchParam;
             DispatchType dispatchType;
             const Property* prop(command->inst() == Instruction::PushConstant && type == Type::Id ?
-                                 resolveProperty(command, widget, propWidget, dispatchType) : nullptr);
+                                 resolveProperty(command, widget, propWidget, dispatchType, dispatchParam) : nullptr);
             if (type != *proto) {
                 // try to do the execution conversion
                 if (*proto == Type::VoidPtr) {
@@ -688,6 +732,7 @@ namespace webui {
                         (prop->type == Type::Int32        && valueType == Type::Float) ||
                         (prop->type == Type::SizeRelative && valueType == Type::Float) ||
                         (prop->type == Type::Float        && valueType == Type::Bit)   ||
+                        (prop->type == Type::Float        && valueType == Type::Int16) ||
                         (prop->type == Type::StrId        && valueType == Type::Id))   valueType = prop->type;
                     else if (prop->type == Type::Text && valueType == Type::StrView) {
                         // promote string view to text
@@ -698,7 +743,7 @@ namespace webui {
                         valueType = prop->type;
                     }
                     if (prop->type == valueType) {
-                        resolvePropertyRecode(prop, propWidget, dispatchType, command, true);
+                        resolvePropertyRecode(prop, propWidget, dispatchType, dispatchParam, command, true);
                         Function assignFunc;
                         switch (prop->type) {
                         case Type::Bit:          assignFunc = Function(int(Function::AssignBit0) + prop->bit); break;
@@ -741,7 +786,7 @@ namespace webui {
 
                     if (cast) {
                         // conversion of type ok
-                        resolvePropertyRecode(prop, propWidget, dispatchType, command, false);
+                        resolvePropertyRecode(prop, propWidget, dispatchType, dispatchParam, command, false);
                     } else {
                         DIAG(LOG("cannot cast '%s' from %s to %s in %d",
                                  Context::strMng.get(command[1].strId), toString(prop->type), toString(*proto), iAction));
@@ -771,7 +816,7 @@ namespace webui {
             } else {
                 // type matches proto, but if pushing a constant id and this is a property of type id, then resolve
                 if (prop && prop->type == Type::Id)
-                    resolvePropertyRecode(prop, propWidget, dispatchType, command, false);
+                    resolvePropertyRecode(prop, propWidget, dispatchType, dispatchParam, command, false);
             }
             ++proto;
             auto lastLocation(locations.back());
@@ -828,6 +873,10 @@ namespace webui {
                         i, "Push double prop", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
                     i++;
                     break;
+                case Instruction::PushParentProperty:
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), parentAncestor(%ld)",
+                        i, "Push parent prop", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
+                    break;
                 case Instruction::PushPropertyPtr:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d)",
                         i, "Push prop ptr", ::toString(actions[i].type()), actions[i].param);
@@ -841,6 +890,10 @@ namespace webui {
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), variable pos(%ld)",
                         i, "Push double prop ptr", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
                     i++;
+                    break;
+                case Instruction::PushParentPropertyPtr:
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), parentAncestor(%ld)",
+                        i, "Push parent prop ptr", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
                     break;
                 case Instruction::FunctionCall:
                     LOG("%6d " GREEN "%-20s " RESET ": func(" CYAN "%s" RESET ") -> %s   type(%s)",
