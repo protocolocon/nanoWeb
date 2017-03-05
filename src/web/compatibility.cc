@@ -25,6 +25,11 @@ namespace webui {
         query();
     }
 
+    char* RequestXHR::buildQuery(char* buffer, int nBuffer) {
+        snprintf(buffer, nBuffer, "%s?id=%s", Context::strMng.get(req), Context::strMng.get(id));
+        return buffer;
+    }
+
     void RequestXHR::onLoadStatic(void* ctx, void* buffer, int nBuffer) {
         reinterpret_cast<RequestXHR*>(ctx)->onLoad(reinterpret_cast<char*>(buffer), nBuffer);
     }

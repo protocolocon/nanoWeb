@@ -80,7 +80,8 @@ namespace webui {
     }
 
     void RequestXHR::query() {
-        const char* req(Context::strMng.get(this->req));
+        char buffer[1024];
+        const char* req(buildQuery(buffer, sizeof(buffer)));
         // perform the request synchronously
         CURL *conn(curl_easy_init());
         if (!conn) {

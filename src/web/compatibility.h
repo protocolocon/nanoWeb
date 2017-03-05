@@ -74,6 +74,7 @@ namespace webui {
         inline StringId getReq() const { return req; }
 
     private:
+        char* buildQuery(char* buffer, int nBuffer);
         static void onLoadStatic(void* ctx, void* buffer, int nBuffer);
         static void onErrorStatic(void* ctx);
         static size_t onAddDataStatic(char* data, size_t size, size_t nmemb, RequestXHR* xhr);

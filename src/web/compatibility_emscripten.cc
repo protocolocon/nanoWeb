@@ -49,7 +49,8 @@ namespace webui {
     }
 
     void RequestXHR::query() {
-        emscripten_async_wget_data(Context::strMng.get(req), this, onLoadStatic, onErrorStatic);
+        char buffer[1024];
+        emscripten_async_wget_data(buildQuery(buffer, sizeof(buffer)), this, onLoadStatic, onErrorStatic);
     }
 
 }
