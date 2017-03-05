@@ -460,3 +460,27 @@ TEST_CASE("application: double dispatch in ancestor", "[application]") {
     CHECK(Context::actions.execute(actionTable.onClick, chil2[1]));
     CHECK(child[0]->typeWidget->get(Context::strMng.search("value").getId(), child[0]) == 3333);
 }
+
+TEST_CASE("application: explicit parent dispatcher", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application {"
+                                  _"  Widget {"
+                                  _"    define: Composite"
+                                  _"    Widget {"
+                                  _"      onClick: query(\"error\", parent.id)"
+                                  _"    }"
+                                  _"  }"
+                                  _"  Composite {"
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 1);
+    auto& chil2(child[0]->getChildren());
+    REQUIRE(chil2.size() == 1);
+    // execute on click
+    auto& actionTable(Context::app.getActionTable(chil2[0]->actions));
+    CHECK(Context::actions.execute(actionTable.onClick, chil2[0]));
+}

@@ -50,6 +50,7 @@ namespace {
         "self" _
         "repeat" _
         "delay" _
+        "parent" _
         "ALast" _
 
         "propInt16" _

@@ -57,7 +57,8 @@ namespace webui {
         self             = OffsetEnum(define),
         repeat           = OffsetEnum(self),
         delay            = OffsetEnum(repeat),
-        ALast            = OffsetEnum(delay),
+        parent           = OffsetEnum(delay),
+        ALast            = OffsetEnum(parent),
 
         // property attribute definition
         propInt16        = OffsetEnum(ALast),

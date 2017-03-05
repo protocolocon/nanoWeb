@@ -598,7 +598,18 @@ namespace webui {
             // x.y => widget.propery
             auto widgetId(command[1].strId);
             assert(widgetId.valid());
-            if (!Context::app.getWidgets().count(widgetId)) {
+            if (widgetId == Identifier::parent) {
+                // explicit parent: parent.property
+                DIAG(if (!widget->parent) { LOG("no parent for widget when explicitly stated"); return nullptr; });
+                propId = command[2].strId;
+                DIAG(if (!propId.valid()) LOG("invalid property id"));
+                // property
+                widget = widget->parent;
+                const Property* prop(widget->getProp(Identifier(propId.getId())));
+                type = DispatchParent;
+                param = 1;
+                return prop;
+            } else if (!Context::app.getWidgets().count(widgetId)) {
                 // maybe it's a property of the widget (or ancestors) to refer a widget
                 const Property* prop(widget->getProp(Identifier(widgetId.getId())));
                 Widget* parent(widget);
@@ -664,31 +675,37 @@ namespace webui {
     void Actions::resolvePropertyRecode(const Property* prop, DispatchType type, long param, Command* command, bool ptr) {
         auto pos(!ptr && prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : ptr ? prop->pos * prop->size : prop->pos);
         int instBase = ptr ? int(Instruction::PushPropertyPtr) : int(Instruction::PushProperty);
+        int commandSize(1 + 1 + command->param);
+        int commandNow(1);
         command[0] = Command(Instruction(instBase + type), prop->type, pos);
         switch (type) {
         case DispatchNormal:
-            command[1] = Command(Instruction::Nop);
             break;
         case DispatchForeign:
             command[1] = Command(param);           // foreign widget
-            command[2] = Command(Instruction::Nop);
+            commandNow++;
             break;
         case DispatchDouble:
             command[1] = Command(param);           // variable id position in widget
-            command[2] = Command(Instruction::Nop);
+            commandNow++;
             break;
         case DispatchParent:
             command[1] = Command(param);           // ancestor level
+            commandNow++;
             break;
         case DispatchDoubleParent:
             command[1] = Command(param & 0xfffff); // variable id position in widget
             command[2] = Command(param >> 20);     // ancestor level
+            commandNow += 2;
             break;
         case DispatchUnknown:
         default:
             DIAG(LOG("bad dispatching"));
             break;
         }
+        assert(commandNow <= commandSize);
+        while (commandNow < commandSize)
+            command[commandNow++] = Command(Instruction::Nop);
     }
 
     Widget* Actions::resolveDoubleDispatch(int pos, Widget* widget) {
