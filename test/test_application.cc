@@ -418,3 +418,45 @@ TEST_CASE("application: hierarchy properties", "[application]") {
     REQUIRE(chil2.size() == 3);
     CHECK(child[0]->typeWidget->get(Context::strMng.search("value").getId(), child[0]) == 725);
 }
+
+TEST_CASE("application: double dispatch in ancestor", "[application]") {
+    ctx.initialize(false, false);
+    CHECK(Context::app.onLoad(mlApp(
+                                  "Application {"
+                                  _"  Widget {"
+                                  _"    define: Target"
+                                  _"    propInt16: value"
+                                  _"    value: 1111"
+                                  _"  }"
+                                  _"  Target {"        // child[0]
+                                  _"    id: target"
+                                  _"    value: 2222"
+                                  _"  }"
+                                  _"  Widget {"
+                                  _"    define: Composite"
+                                  _"    propId: someId"
+                                  _"    propInt16: value"
+                                  _"    someId: target"
+                                  _"    Widget { }"
+                                  _"    Widget {"
+                                  _"      value: someId.value"
+                                  _"      onClick: someId.value = 3333"
+                                  _"    }"
+                                  _"    Widget { }"
+                                  _"  }"
+                                  _"  Composite {"     // child[1]
+                                  _"  }"
+                                  _"}")));
+    auto root(Context::app.getRoot());
+    REQUIRE(root);
+    auto& child(root->getChildren());
+    REQUIRE(child.size() == 2);
+    auto& chil2(child[1]->getChildren());
+    REQUIRE(chil2.size() == 3);
+    CHECK(child[0]->typeWidget->get(Context::strMng.search("value").getId(), child[0]) == 2222);
+    CHECK(child[1]->typeWidget->get(Context::strMng.search("value").getId(), child[1]) == 2222);
+    // execute on click
+    auto& actionTable(Context::app.getActionTable(chil2[1]->actions));
+    CHECK(Context::actions.execute(actionTable.onClick, chil2[1]));
+    CHECK(child[0]->typeWidget->get(Context::strMng.search("value").getId(), child[0]) == 3333);
+}

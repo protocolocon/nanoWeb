@@ -342,6 +342,15 @@ namespace {
             if (f.id == id) return Function(&f - functionList);
         return Function::Error;
     }
+
+    Widget* ancestor(Widget* w, int level) {
+        while (level--) {
+            w = w->parent;
+            DIAG(if (!w) LOG("internal: run out of parents while resoling parent property"));
+        }
+        return w;
+    }
+
 }
 
 namespace webui {
@@ -402,14 +411,18 @@ namespace webui {
                 break;
             }
             case Instruction::PushParentProperty: {
-                auto* parent(widget);
-                auto countParent(actions[iAction + 1].l);
-                while (countParent--) {
-                    parent = parent->parent;
-                    DIAG(if (!parent) LOG("internal: run out of parents while resoling parent property"));
-                }
+                auto* parent(ancestor(widget, actions[iAction + 1].l));
                 stack.push_back(StackFrame(getPropertyData(parent, action)));
                 if (DryRun) locations.push_back(iAction);
+                break;
+            }
+            case Instruction::PushDoubleParentProperty: {
+                auto* parent(ancestor(widget, actions[iAction + 2].l));
+                auto* resolved(resolveDoubleDispatch(actions[iAction + 1].l, parent));
+                DIAG(if (!resolved) { LOG("double parent dispatch failed"); return false; });
+                stack.push_back(StackFrame(getPropertyData(resolved, action)));
+                if (DryRun) locations.push_back(iAction);
+                iAction += 2;
                 break;
             }
             case Instruction::PushPropertyPtr:
@@ -423,21 +436,25 @@ namespace webui {
                 break;
             case Instruction::PushDoublePropertyPtr: {
                 auto* resolved(resolveDoubleDispatch(actions[iAction + 1].l, widget));
-                DIAG(if (!resolved) { LOG("double dispatch failed"); return false; });
+                DIAG(if (!resolved) { LOG("double dispatch ptr failed"); return false; });
                 stack.push_back(StackFrame(long(resolved) + action.param));
                 if (DryRun) locations.push_back(iAction);
                 iAction += 2;
                 break;
             }
             case Instruction::PushParentPropertyPtr: {
-                auto* parent(widget);
-                auto countParent(actions[iAction + 1].l);
-                while (countParent--) {
-                    parent = parent->parent;
-                    DIAG(if (!parent) LOG("internal: run out of parents while resoling parent property ptr"));
-                }
+                auto* parent(ancestor(widget, actions[iAction + 1].l));
                 stack.push_back(StackFrame(long(parent) + action.param));
                 if (DryRun) locations.push_back(iAction);
+                break;
+            }
+            case Instruction::PushDoubleParentPropertyPtr: {
+                auto* parent(ancestor(widget, actions[iAction + 2].l));
+                auto* resolved(resolveDoubleDispatch(actions[iAction + 1].l, parent));
+                DIAG(if (!resolved) { LOG("double parent dispatch ptr failed"); return false; });
+                stack.push_back(StackFrame(long(resolved) + action.param));
+                if (DryRun) locations.push_back(iAction);
+                iAction += 2;
                 break;
             }
             case Instruction::FunctionCall: {
@@ -584,23 +601,37 @@ namespace webui {
             if (!Context::app.getWidgets().count(widgetId)) {
                 // maybe it's a property of the widget (or ancestors) to refer a widget
                 const Property* prop(widget->getProp(Identifier(widgetId.getId())));
+                Widget* parent(widget);
+                param = 0;
+                while (!prop && parent->parent) { // try to find the property in hierarchy
+                    parent = parent->parent;
+                    param++;
+                    prop = parent->getProp(Identifier(widgetId.getId()));
+                }
                 if (!prop || prop->type != Type::Id || // variable has to be set to a valid widget since the beginning
-                    !Context::app.getWidgets().count(widgetId = reinterpret_cast<StringId*>(widget)[prop->pos])) {
+                    !Context::app.getWidgets().count(widgetId = reinterpret_cast<StringId*>(parent)[prop->pos])) {
                     DIAG(LOG("unknown widget: %s.%s resolving property (%s = %s [%d])",
                              Context::strMng.get(command[1].strId), Context::strMng.get(command[2].strId),
                              Context::strMng.get(command[1].strId),
-                             prop ? Context::strMng.get(reinterpret_cast<StringId*>(widget)[prop->pos]) : "error",
-                             prop ? reinterpret_cast<int*>(widget)[prop->pos] : -1));
+                             prop ? Context::strMng.get(reinterpret_cast<StringId*>(parent)[prop->pos]) : "error",
+                             prop ? reinterpret_cast<int*>(parent)[prop->pos] : -1));
                     type = DispatchUnknown;
                     return nullptr;
                 }
-                // double dispatch: (variable->widget).property
-                type = DispatchDouble;
-                param = prop->pos;
+                widget = Context::app.getWidgets()[widgetId];
+                if (param && parent) {
+                    // double dispatch parent: (ancestor:variable->widget).property
+                    type = DispatchDoubleParent;
+                    param = prop->pos | param << 20;
+                } else {
+                    // double dispatch: (variable->widget).property
+                    type = DispatchDouble;
+                    param = prop->pos;
+                }
             } else {
                 // foreign: widget.property
-                type = DispatchForeign;
                 widget = Context::app.getWidgets()[widgetId];
+                type = DispatchForeign;
                 param = long(widget);
             }
             propId = command[2].strId;
@@ -633,24 +664,25 @@ namespace webui {
     void Actions::resolvePropertyRecode(const Property* prop, DispatchType type, long param, Command* command, bool ptr) {
         auto pos(!ptr && prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : ptr ? prop->pos * prop->size : prop->pos);
         int instBase = ptr ? int(Instruction::PushPropertyPtr) : int(Instruction::PushProperty);
+        command[0] = Command(Instruction(instBase + type), prop->type, pos);
         switch (type) {
         case DispatchNormal:
-            command[0] = Command(Instruction(instBase), prop->type, pos);
             command[1] = Command(Instruction::Nop);
             break;
         case DispatchForeign:
-            command[0] = Command(Instruction(instBase + 1), prop->type, pos);
-            command[1] = Command(param); // foreign widget
+            command[1] = Command(param);           // foreign widget
             command[2] = Command(Instruction::Nop);
             break;
         case DispatchDouble:
-            command[0] = Command(Instruction(instBase + 2), prop->type, pos);
-            command[1] = Command(param); // variable id position in widget
+            command[1] = Command(param);           // variable id position in widget
             command[2] = Command(Instruction::Nop);
             break;
         case DispatchParent:
-            command[0] = Command(Instruction(instBase + 3), prop->type, pos);
-            command[1] = Command(param); // ancestor level
+            command[1] = Command(param);           // ancestor level
+            break;
+        case DispatchDoubleParent:
+            command[1] = Command(param & 0xfffff); // variable id position in widget
+            command[2] = Command(param >> 20);     // ancestor level
             break;
         case DispatchUnknown:
         default:
@@ -864,8 +896,7 @@ namespace webui {
                     break;
                 case Instruction::PushForeignProperty:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), widget(%p)",
-                        i, "Push foreign prop", ::toString(actions[i].type()), actions[i].param,
-                        actions[i+1].widget);
+                        i, "Push foreign prop", ::toString(actions[i].type()), actions[i].param, actions[i+1].widget);
                     i++;
                     break;
                 case Instruction::PushDoubleProperty:
@@ -876,6 +907,12 @@ namespace webui {
                 case Instruction::PushParentProperty:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), parentAncestor(%ld)",
                         i, "Push parent prop", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
+                    i++;
+                    break;
+                case Instruction::PushDoubleParentProperty:
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), variable pos(%ld) parentAncestor(%ld)",
+                        i, "Push 2 parent prop", ::toString(actions[i].type()), actions[i].param, actions[i+1].l, actions[i+2].l);
+                    i += 2;
                     break;
                 case Instruction::PushPropertyPtr:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d)",
@@ -894,6 +931,12 @@ namespace webui {
                 case Instruction::PushParentPropertyPtr:
                     LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), parentAncestor(%ld)",
                         i, "Push parent prop ptr", ::toString(actions[i].type()), actions[i].param, actions[i+1].l);
+                    i++;
+                    break;
+                case Instruction::PushDoubleParentPropertyPtr:
+                    LOG("%6d " GREEN "%-20s " RESET ": type(%s), offset(%d), variable pos(%ld) parentAncestor(%ld)",
+                        i, "Push 2 parent ptr", ::toString(actions[i].type()), actions[i].param, actions[i+1].l, actions[i+2].l);
+                    i += 2;
                     break;
                 case Instruction::FunctionCall:
                     LOG("%6d " GREEN "%-20s " RESET ": func(" CYAN "%s" RESET ") -> %s   type(%s)",

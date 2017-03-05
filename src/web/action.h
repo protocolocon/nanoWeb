@@ -94,10 +94,12 @@ namespace webui {
         PushForeignProperty,         // [ ins, type, offset ] [ widget* ]
         PushDoubleProperty,          // [ ins, type, offset ] [ variable prop position ]
         PushParentProperty,          // [ ins, type, offset ] [ ancestor level ]
+        PushDoubleParentProperty,    // [ ins, type, offset ] [ variable prop position ] [ ancestor level ]
         PushPropertyPtr,             // [ ins, type, offset ]
         PushForeignPropertyPtr,      // [ ins, type, offset ] [ widget* ]
         PushDoublePropertyPtr,       // [ ins, type, offset ] [ variable prop position ]
         PushParentPropertyPtr,       // [ ins, type, offset ] [ ancestor level ]
+        PushDoubleParentPropertyPtr, // [ ins, type, offset ] [ variable prop position ] [ ancestor level ]
         FunctionCall,                // [ ins, type, func   ]
     };
 
@@ -107,7 +109,7 @@ namespace webui {
         DispatchForeign      = 1,    // widget.property                       param: foreign widget
         DispatchDouble       = 2,    // (variable->widget).property           param: variable position
         DispatchParent       = 3,    // property (found in ancestor)          param: ancestor
-        DispatchDoubleParent = 4,    // (ancestor:variable->widget).property  param: ...
+        DispatchDoubleParent = 4,    // (ancestor:variable->widget).property  param: variable position | ancestor << 20
         DispatchUnknown
     };
 
