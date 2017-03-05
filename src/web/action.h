@@ -103,10 +103,11 @@ namespace webui {
 
     // property resolution types
     enum DispatchType {
-        DispatchNormal   = 0,        // property
-        DispatchForeign  = 1,        // widget.property
-        DispatchDouble   = 2,        // (variable->widget).property
-        DispatchParent   = 3,        // property (found in ancestor)
+        DispatchNormal       = 0,    // property                              param: none
+        DispatchForeign      = 1,    // widget.property                       param: foreign widget
+        DispatchDouble       = 2,    // (variable->widget).property           param: variable position
+        DispatchParent       = 3,    // property (found in ancestor)          param: ancestor
+        DispatchDoubleParent = 4,    // (ancestor:variable->widget).property  param: ...
         DispatchUnknown
     };
 
@@ -173,8 +174,8 @@ namespace webui {
         bool addRecur(MLParser& parser, int iEntry, int fEntry);
         bool checkFunctionParams(int iFunction, int iAction, Widget* widget);
         static long getPropertyData(const void* data, Command command);
-        const Property* resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type, long& param);
-        void resolvePropertyRecode(const Property* prop, Widget* widget, DispatchType type, long param, Command* command, bool ptr);
+        const Property* resolveProperty(Command* command, Widget* widget, DispatchType& type, long& param);
+        void resolvePropertyRecode(const Property* prop, DispatchType type, long param, Command* command, bool ptr);
         static Widget* resolveDoubleDispatch(int pos, Widget* widget);
 
         DIAG(const char* valueToString(Type type, const Command& action, char* buffer, int nBuffer) const);

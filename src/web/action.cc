@@ -462,10 +462,9 @@ namespace webui {
         int iAction(actions.size());
         actions.push_back(Command(Instruction::PushConstant, Type::Id));
         actions.push_back(Command(propId));
-        Widget* propWidget;
         long dispatchParam;
         DispatchType dispatchType;
-        const auto* prop(resolveProperty(&actions[iAction], widget, propWidget, dispatchType, dispatchParam));
+        const auto* prop(resolveProperty(&actions[iAction], widget, dispatchType, dispatchParam));
         if (!prop) {
             DIAG(LOG("no such property in widget: %s", Context::strMng.get(propId)));
             return false;
@@ -575,7 +574,7 @@ namespace webui {
         return true;
     }
 
-    const Property* Actions::resolveProperty(Command* command, Widget* widget, Widget*& propWidget, DispatchType& type, long& param) {
+    const Property* Actions::resolveProperty(Command* command, Widget* widget, DispatchType& type, long& param) {
         assert(command->inst() == Instruction::PushConstant && command->type() == Type::Id);
         StringId propId;
         if (command->param) {
@@ -583,7 +582,7 @@ namespace webui {
             auto widgetId(command[1].strId);
             assert(widgetId.valid());
             if (!Context::app.getWidgets().count(widgetId)) {
-                // maybe it's a property of the widget to refer a widget
+                // maybe it's a property of the widget (or ancestors) to refer a widget
                 const Property* prop(widget->getProp(Identifier(widgetId.getId())));
                 if (!prop || prop->type != Type::Id || // variable has to be set to a valid widget since the beginning
                     !Context::app.getWidgets().count(widgetId = reinterpret_cast<StringId*>(widget)[prop->pos])) {
@@ -598,24 +597,22 @@ namespace webui {
                 // double dispatch: (variable->widget).property
                 type = DispatchDouble;
                 param = prop->pos;
-            } else
+            } else {
                 // foreign: widget.property
                 type = DispatchForeign;
-
-            propWidget = Context::app.getWidgets()[widgetId];
+                widget = Context::app.getWidgets()[widgetId];
+                param = long(widget);
+            }
             propId = command[2].strId;
             DIAG(if (!propId.valid()) LOG("invalid property id"));
             // property
-            return propWidget->getProp(Identifier(propId.getId()));
+            return widget->getProp(Identifier(propId.getId()));
         } else {
-            // normal: property
-            type = DispatchNormal;
-            propWidget = widget;
             propId = command[1].strId;
             DIAG(if (!propId.valid()) LOG("invalid property id"));
             // property
-            const Property* prop(propWidget->getProp(Identifier(propId.getId())));
-            Widget* parent(propWidget);
+            const Property* prop(widget->getProp(Identifier(propId.getId())));
+            Widget* parent(widget);
             param = 0;
             while (!prop && parent->parent) { // try to find the property in hierarchy
                 parent = parent->parent;
@@ -625,13 +622,15 @@ namespace webui {
             if (param && parent) {
                 // parent property
                 type = DispatchParent;
-                propWidget = parent;
+            } else {
+                // normal: property
+                type = DispatchNormal;
             }
             return prop;
         }
     }
 
-    void Actions::resolvePropertyRecode(const Property* prop, Widget* widget, DispatchType type, long param, Command* command, bool ptr) {
+    void Actions::resolvePropertyRecode(const Property* prop, DispatchType type, long param, Command* command, bool ptr) {
         auto pos(!ptr && prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : ptr ? prop->pos * prop->size : prop->pos);
         int instBase = ptr ? int(Instruction::PushPropertyPtr) : int(Instruction::PushProperty);
         switch (type) {
@@ -641,7 +640,7 @@ namespace webui {
             break;
         case DispatchForeign:
             command[0] = Command(Instruction(instBase + 1), prop->type, pos);
-            command[1] = Command(widget);
+            command[1] = Command(param); // foreign widget
             command[2] = Command(Instruction::Nop);
             break;
         case DispatchDouble:
@@ -710,11 +709,10 @@ namespace webui {
             }
             auto* command(&actions[locations[iStack]]);
             auto type(command->type());
-            Widget* propWidget;
             long dispatchParam;
             DispatchType dispatchType;
             const Property* prop(command->inst() == Instruction::PushConstant && type == Type::Id ?
-                                 resolveProperty(command, widget, propWidget, dispatchType, dispatchParam) : nullptr);
+                                 resolveProperty(command, widget, dispatchType, dispatchParam) : nullptr);
             if (type != *proto) {
                 // try to do the execution conversion
                 if (*proto == Type::VoidPtr) {
@@ -745,7 +743,7 @@ namespace webui {
                         valueType = prop->type;
                     }
                     if (prop->type == valueType) {
-                        resolvePropertyRecode(prop, propWidget, dispatchType, dispatchParam, command, true);
+                        resolvePropertyRecode(prop, dispatchType, dispatchParam, command, true);
                         Function assignFunc;
                         switch (prop->type) {
                         case Type::Bit:          assignFunc = Function(int(Function::AssignBit0) + prop->bit); break;
@@ -788,7 +786,7 @@ namespace webui {
 
                     if (cast) {
                         // conversion of type ok
-                        resolvePropertyRecode(prop, propWidget, dispatchType, dispatchParam, command, false);
+                        resolvePropertyRecode(prop, dispatchType, dispatchParam, command, false);
                     } else {
                         DIAG(LOG("cannot cast '%s' from %s to %s in %d",
                                  Context::strMng.get(command[1].strId), toString(prop->type), toString(*proto), iAction));
@@ -818,7 +816,7 @@ namespace webui {
             } else {
                 // type matches proto, but if pushing a constant id and this is a property of type id, then resolve
                 if (prop && prop->type == Type::Id)
-                    resolvePropertyRecode(prop, propWidget, dispatchType, dispatchParam, command, false);
+                    resolvePropertyRecode(prop, dispatchType, dispatchParam, command, false);
             }
             ++proto;
             auto lastLocation(locations.back());
