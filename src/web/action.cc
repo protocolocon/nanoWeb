@@ -596,9 +596,10 @@ namespace webui {
                     return nullptr;
                 }
                 // double dispatch: (variable->widget).property
-                type = DispatchType(prop->pos);
+                type = DispatchDouble;
+                param = prop->pos;
             } else
-                // foreign
+                // foreign: widget.property
                 type = DispatchForeign;
 
             propWidget = Context::app.getWidgets()[widgetId];
@@ -607,7 +608,7 @@ namespace webui {
             // property
             return propWidget->getProp(Identifier(propId.getId()));
         } else {
-            // normal
+            // normal: property
             type = DispatchNormal;
             propWidget = widget;
             propId = command[1].strId;
@@ -634,9 +635,6 @@ namespace webui {
         auto pos(!ptr && prop->type == Type::Bit ? (prop->pos << 3 | prop->bit) : ptr ? prop->pos * prop->size : prop->pos);
         int instBase = ptr ? int(Instruction::PushPropertyPtr) : int(Instruction::PushProperty);
         switch (type) {
-        case DispatchUnknown:
-            DIAG(LOG("bad dispatching"));
-            break;
         case DispatchNormal:
             command[0] = Command(Instruction(instBase), prop->type, pos);
             command[1] = Command(Instruction::Nop);
@@ -646,14 +644,18 @@ namespace webui {
             command[1] = Command(widget);
             command[2] = Command(Instruction::Nop);
             break;
+        case DispatchDouble:
+            command[0] = Command(Instruction(instBase + 2), prop->type, pos);
+            command[1] = Command(param); // variable id position in widget
+            command[2] = Command(Instruction::Nop);
+            break;
         case DispatchParent:
             command[0] = Command(Instruction(instBase + 3), prop->type, pos);
             command[1] = Command(param); // ancestor level
             break;
+        case DispatchUnknown:
         default:
-            command[0] = Command(Instruction(instBase + 2), prop->type, pos);
-            command[1] = Command(long(type)); // variable id position in widget
-            command[2] = Command(Instruction::Nop);
+            DIAG(LOG("bad dispatching"));
             break;
         }
     }

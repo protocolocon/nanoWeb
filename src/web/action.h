@@ -101,12 +101,13 @@ namespace webui {
         FunctionCall,                // [ ins, type, func   ]
     };
 
+    // property resolution types
     enum DispatchType {
-        DispatchUnknown  = -4,
-        DispatchNormal   = -3,
-        DispatchForeign  = -2,
-        DispatchDouble   = -1,
-        DispatchParent   =  0,       // and everything after, stores id prop position
+        DispatchNormal   = 0,        // property
+        DispatchForeign  = 1,        // widget.property
+        DispatchDouble   = 2,        // (variable->widget).property
+        DispatchParent   = 3,        // property (found in ancestor)
+        DispatchUnknown
     };
 
 
