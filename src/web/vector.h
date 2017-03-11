@@ -153,6 +153,12 @@ namespace webui {
     struct Box {
         Box() { }
         Box(C x, C y, C w, C h): pos(x, y), size(w, h) { }
+        void intersect(Box b) {
+            if (b.pos.x > pos.x) { size.x -= b.pos.x - pos.x; pos.x = b.pos.x; }
+            if (b.pos.y > pos.y) { size.y -= b.pos.y - pos.y; pos.y = b.pos.y; }
+            if (b.pos.x + b.size.x < pos.x + size.x) size.x = b.pos.x + b.size.x - pos.x;
+            if (b.pos.y + b.size.y < pos.y + size.y) size.y = b.pos.y + b.size.y - pos.y;
+        }
         Vector<C> pos;
         Vector<C> size;
     };
