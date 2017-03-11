@@ -190,8 +190,7 @@ namespace webui {
                     DIAG(LOG("cannot parse template info or is not a complete list"));
                     dev = false;
                 } else {
-                    DIAG(LOG("adding data to widget: %s", Context::strMng.get(xhr->getId()));
-                         tpl.dumpTree());
+                    //DIAG(LOG("adding data to widget: %s", Context::strMng.get(xhr->getId())); tpl.dumpTree());
                     dev = it->second->setData();
                 }
             break;
@@ -207,15 +206,13 @@ namespace webui {
         fTpl = tpl[0].next;
 
         tree.swap(tplWidget->getParser());
-        DIAG(
-            LOG("template with description:");
-            tree.dumpTree());
+        //DIAG(LOG("template with description:"); tree.dumpTree());
         Construct cons(tplWidget, 0, tree.size(), true, false);
         if (!initializeConstructCheckUpdate(cons)) {
             DIAG(LOG("error: update template"));
             dev = false;
         } else {
-            DIAG(dump());
+            //DIAG(dump());
             layoutStable = false;
             ctx.forceRender();
         }
@@ -342,7 +339,7 @@ namespace webui {
                     while (cons.iChild < cons.widget->getChildren().size()) {
                         if (cons.widget->getChildren()[cons.iChild]->type() == key) {
                             widgetChild = cons.widget->getChildren()[cons.iChild]; // reuse child from current widget
-                            DIAG(LOG("reusing widget: %s", Context::strMng.get(widgetChild->getId())));
+                            //DIAG(LOG("reusing widget: %s", Context::strMng.get(widgetChild->getId())));
                             update = true;
                             break;
                         }
@@ -594,18 +591,6 @@ namespace webui {
         default: DIAG(LOG("unknown action")); return false;
         }
         return true;
-    }
-
-    bool Application::parseId(Widget* widget, const char*& str, const Property*& prop) const {
-        if (isalpha(*str)) {
-            const auto* start(str++);
-            while (isalnum(*str)) ++str;
-            auto id(Context::strMng.search(start, str - start));
-            if (id.valid()) return (prop = widget->getProp(Identifier(id.getId())));
-            return false; // error
-        }
-        prop = nullptr;
-        return true; // ok
     }
 
     int Application::getFont(StringId str) {

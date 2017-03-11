@@ -127,13 +127,6 @@ namespace webui {
 
         // timers
         bool refreshTimers(); // returns true on command execution
-
-        bool parseId(Widget* widget, const char*& str, const Property*& prop) const;
-        static inline float getCoord(int c, Widget* widget) {
-            int x(short(c & 0xffff));
-            if (c >= 0) x += ((short*)widget)[c >> 16] << 2;
-            return float(x) * 0.25f;
-        }
     };
 
 }
