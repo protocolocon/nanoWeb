@@ -80,6 +80,7 @@ namespace {
         "scale" _
         "resetTransform" _
         "set" _
+        "scissor" _
         "query" _
         "triggerTimers" _
         "CLast" _

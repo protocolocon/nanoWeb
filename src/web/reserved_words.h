@@ -89,7 +89,8 @@ namespace webui {
         scale            = OffsetEnum(translate),
         resetTransform   = OffsetEnum(scale),
         set              = OffsetEnum(resetTransform),
-        query            = OffsetEnum(set),
+        scissor          = OffsetEnum(set),
+        query            = OffsetEnum(scissor),
         triggerTimers    = OffsetEnum(query),
         CLast            = OffsetEnum(triggerTimers),
 

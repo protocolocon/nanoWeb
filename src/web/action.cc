@@ -25,6 +25,7 @@ namespace {
     Type VoidPrototype[] =         { Type::LastType };
     Type FloatPrototype[] =        { Type::Float,   Type::LastType };
     Type Float2Prototype[] =       { Type::Float,   Type::Float,    Type::LastType };
+    Type Float4Prototype[] =       { Type::Float,   Type::Float,    Type::Float, Type::Float, Type::LastType };
     Type Float5Prototype[] =       { Type::Float,   Type::Float,    Type::Float, Type::Float, Type::Float, Type::LastType };
     Type Float6Prototype[] =       { Type::Float,   Type::Float,    Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
     Type ColorPrototype[] =        { Type::Color,   Type::LastType };
@@ -179,6 +180,13 @@ namespace {
         Context::render.resetTransform();
     }
 
+    void FunctionScissor() {
+        assert(stack.size() >= 4);
+        auto* s(&stack.back() - 3);
+        Context::render.scissor(s[0].f, s[1].f, s[2].f, s[3].f);
+        stack.resize(stack.size() - 4);
+    }
+
     void FunctionQuery() {
         assert(stack.size() >= 2);
         auto* s(&stack.back() - 1);
@@ -308,6 +316,7 @@ namespace {
         { Identifier::translate,       FunctionTranslate,      Float2Prototype,       Type::LastType },
         { Identifier::scale,           FunctionScale,          FloatPrototype,        Type::LastType },
         { Identifier::resetTransform,  FunctionResetTransform, VoidPrototype,         Type::LastType },
+        { Identifier::scissor,         FunctionScissor,        Float4Prototype,       Type::LastType },
         { Identifier::query,           FunctionQuery,          QueryPrototype,        Type::LastType },
         { Identifier::triggerTimers,   FunctionTriggerTimers,  VoidPrototype,         Type::LastType },
         { Identifier::log,             FunctionLog,            StrIdPrototype,        Type::LastType },
