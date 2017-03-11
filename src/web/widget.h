@@ -43,6 +43,10 @@ namespace webui {
         virtual bool layout(const Box4f& box); // returns true if stable
         virtual bool setData();                // returns true if ok
 
+        // render utils
+        int renderBase(int alphaMult);
+        void renderChildren(int alphaMult);
+
         // get a property or null
         const Property* getProp(StringId id) const;
 

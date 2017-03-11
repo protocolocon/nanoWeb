@@ -62,6 +62,10 @@ namespace webui {
     }
 
     void Widget::render(int alphaMult) {
+        renderChildren(renderBase(alphaMult));
+    }
+
+    int Widget::renderBase(int alphaMult) {
         alphaMult = Context::render.multAlpha(alphaMult, alpha);
 
         const auto& actionTable(Context::app.getActionTable(actions));
@@ -69,7 +73,10 @@ namespace webui {
             Context::actions.execute(actionTable.onRenderActive, this);
         else
             Context::actions.execute(actionTable.onRender, this);
+        return alphaMult;
+    }
 
+    void Widget::renderChildren(int alphaMult) {
         if (alphaMult)
             for (auto* child: children) child->render(alphaMult);
     }
