@@ -152,10 +152,12 @@ namespace webui {
         bool recurse(false), executed(false);
         if (Input::cursor >= box.pos && Input::cursor < box.pos + box.size) {
             // inside
+            auto& actionTable(Context::app.getActionTable(actions));
             if (!inside) {
                 inside = 1;
-                executed = Context::actions.execute(Context::app.getActionTable(actions).onEnter, this);
+                executed = Context::actions.execute(actionTable.onEnter, this);
             }
+            Context::cursor = actionTable.onClick ? Cursor::Pointer : Cursor::Default;
             recurse = true;
         } else {
             // outside

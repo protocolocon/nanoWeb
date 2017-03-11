@@ -56,6 +56,14 @@ namespace webui {
     int defaultHeight();
     int getTimeNowMs();
 
+    // cursors
+    enum class Cursor {
+        Default,
+        Pointer,
+        Last
+    };
+    void setCursor(Cursor c);
+
     // XHR
     class RequestXHR {
     public:

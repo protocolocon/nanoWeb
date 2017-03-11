@@ -23,6 +23,7 @@ namespace webui {
     Application Context::app;
     StringManager Context::strMng;
     Box4f Context::renderVisibilityBox;
+    Cursor Context::cursor;
 
     Context::Context(): renderForced(true), timeMs(getTimeNowMs()) {
     }

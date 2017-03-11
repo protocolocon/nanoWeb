@@ -102,7 +102,10 @@ namespace webui {
 
     bool Application::update() {
         assert(root);
-        return root->update();
+        Context::cursor = Cursor::Default;
+        auto dev(root->update());
+        setCursor(Context::cursor);
+        return dev;
     }
 
     DIAG(void Application::clear() {

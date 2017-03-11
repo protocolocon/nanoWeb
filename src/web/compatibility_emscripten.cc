@@ -40,6 +40,16 @@ namespace webui {
     }
 
 
+    // cursors
+    void setCursorInner(Cursor c) {
+        switch (c) {
+        case Cursor::Default: EM_ASM(Module.canvas.style.cursor = 'default'); break;
+        case Cursor::Pointer: EM_ASM(Module.canvas.style.cursor = 'pointer'); break;
+        default: DIAG(LOG("invalid cursor"));
+        }
+    }
+
+
     // class RequestXHR
     RequestXHR::RequestXHR(StringId id, StringId req, const char* data, int nData):
         id(id), req(req), data(nullptr), nData(0) {

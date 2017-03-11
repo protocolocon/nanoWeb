@@ -49,6 +49,7 @@ namespace webui {
         static Application app;
         static StringManager strMng;
         static Box4f renderVisibilityBox;
+        static Cursor cursor;
 
     private:
         bool renderForced;

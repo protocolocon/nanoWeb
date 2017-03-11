@@ -17,7 +17,23 @@
 #  include "compatibility_desktop.cc"
 #endif
 
+namespace {
+
+    webui::Cursor currentCursor;
+
+}
+
 namespace webui {
+
+    void setCursorInner(Cursor c);
+
+    // cursors common part
+    void setCursor(Cursor c) {
+        if (c != currentCursor) {
+            currentCursor = c;
+            setCursorInner(c);
+        }
+    }
 
     // class RequestXHR common part
     RequestXHR::RequestXHR(StringId id, StringId req):

@@ -13,12 +13,15 @@
 #include <curl/curl.h>
 
 using namespace std;
+using namespace webui;
 
 namespace {
 
     char curlErrorBuffer[CURL_ERROR_SIZE];
     const char* curlServerAddr("127.0.0.1:9999");
 
+    // cursors
+    GLFWcursor* cursors[int(Cursor::Last)];
 
     bool mainLoopRunning(true);
 }
@@ -40,6 +43,9 @@ namespace webui {
     }
 
     void setMainLoop(void (*loop)(void)) {
+        // initialize cursors
+        cursors[1] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+
         // synchronous main loop
         while (mainLoopRunning) {
             loop();
@@ -63,6 +69,13 @@ namespace webui {
         struct timeval now;
         gettimeofday(&now, nullptr);
         return now.tv_sec * 1000 + now.tv_usec / 1000;
+    }
+
+
+    // cursors
+    void setCursorInner(Cursor c) {
+        assert(size_t(c) < sizeof(cursors) / sizeof(cursors[0]));
+        glfwSetCursor(Context::render.getWin(), cursors[int(c)]);
     }
 
 
