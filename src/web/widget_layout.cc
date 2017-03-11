@@ -42,12 +42,25 @@ namespace webui {
     }
 
     void WidgetLayout::render(int alphaMult) {
-        Widget::render(alphaMult);
-        if (dragDrop) {
-            alphaMult = Context::render.multAlpha(alphaMult, alpha);
-            dragDrop->translate(Input::cursor - Input::cursorLeftPress);
-            dragDrop->render(alphaMult >> 1);
-            dragDrop->translate(Input::cursorLeftPress - Input::cursor);
+        alphaMult = renderBase(alphaMult);
+        if (alphaMult) {
+            // render only visible widgets taking into account they are sorted (use renderVisibilityBox intersection)
+            Box4f boxVisibilitySave(Context::renderVisibilityBox);
+            Context::renderVisibilityBox.intersect(box);
+
+            float maxCoord(Context::renderVisibilityBox.pos[coord] + Context::renderVisibilityBox.size[coord]);
+            for (auto* child: children) {
+                if (child->box.pos[coord] >= maxCoord) break;
+                child->render(alphaMult);
+            }
+            if (dragDrop) {
+                alphaMult = Context::render.multAlpha(alphaMult, alpha);
+                dragDrop->translate(Input::cursor - Input::cursorLeftPress);
+                dragDrop->render(alphaMult >> 1);
+                dragDrop->translate(Input::cursorLeftPress - Input::cursor);
+            }
+
+            Context::renderVisibilityBox = boxVisibilitySave;
         }
     }
 
@@ -74,9 +87,9 @@ namespace webui {
 
     bool WidgetLayout::layout(const Box4f& boxAvail) {
         bool stable(true);
-        int coord2(coord ^ 1);
         box = boxAvail;
-        if (visible) {
+        if (visible && box.size[coord] >= 0) {
+            int coord2(coord ^ 1);
             // drag & drop
             float prevCoord(0);
             if (dragDrop) {
@@ -103,30 +116,33 @@ namespace webui {
             }
 
             // use linear arrangement util
-            LinearArrangement::Elem elems[children.size() + 1];
-            LinearArrangement la(elems, boxAvail.pos[coord]);
+            LinearArrangement<float>::Elem elems[children.size() + 1];
+            LinearArrangement<float> la(elems, boxAvail.pos[coord]);
             for (auto child: children)
                 if (child->isVisible())
                     la.add(child->box.size[coord], child->size[coord].get(boxAvail.size[coord]), child->size[coord].relative);
                 else
                     la.add(child->box.size[coord], 0, true);
             stable = la.calculate(boxAvail.size[coord]);
-            if (!coord)
-                for (size_t idx = 0; idx < children.size(); idx++) {
-                    auto* child(children[idx]);
-                    stable &= child->layout(Box4f(la.get(idx), boxAvail.pos.y, la.get(idx + 1) - la.get(idx), child->size[1].get(box.size.y)));
-                }
-            else
-                for (size_t idx = 0; idx < children.size(); idx++) {
-                    auto* child(children[idx]);
-                    stable &= child->layout(Box4f(box.pos.x, la.get(idx), child->size[0].get(box.size.x), la.get(idx + 1) - la.get(idx)));
-                }
 
-            // adaptative size
-            if (size[coord].adapt) {
-                size[coord].size = elems[children.size()].posTarget - elems[0].posTarget;
-                if (size[coord].size != box.size[coord]) stable = false;
+            float lastCoord(la.get(0));
+            for (size_t idx = 0; idx < children.size(); idx++) {
+                auto* child(children[idx]);
+                Box4f b;
+                float newCoord = la.get(idx + 1);
+                // calculate children box
+                b.pos[coord]   = lastCoord;
+                b.pos[coord2]  = box.pos[coord2];
+                b.size[coord]  = newCoord - lastCoord;
+                b.size[coord2] = child->size[coord2].get(box.size[coord2]);
+                lastCoord      = newCoord;
+
+                // recurse layout
+                stable &= child->layout(b);
             }
+            // adaptative size
+            if (size[coord].adapt)
+                size[coord].size = elems[children.size()].posTarget - elems[0].posTarget; // total space required
             if (size[coord2].adapt) {
                 if (children.empty())
                     size[coord2].size = 0;

@@ -43,6 +43,10 @@ namespace webui {
         const auto& actionTable(Context::app.getActionTable(actions));
         Context::actions.execute(actionTable.onRender, this);
 
+        // visibility of layouts
+        Context::renderVisibilityBox.pos.assign(0, 0);
+        Context::renderVisibilityBox.size.assign(Context::render.getWidth(), Context::render.getHeight());
+
         for (auto* child: children) child->render(alphaMult);
     }
 

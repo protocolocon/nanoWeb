@@ -12,17 +12,18 @@
 
 namespace webui {
 
+    template <typename T>
     class LinearArrangement {
     public:
         struct Elem {
             bool resizable;
-            short pos, posTarget;
+            T pos, posTarget;
         };
 
     public:
-        inline LinearArrangement(Elem* elems, int initialPos);
-        inline void add(int sizeCurrent, int sizeTarget, bool resizable);
-        bool calculate(int sizeAvailable); // returns true if stable
+        inline LinearArrangement(Elem* elems, T initialPos);
+        inline void add(T sizeCurrent, T sizeTarget, bool resizable);
+        bool calculate(T sizeAvailable); // returns true if stable
         inline int get(int idx) const { return elems[idx].pos; }
         void dump() const;
 
@@ -32,12 +33,14 @@ namespace webui {
     };
 
 
-    LinearArrangement::LinearArrangement(Elem* elems, int initialPos): elems(elems), nElems(1) {
+    template<typename T>
+    LinearArrangement<T>::LinearArrangement(Elem* elems, T initialPos): elems(elems), nElems(1) {
         elems[0].resizable = false;
         elems[0].pos = elems[0].posTarget = initialPos;
     }
 
-    void LinearArrangement::add(int sizeCurrent, int sizeTarget, bool resizable) {
+    template<typename T>
+    void LinearArrangement<T>::add(T sizeCurrent, T sizeTarget, bool resizable) {
         auto& b(elems[nElems - 1]);
         auto& e(elems[nElems++]);
         e.resizable = resizable;

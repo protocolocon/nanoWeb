@@ -34,11 +34,12 @@ namespace webui {
         inline int getTime1MRatio() const { return time1MRatio; }
         inline void resetRatio() { timeRatio = 0x10000; time1MRatio = 0; }
         template <typename T>
-        inline bool getCloser(T& x, int target) const {
-            int xx((int(x) * timeRatio + target * time1MRatio) >> 16);
+        inline bool getCloser(T& xT, int target) const {
+            int x(xT);
+            int xx((x * timeRatio + target * time1MRatio) >> 16);
             if (x == xx && xx != target) xx = xx < target ? xx + 1 : xx - 1;
-            x = xx;
-            return xx == target;
+            xT = xx;
+            return x == target;
         }
 
     public:
@@ -47,6 +48,7 @@ namespace webui {
         static Actions actions;
         static Application app;
         static StringManager strMng;
+        static Box4f renderVisibilityBox;
 
     private:
         bool renderForced;
