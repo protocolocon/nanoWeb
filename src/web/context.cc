@@ -69,10 +69,12 @@ namespace webui {
     }
 
     void Context::updateTime() {
+        const auto factor(0.96f); // how slow animations are processed (the closer to 1, the slower)
+
         timeDiffMs = -timeMs;
         timeMs = getTimeNowMs();
         timeDiffMs += timeMs;
-        timeRatio = int(65536.f * powf(0.96f, float(timeDiffMs)));
+        timeRatio = int(65536.f * powf(factor, float(timeDiffMs)));
         time1MRatio = 65536 - timeRatio;
     }
 
