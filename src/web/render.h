@@ -48,6 +48,7 @@ namespace webui {
         inline void scale(float x, float y) const { nvgScale(vg, x, y); }
         inline void resetTransform() const { nvgResetTransform(vg); }
         inline void scissor(float x, float y, float w, float h) const { nvgScissor(vg, x, y, w, h); }
+        inline void resetScissor() const { nvgResetScissor(vg); }
         inline void font(int iFont) const { nvgFontFaceId(vg, iFont); }
         inline void fontSize(float size) const { nvgFontSize(vg, size); }
         void textAlign(int align);

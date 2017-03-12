@@ -62,6 +62,7 @@ namespace webui {
         Scale,
         ResetTransform,
         Scissor,
+        ResetScissor,
         Query,
         TriggerTimers,
         Log,                         // log(StringId)

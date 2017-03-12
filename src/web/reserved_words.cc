@@ -81,6 +81,7 @@ namespace {
         "resetTransform" _
         "set" _
         "scissor" _
+        "resetScissor" _
         "query" _
         "triggerTimers" _
         "CLast" _

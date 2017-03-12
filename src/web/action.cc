@@ -191,6 +191,10 @@ namespace {
         stack.resize(stack.size() - 4);
     }
 
+    void FunctionResetScissor() {
+        Context::render.resetScissor();
+    }
+
     void FunctionQuery() {
         assert(stack.size() >= 2);
         auto* s(&stack.back() - 1);
@@ -321,6 +325,7 @@ namespace {
         { Identifier::scale,           FunctionScale,          FloatPrototype,        Type::LastType },
         { Identifier::resetTransform,  FunctionResetTransform, VoidPrototype,         Type::LastType },
         { Identifier::scissor,         FunctionScissor,        Float4Prototype,       Type::LastType },
+        { Identifier::resetScissor,    FunctionResetScissor,   VoidPrototype,         Type::LastType },
         { Identifier::query,           FunctionQuery,          QueryPrototype,        Type::LastType },
         { Identifier::triggerTimers,   FunctionTriggerTimers,  VoidPrototype,         Type::LastType },
         { Identifier::log,             FunctionLog,            StrIdPrototype,        Type::LastType },
