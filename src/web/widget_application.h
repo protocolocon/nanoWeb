@@ -25,6 +25,8 @@ namespace webui {
 
     public:
         RGBA background;
+        V2f cursor;
+        V2f hover;
     };
 
 }

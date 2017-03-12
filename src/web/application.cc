@@ -136,6 +136,11 @@ namespace webui {
         if (root) {
             Context::render.beginFrame();
             root->render(0x100);
+            if (Input::hoverWidget) {
+                const auto& actionTable(getActionTable(Input::hoverWidget->actions));
+                assert(actionTable.onHover);
+                Context::actions.execute(actionTable.onHover, Input::hoverWidget);
+            }
             Context::render.endFrame();
         }
     }
@@ -591,6 +596,7 @@ namespace webui {
         case Identifier::onClick:        table.onClick        = iAction; break;
         case Identifier::onRender:       table.onRender       = iAction; break;
         case Identifier::onRenderActive: table.onRenderActive = iAction; break;
+        case Identifier::onHover:        table.onHover        = iAction; break;
         default: DIAG(LOG("unknown action")); return false;
         }
         return true;

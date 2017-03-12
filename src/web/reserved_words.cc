@@ -46,12 +46,17 @@ namespace {
         "onRender" _
         "onRenderActive" _
         "onTimeout" _
+        "onHover" _
         "define" _
         "self" _
         "repeat" _
         "delay" _
         "parent" _
         "margin" _
+        "mouseX" _
+        "mouseY" _
+        "hoverX" _
+        "hoverY" _
         "ALast" _
 
         "propInt16" _

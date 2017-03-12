@@ -38,6 +38,7 @@ namespace {
             { Identifier::onClick,        PROP(Widget, actions,    ActionTable,  4, 0, 1) },
             { Identifier::onRender,       PROP(Widget, actions,    ActionTable,  4, 0, 1) },
             { Identifier::onRenderActive, PROP(Widget, actions,    ActionTable,  4, 0, 1) },
+            { Identifier::onHover,        PROP(Widget, actions,    ActionTable,  4, 0, 1) },
         }
     };
 
@@ -160,6 +161,10 @@ namespace webui {
             // cursor
             if (actionTable.onClick) Context::cursor = Cursor::Pointer;
             else if (scrollable) Context::cursor = Cursor::Hand;
+
+            // hover widget
+            if (actionTable.onHover) Context::hoverWidget = this;
+
             recurse = true;
         } else {
             // outside

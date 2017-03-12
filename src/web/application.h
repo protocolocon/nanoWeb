@@ -46,7 +46,7 @@ namespace webui {
 
         // actions
         struct ActionTable {
-            inline ActionTable(): onEnter(0), onLeave(0), onClick(0), onRender(0), onRenderActive(0) { }
+            inline ActionTable(): onEnter(0), onLeave(0), onClick(0), onRender(0), onRenderActive(0), onHover(0) { }
             union {
                 struct {
                     int onEnter;
@@ -54,8 +54,9 @@ namespace webui {
                     int onClick;
                     int onRender;
                     int onRenderActive;
+                    int onHover;
                 };
-                int actions[5];
+                int actions[6];
             };
         };
         inline const ActionTable& getActionTable(int actions) const { return actionTables[actions]; }

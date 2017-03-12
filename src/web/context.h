@@ -50,6 +50,7 @@ namespace webui {
         static StringManager strMng;
         static Box4f renderVisibilityBox;
         static Cursor cursor;
+        static Widget* hoverWidget;
 
     private:
         bool renderForced;

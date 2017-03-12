@@ -24,6 +24,8 @@ namespace webui {
     StringManager Context::strMng;
     Box4f Context::renderVisibilityBox;
     Cursor Context::cursor;
+    Widget* Context::hoverWidget;
+
 
     Context::Context(): renderForced(true), timeMs(getTimeNowMs()) {
     }

@@ -7,6 +7,7 @@
 */
 
 #include "widget_application.h"
+#include "input.h"
 #include "nanovg.h"
 #include "context.h"
 #include "application.h"
@@ -20,6 +21,10 @@ namespace {
     TypeWidget widgetApplicationType = {
         Identifier::Application, sizeof(WidgetApplication), {
             { Identifier::background,     PROP(WidgetApplication, background, Color,        4, 0, 0) },
+            { Identifier::mouseX,         PROP(WidgetApplication, cursor.x,   Float,        4, 0, 0) },
+            { Identifier::mouseY,         PROP(WidgetApplication, cursor.y,   Float,        4, 0, 0) },
+            { Identifier::hoverX,         PROP(WidgetApplication, hover.x,    Float,        4, 0, 0) },
+            { Identifier::hoverY,         PROP(WidgetApplication, hover.y,    Float,        4, 0, 0) },
         }
     };
 
@@ -46,6 +51,13 @@ namespace webui {
         // visibility of layouts
         Context::renderVisibilityBox.pos.assign(0, 0);
         Context::renderVisibilityBox.size.assign(Context::render.getWidth(), Context::render.getHeight());
+
+        // reset hover
+        Context::hoverWidget = nullptr;
+
+        // mouse cursor
+        cursor = Input::cursor;
+        hover = Input::hoverCursor;
 
         for (auto* child: children) child->render(alphaMult);
     }

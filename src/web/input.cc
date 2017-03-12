@@ -15,6 +15,11 @@
 using namespace std;
 using namespace webui;
 
+namespace {
+
+    const int HoverTimeMs = 500;
+}
+
 namespace webui {
 
     void Input::init() {
@@ -68,6 +73,21 @@ namespace webui {
             // call update if required
             if (!updateCalled && (cursor.x || cursor.y)) // in the browser, when cursor is outside, cursor is (0, 0)
                 ret |= Context::app.update();
+            // hover
+            if (hoverWidget != Context::hoverWidget) {
+                if (hoverWidget) ret = true;               // make hover effect disappear immediately
+                hoverTime = ctx.getTimeMs() + HoverTimeMs; // reset trigger
+                hoverWidget = nullptr;                     // deactivate hover widget
+            }
+        } else {
+            // hover
+            if (hoverTime && ctx.getTimeMs() > hoverTime) {
+                hoverTime = 0;                             // deactivate trigger
+                hoverWidget = Context::hoverWidget;        // activate hover widget if any
+                hoverCursor = cursor;
+                ret = true;                                // make hover appear immediately
+                //DIAG(LOG("hover: %p", Input::hoverWidget));
+            }
         }
         updateCalled = updateModifications = false;
         return ret;
@@ -92,5 +112,8 @@ namespace webui {
     int Input::mouseAction;
     int Input::currentMods;
     Widget* Input::mouseButtonWidget;
+    int Input::hoverTime;
+    Widget* Input::hoverWidget;
+    V2f Input::hoverCursor;
 
 }

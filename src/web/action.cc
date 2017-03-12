@@ -673,13 +673,13 @@ namespace webui {
             propId = command[1].strId;
             DIAG(if (!propId.valid()) LOG("invalid property id"));
             // property
-            const Property* prop(widget->getProp(Identifier(propId.getId())));
+            const Property* prop(nullptr);
             Widget* parent(widget);
             param = 0;
-            while (!prop && parent->parent) { // try to find the property in hierarchy
+            while (parent) { // try to find the property in hierarchy
+                if ((prop = parent->getProp(Identifier(propId.getId())))) break;
                 parent = parent->parent;
                 param++;
-                prop = parent->getProp(Identifier(propId.getId()));
             }
             if (param && parent) {
                 // parent property

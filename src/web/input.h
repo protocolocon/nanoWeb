@@ -31,6 +31,11 @@ namespace webui {
         static int mouseAction;            // glfw enum
         static int currentMods;            // glfw
         static Widget* mouseButtonWidget;  // the widget taking the press action
+
+        // hover
+        static int hoverTime;
+        static Widget* hoverWidget;
+        static V2f hoverCursor;
     };
 
 }
