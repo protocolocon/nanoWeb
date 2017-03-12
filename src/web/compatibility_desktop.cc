@@ -45,6 +45,7 @@ namespace webui {
     void setMainLoop(void (*loop)(void)) {
         // initialize cursors
         cursors[1] = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
+        cursors[2] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
 
         // synchronous main loop
         while (mainLoopRunning) {

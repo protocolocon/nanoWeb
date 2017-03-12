@@ -60,6 +60,7 @@ namespace webui {
     enum class Cursor {
         Default,
         Pointer,
+        Hand,
         Last
     };
     void setCursor(Cursor c);

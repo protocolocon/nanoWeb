@@ -45,6 +45,7 @@ namespace webui {
         switch (c) {
         case Cursor::Default: EM_ASM(Module.canvas.style.cursor = 'default'); break;
         case Cursor::Pointer: EM_ASM(Module.canvas.style.cursor = 'pointer'); break;
+        case Cursor::Hand:    EM_ASM(Module.canvas.style.cursor = 'all-scroll'); break;
         default: DIAG(LOG("invalid cursor"));
         }
     }
