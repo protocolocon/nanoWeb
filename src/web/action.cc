@@ -120,47 +120,51 @@ namespace {
         stack.resize(stack.size() - 2);
     }
 
-    inline void FunctionTextCommon(float x, float y, const char* text) {
+    inline float FunctionTextCommon(float x, float y, const char* text) {
         V2f pos(x, y);
         pos += execWidget->box.pos + execWidget->box.size * 0.5f;
         Context::render.textAlign(NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        Context::render.text(pos.x, pos.y, text);
+        return Context::render.text(pos.x, pos.y, text);
     }
 
     void FunctionText() {
         assert(stack.size() >= 3);
         auto* s(&stack.back() - 2);
-        FunctionTextCommon(s[0].f, s[1].f, Context::strMng.get(s[2].l));
-        stack.resize(stack.size() - 3);
+        float end(FunctionTextCommon(s[0].f, s[1].f, Context::strMng.get(s[2].l)));
+        stack.resize(stack.size() - 2);
+        stack.back().f = end;
     }
 
     void FunctionTextCharPtr() {
         assert(stack.size() >= 3);
         auto* s(&stack.back() - 2);
-        FunctionTextCommon(s[0].f, s[1].f, s[2].text);
-        stack.resize(stack.size() - 3);
+        float end(FunctionTextCommon(s[0].f, s[1].f, s[2].text));
+        stack.resize(stack.size() - 2);
+        stack.back().f = end;
     }
 
-    inline void FunctionTextLeftCommon(float x, float y, const char* text) {
+    inline float FunctionTextLeftCommon(float x, float y, const char* text) {
         V2f pos(x, y);
         pos += execWidget->box.pos;
         pos.y += execWidget->box.size.y * 0.5f;
         Context::render.textAlign(NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-        Context::render.text(pos.x, pos.y, text);
+        return Context::render.text(pos.x, pos.y, text);
     }
 
     void FunctionTextLeft() {
         assert(stack.size() >= 3);
         auto* s(&stack.back() - 2);
-        FunctionTextLeftCommon(s[0].f, s[1].f, Context::strMng.get(s[2].l));
-        stack.resize(stack.size() - 3);
+        float end(FunctionTextLeftCommon(s[0].f, s[1].f, Context::strMng.get(s[2].l)));
+        stack.resize(stack.size() - 2);
+        stack.back().f = end;
     }
 
     void FunctionTextLeftCharPtr() {
         assert(stack.size() >= 3);
         auto* s(&stack.back() - 2);
-        FunctionTextLeftCommon(s[0].f, s[1].f, s[2].text);
-        stack.resize(stack.size() - 3);
+        float end(FunctionTextLeftCommon(s[0].f, s[1].f, s[2].text));
+        stack.resize(stack.size() - 2);
+        stack.back().f = end;
     }
 
     void FunctionTranslate() {
@@ -309,10 +313,10 @@ namespace {
         { Identifier::strokeColor,     FunctionStrokeColor,    ColorPrototype,        Type::LastType },
         { Identifier::stroke,          FunctionStroke,         VoidPrototype,         Type::LastType },
         { Identifier::font,            FunctionFont,           FontPrototype,         Type::LastType },
-        { Identifier::text,            FunctionText,           TextPrototype,         Type::LastType },
-        { Identifier::text,            FunctionTextCharPtr,    TextCharPtrPrototype,  Type::LastType },
-        { Identifier::textLeft,        FunctionTextLeft,       TextPrototype,         Type::LastType },
-        { Identifier::textLeft,        FunctionTextLeftCharPtr,TextCharPtrPrototype,  Type::LastType },
+        { Identifier::text,            FunctionText,           TextPrototype,         Type::Float },
+        { Identifier::text,            FunctionTextCharPtr,    TextCharPtrPrototype,  Type::Float },
+        { Identifier::textLeft,        FunctionTextLeft,       TextPrototype,         Type::Float },
+        { Identifier::textLeft,        FunctionTextLeftCharPtr,TextCharPtrPrototype,  Type::Float },
         { Identifier::translate,       FunctionTranslate,      Float2Prototype,       Type::LastType },
         { Identifier::scale,           FunctionScale,          FloatPrototype,        Type::LastType },
         { Identifier::resetTransform,  FunctionResetTransform, VoidPrototype,         Type::LastType },
