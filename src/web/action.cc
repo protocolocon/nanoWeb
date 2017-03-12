@@ -739,16 +739,16 @@ namespace webui {
     long Actions::getPropertyData(const void* data, Command command) {
         float f;
         switch (command.type()) {
-        case Type::Bit:      f = (reinterpret_cast<const uint8_t*>(data)[command.param >> 3] >> (command.param & 7)) & 1; break;
-        case Type::Uint8:    f = reinterpret_cast<const uint8_t*>(data)[command.param]; break;
-        case Type::Int16:    f = reinterpret_cast<const int16_t*>(data)[command.param]; break;
-        case Type::Int32:    f = reinterpret_cast<const int32_t*>(data)[command.param]; break;
+        case Type::Bit:          f = (reinterpret_cast<const uint8_t*>(data)[command.param >> 3] >> (command.param & 7)) & 1; break;
+        case Type::Uint8:        f = reinterpret_cast<const uint8_t*>(data)[command.param]; break;
+        case Type::Int16:        f = reinterpret_cast<const int16_t*>(data)[command.param]; break;
+        case Type::Int32:        f = reinterpret_cast<const int32_t*>(data)[command.param]; break;
+        case Type::SizeRelative: f = reinterpret_cast<const int16_t*>(data)[command.param] & 0x3fff; break;
         case Type::Id:
         case Type::StrId:
         case Type::Float:
         case Type::Color:
         case Type::FontIdx:
-        case Type::SizeRelative:
                              return reinterpret_cast<const uint32_t*>(data)[command.param];
         case Type::Text:
         case Type::VoidPtr:
@@ -800,6 +800,7 @@ namespace webui {
                         (prop->type == Type::SizeRelative && valueType == Type::Float) ||
                         (prop->type == Type::Float        && valueType == Type::Bit)   ||
                         (prop->type == Type::Float        && valueType == Type::Int16) ||
+                        (prop->type == Type::Float        && valueType == Type::SizeRelative) ||
                         (prop->type == Type::StrId        && valueType == Type::Id))   valueType = prop->type;
                     else if (prop->type == Type::Text && valueType == Type::StrView) {
                         // promote string view to text
@@ -838,7 +839,7 @@ namespace webui {
                     if (prop->type != *proto && *proto != Type::Unknown) {
                         if (*proto == Type::Float &&
                             (prop->type == Type::Bit   || prop->type == Type::Uint8 ||
-                             prop->type == Type::Int16 || prop->type == Type::Int32)) {
+                             prop->type == Type::Int16 || prop->type == Type::Int32 || prop->type == Type::SizeRelative)) {
                             // these types are promoted to float, so allow cast
                         } else if (iFunction == int(Function::Text) && prop->type == Type::Text) {
                             // change function from text to textCharPtr
