@@ -157,7 +157,9 @@ namespace webui {
                 inside = 1;
                 executed = Context::actions.execute(actionTable.onEnter, this);
             }
-            Context::cursor = actionTable.onClick ? Cursor::Pointer : Cursor::Default;
+            // cursor
+            if (actionTable.onClick) Context::cursor = Cursor::Pointer;
+            else if (scrollable) Context::cursor = Cursor::Hand;
             recurse = true;
         } else {
             // outside

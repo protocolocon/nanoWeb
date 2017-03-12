@@ -51,6 +51,7 @@ namespace {
         "repeat" _
         "delay" _
         "parent" _
+        "margin" _
         "ALast" _
 
         "propInt16" _

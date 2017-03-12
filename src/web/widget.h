@@ -105,7 +105,8 @@ namespace webui {
                 uint8_t constStructural:1;// indicates this widget is part of the construction structure and should not be deleted
                 uint8_t zoom;
                 uint8_t alpha;
-                uint8_t reserved2;
+                uint8_t scrollable:1;     // if widget (mostly layouts) declares that content can be scrolled around
+                uint8_t reserved:7;
             };
         };
         int actions;

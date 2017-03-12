@@ -22,14 +22,17 @@ namespace {
     };
 
     TypeWidget widgetLayoutVerType = {
-        Identifier::LayoutVer, sizeof(WidgetLayout), { }
+        Identifier::LayoutVer, sizeof(WidgetLayout), {
+            { Identifier::margin,         PROP(WidgetLayout, margin,     Float,        4, 0, 0) },
+        }
     };
 
 }
 
 namespace webui {
 
-    WidgetLayout::WidgetLayout(Widget* parent, int coord): Widget(parent), coord(coord), dragDrop(nullptr) {
+    WidgetLayout::WidgetLayout(Widget* parent, int coord):
+        Widget(parent), margin(0), scrolling(false), coord(coord), position(1e10f), dragDrop(nullptr) {
         typeWidget = coord ? &widgetLayoutVerType : &widgetLayoutHorType;
     }
 
@@ -65,8 +68,25 @@ namespace webui {
     }
 
     bool WidgetLayout::input() {
+        // scroll content
+        if (scrollable && Context::cursor == Cursor::Hand && Input::mouseButtonAction &&
+            Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT && Input::mouseAction == GLFW_PRESS) {
+            // this widge takes care of the event and does not propagate upwards
+            Input::mouseButtonAction = false;
+            Input::mouseButtonWidget = this;
+            Input::cursorLeftPress[coord] -= position;
+            scrolling = true;
+        } else if (scrolling) {
+            if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT && Input::mouseAction == GLFW_RELEASE) {
+                scrolling = false;
+            } else if (Input::mouseAction) {
+                position = Input::cursor[coord] - Input::cursorLeftPress[coord];
+                return true;
+            }
+        }
+
+        // drag & drop
         if (Input::mouseButtonWidget && Input::cursorLeftPress.manhatan(Input::cursor) > 16) {
-            // drag & drop
             if (draggable && !dragDrop) {
                 // check if clicked in one of layout widgets
                 for (size_t idx = 0; idx < children.size(); idx++)
@@ -89,6 +109,8 @@ namespace webui {
         bool stable(true);
         box = boxAvail;
         if (visible && box.size[coord] >= 0) {
+            // margin (only once)
+            if (position == 1e10f) position = margin;
             int coord2(coord ^ 1);
             // drag & drop
             float prevCoord(0);
@@ -117,7 +139,7 @@ namespace webui {
 
             // use linear arrangement util
             LinearArrangement<float>::Elem elems[children.size() + 1];
-            LinearArrangement<float> la(elems, boxAvail.pos[coord]);
+            LinearArrangement<float> la(elems, boxAvail.pos[coord] + position);
             for (auto child: children)
                 if (child->isVisible())
                     la.add(child->box.size[coord], child->size[coord].get(boxAvail.size[coord]), child->size[coord].relative);
@@ -141,8 +163,21 @@ namespace webui {
                 stable &= child->layout(b);
             }
             // adaptative size
-            if (size[coord].adapt)
-                size[coord].size = elems[children.size()].posTarget - elems[0].posTarget; // total space required
+            float requiredSize(elems[children.size()].posTarget - elems[0].posTarget);
+            if (size[coord].adapt) {
+                size[coord].size = requiredSize; // total space required
+                scrollable = 0;
+            } else {
+                scrollable = box.size[coord] + 1.1f < requiredSize;
+                // converge position
+                if (!scrolling) {
+                    float targetPosition(position);
+                    if (targetPosition > margin) targetPosition = margin;
+                    else if (targetPosition < margin && targetPosition < box.size[coord] - requiredSize - margin)
+                        targetPosition = box.size[coord] - requiredSize - margin;
+                    stable &= ctx.getCloser(position, targetPosition);
+                }
+            }
             if (size[coord2].adapt) {
                 if (children.empty())
                     size[coord2].size = 0;
