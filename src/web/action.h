@@ -163,7 +163,7 @@ namespace webui {
         bool execute(int iAction, Widget* widget);
 
         // evaluate property: executes an action and sets corresponding value to property
-        bool evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget, bool onlyIfTemplated);
+        bool evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget, bool onlyIfTemplated, bool define);
 
         // dump action and stack
         DIAG(void dump(int i) const);
@@ -174,6 +174,7 @@ namespace webui {
         // compiled actions
         std::vector<Command> actions;
         bool templateFound;
+        bool defining;
 
         bool addRecur(MLParser& parser, int iEntry, int fEntry);
         bool checkFunctionParams(int iFunction, int iAction, Widget* widget);

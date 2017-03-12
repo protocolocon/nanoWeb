@@ -492,7 +492,7 @@ namespace webui {
         }
     }
 
-    bool Actions::evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget, bool onlyIfTemplated) {
+    bool Actions::evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget, bool onlyIfTemplated, bool define) {
         // creating actions: prop = expression
         int iAction(actions.size());
         actions.push_back(Command(Instruction::PushConstant, Type::Id));
@@ -505,10 +505,11 @@ namespace webui {
             return false;
         }
         if (prop->type == Type::ActionTable) actions.resize(iAction); // action
+        defining = define;
         templateFound = false;
         if (!add(parser, iEntry, fEntry)) {
-            DIAG(LOG("evaluating property"));
-            return false;
+            DIAG(LOG("evaluating property: hasTemplates=%d defining=%d", templateFound, defining));
+            return templateFound && defining; // templatized attribute of template while defining
         }
         if (!onlyIfTemplated || templateFound) {
             if (prop->type == Type::ActionTable) {
@@ -593,10 +594,11 @@ namespace webui {
                 break;
             case MLParser::EntryType::Wildcar: {
                 int iTpl, fTpl;
+                templateFound = true;
+                if (defining) return false;
                 if (!Context::app.startTemplate(iTpl, fTpl) ||
                     !addRecur(Context::app.getTemplateParser(), iTpl, fTpl) ||
                     !Context::app.endTemplate()) return false;
-                templateFound = true;
                 break;
             }
             default:

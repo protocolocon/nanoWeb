@@ -289,14 +289,14 @@ namespace webui {
                 }
                 if (int(key) > int(Identifier::ALast) && int(key) <= int(Identifier::PLast)) {
                     // addition of properties in widget definition
-                    DIAG(if (!cons.define) {
+                    DIAG(if (!cons.define && iTpl <= 0) {
                             LOG("defining a property for a widget that is not being defined");
                             tree.error(entryKey.pos, "=>", entryKey.line);
                             return nullptr;
                         });
                 } else {
                     auto id(cons.widget->id);
-                    if(!Context::actions.evalProperty(tree, valEntry, tree[valEntry].next, key, cons.widget, cons.update)) { // eval property
+                    if(!Context::actions.evalProperty(tree, valEntry, tree[valEntry].next, key, cons.widget, cons.update, cons.define)) { // eval property
                         DIAG(
                             LOG("warning: unknown attribute %s with value %.*s", Context::strMng.get(key), tree.size(valEntry), tree[valEntry].pos);
                             tree.error(entryKey.pos, "=>", entryKey.line);
