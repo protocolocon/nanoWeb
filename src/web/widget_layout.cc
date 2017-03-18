@@ -179,10 +179,12 @@ namespace webui {
                 else if (positionTarget < margin && positionTarget < box.size[coord] - requiredSize - margin)
                     diff = box.size[coord] - requiredSize - margin - positionTarget;
                 if (scrolling) {
+                    // when scrolling with the mouse, don't separate content too much from limits
                     const float tension(0.7f);
                     float diffTension(diff > 0 ? -powf(diff, tension) : powf(-diff, tension));
                     position = positionTarget + diff + diffTension;
                 } else {
+                    // scrolling with mouse wheel or converging to position
                     positionTarget += diff;
                     stable &= ctx.getCloser(position, positionTarget);
                 }
