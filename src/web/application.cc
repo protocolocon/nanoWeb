@@ -188,19 +188,22 @@ namespace webui {
             break;
         }
         default: {
-            // pass directly to the widget
-            auto it(widgets.find(xhr->getId()));
-            if (it == widgets.end()) {
-                DIAG(LOG("internal: cannot find template %s", Context::strMng.get(xhr->getId())));
+            // pass directly to the widget(s)
+            // parse received ML
+            if (!tpl.parse(xhr->getData(), xhr->getNData())) {
+                DIAG(LOG("cannot parse server ML"));
                 dev = false;
-            } else
-                if (!tpl.parse(xhr->getData(), xhr->getNData()) || tpl.empty() || tpl[0].type() != MLParser::EntryType::List) {
-                    DIAG(LOG("cannot parse template info or is not a complete list"));
-                    dev = false;
-                } else {
-                    //DIAG(LOG("adding data to widget: %s", Context::strMng.get(xhr->getId())); tpl.dumpTree());
-                    dev = it->second->setData();
+            } else {
+                if (!tpl.empty()) {
+                    if (tpl[0].type() == MLParser::EntryType::List) {
+                        // provide server info to single widget
+                        dev = setData(xhr->getId(), 1, tpl[0].next);
+                    } else if (tpl[0].type() == MLParser::EntryType::Object) {
+                        // several initialization lists
+                        dev = setDataMultiple(1, tpl[0].next);
+                    }
                 }
+            }
             break;
         }
         }
@@ -208,10 +211,41 @@ namespace webui {
         return dev;
     }
 
-    bool Application::updateTemplate(WidgetTemplate* tplWidget) {
+    bool Application::setData(StringId widgetId, int iTpl, int fTpl) {
+        auto it(widgets.find(widgetId));
+        if (it == widgets.end()) {
+            DIAG(LOG("internal: cannot find template %s", Context::strMng.get(widgetId)));
+            return false;
+        }
+        return it->second->setData(iTpl, fTpl);
+    }
+
+    bool Application::setDataMultiple(int iEntry, int fEntry) {
         bool dev(true);
-        iTpl = 1;
-        fTpl = tpl[0].next;
+        while (iEntry < fEntry) {
+            // only key: value are accepted
+            if (tpl[iEntry].type() != MLParser::EntryType::Id) {
+                DIAG(LOG("expecting key: value in object"));
+                dev = false;
+                break;
+            }
+            auto valEntry(tpl[iEntry + 1]);
+            if (valEntry.type() != MLParser::EntryType::List) {
+                DIAG(LOG("expecting list as value"));
+                dev = false;
+                break;
+            }
+            auto widgetId(tpl.asId(iEntry));
+            dev &= setData(widgetId, iEntry + 2, valEntry.next);
+            iEntry = valEntry.next;
+        }
+        return dev;
+    }
+
+    bool Application::updateTemplate(WidgetTemplate* tplWidget, int iTpl_, int fTpl_) {
+        bool dev(true);
+        iTpl = iTpl_;
+        fTpl = fTpl_;
 
         tree.swap(tplWidget->getParser());
         //DIAG(LOG("template with description:"); tree.dumpTree());

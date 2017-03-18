@@ -24,7 +24,7 @@ namespace webui {
 
         // polymorphic interface
         virtual Identifier baseType() const final override { return Identifier::Template; }
-        virtual bool setData() final override;
+        virtual bool setData(int iTpl, int fTpl) final override;
 
     public:
         MLParser parser;

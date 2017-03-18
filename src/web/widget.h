@@ -39,9 +39,9 @@ namespace webui {
         // polymorphic interface
         virtual Identifier baseType() const { return Identifier::Widget; }
         virtual void render(int alphaMult);
-        virtual bool input();                  // returns true if actions were executed (affecting application)
-        virtual bool layout(const Box4f& box); // returns true if stable
-        virtual bool setData();                // returns true if ok
+        virtual bool input();                     // returns true if actions were executed (affecting application)
+        virtual bool layout(const Box4f& box);    // returns true if stable
+        virtual bool setData(int iTpl, int fTpl); // returns true if ok
 
         // render utils
         int renderBase(int alphaMult);

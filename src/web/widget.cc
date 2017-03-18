@@ -108,8 +108,8 @@ namespace webui {
         return animeAlpha() && stable;
     }
 
-    bool Widget::setData() {
-        DIAG(LOG("widget does not implement setData()"));
+    bool Widget::setData(int iTpl, int fTpl) {
+        DIAG(LOG("widget %s of type %s, does not implement setData()", Context::strMng.get(id), Context::strMng.get(type())));
         return false;
     }
 

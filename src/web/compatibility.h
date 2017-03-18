@@ -59,8 +59,8 @@ namespace webui {
     // cursors
     enum class Cursor {
         Default,
-        Pointer,
-        Hand,
+        Pointer,       // for links
+        Hand,          // for scrolls
         Last
     };
     void setCursor(Cursor c);

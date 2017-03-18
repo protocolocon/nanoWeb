@@ -32,8 +32,8 @@ namespace webui {
         return widgetTemplateType;
     }
 
-    bool WidgetTemplate::setData() {
-        return Context::app.updateTemplate(this);
+    bool WidgetTemplate::setData(int iTpl, int fTpl) {
+        return Context::app.updateTemplate(this, iTpl, fTpl);
     }
 
 }

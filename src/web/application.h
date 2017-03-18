@@ -70,7 +70,7 @@ namespace webui {
         void onError(RequestXHR* xhr);
 
         // template
-        bool updateTemplate(WidgetTemplate* widget);
+        bool updateTemplate(WidgetTemplate* widget, int iTpl, int fTpl);
         inline MLParser& getTemplateParser() { return tpl; }
         bool startTemplate(int& iTpl, int& fTpl);
         bool endTemplate();
@@ -122,6 +122,10 @@ namespace webui {
         bool registerWidget(Widget* widget);
         int getWidgetRange(StringId widgetId) const;
         Widget* createType(Widget* widget, Identifier typeId, int iEntry, int fEntry);
+
+        // provide server data to widget(s)
+        bool setData(StringId widgetId, int iTpl, int fTpl);
+        bool setDataMultiple(int iEntry, int fEntry);
 
         // actions
         bool checkActions();
