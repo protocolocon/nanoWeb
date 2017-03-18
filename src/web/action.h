@@ -160,7 +160,8 @@ namespace webui {
 
         // execute
         template <bool DryRun = false>
-        bool execute(int iAction, Widget* widget);
+        bool execute(int iAction, Widget* widget); // false on error
+        bool executeOrEmpty(int iAction, Widget* widget) { return iAction ? execute(iAction, widget) : false; } // false on error or empty
 
         // evaluate property: executes an action and sets corresponding value to property
         bool evalProperty(MLParser& parser, int iEntry, int fEntry, StringId propId, Widget* widget, bool onlyIfTemplated, bool define);

@@ -156,7 +156,7 @@ namespace webui {
             auto& actionTable(Context::app.getActionTable(actions));
             if (!inside) {
                 inside = 1;
-                executed = Context::actions.execute(actionTable.onEnter, this);
+                executed = Context::actions.executeOrEmpty(actionTable.onEnter, this);
             }
             // cursor
             if (actionTable.onClick) Context::cursor = Cursor::Pointer;
@@ -170,7 +170,7 @@ namespace webui {
             // outside
             if (inside) {
                 inside = 0;
-                executed = Context::actions.execute(Context::app.getActionTable(actions).onLeave, this);
+                executed = Context::actions.executeOrEmpty(Context::app.getActionTable(actions).onLeave, this);
                 recurse = true;
             }
         }
@@ -202,7 +202,7 @@ namespace webui {
         void Widget::dump(int level, bool props) const {
             bool recur(level >= 0);
             if (level < 0) level = 1;
-            LOG("%*s%-*s: %-24s %p %7.1f %7.1f - %7.1f %7.1f (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s",
+            LOG("%*s%-*s: %-24s %8p %7.1f %7.1f - %7.1f %7.1f (%6.1f%c %6.1f%c) actions: %3d  flags: %08x  size:%4d  baseType: %s",
                 level * 2, "", 64 - level*2, Context::strMng.get(id),
                 Context::strMng.get(type()),
                 this,
