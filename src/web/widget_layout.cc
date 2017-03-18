@@ -11,6 +11,7 @@
 #include "nanovg.h"
 #include "context.h"
 #include "type_widget.h"
+#include <cmath>
 
 using namespace std;
 using namespace webui;
@@ -32,7 +33,7 @@ namespace {
 namespace webui {
 
     WidgetLayout::WidgetLayout(Widget* parent, int coord):
-        Widget(parent), margin(0), scrolling(false), coord(coord), position(1e10f), dragDrop(nullptr) {
+        Widget(parent), margin(0), scrolling(false), coord(coord), positionTarget(1e10f), dragDrop(nullptr) {
         typeWidget = coord ? &widgetLayoutVerType : &widgetLayoutHorType;
     }
 
@@ -74,15 +75,18 @@ namespace webui {
             // this widge takes care of the event and does not propagate upwards
             Input::mouseButtonAction = false;
             Input::mouseButtonWidget = this;
-            Input::cursorLeftPress[coord] -= position;
+            Input::cursorLeftPress[coord] -= positionTarget;
             scrolling = true;
         } else if (scrolling) {
             if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT && Input::mouseAction == GLFW_RELEASE) {
                 scrolling = false;
             } else if (Input::mouseAction) {
-                position = Input::cursor[coord] - Input::cursorLeftPress[coord];
+                positionTarget = Input::cursor[coord] - Input::cursorLeftPress[coord];
                 return true;
             }
+        } else if (scrollable && Input::scroll[coord] != 0.0f) {
+            positionTarget += Input::scroll[coord] * 50;
+            return true;
         }
 
         // drag & drop
@@ -110,7 +114,7 @@ namespace webui {
         box = boxAvail;
         if (visible && box.size[coord] >= 0) {
             // margin (only once)
-            if (position == 1e10f) position = margin;
+            if (positionTarget == 1e10f) position = positionTarget = margin;
             int coord2(coord ^ 1);
             // drag & drop
             float prevCoord(0);
@@ -170,12 +174,17 @@ namespace webui {
             } else {
                 scrollable = box.size[coord] + 1.1f < requiredSize;
                 // converge position
-                if (!scrolling) {
-                    float targetPosition(position);
-                    if (targetPosition > margin) targetPosition = margin;
-                    else if (targetPosition < margin && targetPosition < box.size[coord] - requiredSize - margin)
-                        targetPosition = box.size[coord] - requiredSize - margin;
-                    stable &= ctx.getCloser(position, targetPosition);
+                float diff(0);
+                if (positionTarget > margin) diff = margin - positionTarget;
+                else if (positionTarget < margin && positionTarget < box.size[coord] - requiredSize - margin)
+                    diff = box.size[coord] - requiredSize - margin - positionTarget;
+                if (scrolling) {
+                    const float tension(0.7f);
+                    float diffTension(diff > 0 ? -powf(diff, tension) : powf(-diff, tension));
+                    position = positionTarget + diff + diffTension;
+                } else {
+                    positionTarget += diff;
+                    stable &= ctx.getCloser(position, positionTarget);
                 }
             }
             if (size[coord2].adapt) {

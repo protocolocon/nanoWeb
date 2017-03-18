@@ -32,6 +32,10 @@ namespace webui {
         static int currentMods;            // glfw
         static Widget* mouseButtonWidget;  // the widget taking the press action
 
+        // scroll input
+        static bool scrollAction;
+        static V2f scroll;
+
         // hover
         static int hoverTime;
         static Widget* hoverWidget;

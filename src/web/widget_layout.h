@@ -26,12 +26,13 @@ namespace webui {
         virtual bool input() final override; // returns true if actions were executed (affecting application)
         virtual bool layout(const Box4f& box) final override; // returns true if stable
 
-        float margin;       // amount of pixels before and after content
+        float margin;         // amount of pixels before and after content
 
     private:
         bool scrolling;
         int coord;
-        float position;     // when scrollable (content bigger than widget size), position of content
+        float position;       // when scrollable (content bigger than widget size), position of content
+        float positionTarget; // smoothly converge to definitive position
         Widget* dragDrop;
     };
 

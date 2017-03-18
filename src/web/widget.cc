@@ -179,7 +179,7 @@ namespace webui {
                 executed |= child->update();
 
         // specific input actions
-        if (inside && (Input::mouseButtonAction || Input::keyboardAction)) executed |= input();
+        if (inside && (Input::mouseButtonAction || Input::keyboardAction || Input::scrollAction)) executed |= input();
 
         return executed;
     }

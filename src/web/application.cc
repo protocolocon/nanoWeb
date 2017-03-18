@@ -65,7 +65,6 @@ namespace webui {
 
     void Application::refresh() {
         if (root && ((Input::refresh() | refreshTimers()) || !layoutStable)) {
-            layoutStable = root->layout(Box4f(0.f, 0.f, float(Context::render.getWidth()), float(Context::render.getHeight())));
             ctx.forceRender();
         }
     }
@@ -134,11 +133,13 @@ namespace webui {
 
     void Application::render() {
         if (root) {
+            layoutStable = root->layout(Box4f(0.f, 0.f, float(Context::render.getWidth()), float(Context::render.getHeight())));
             Context::render.beginFrame();
             root->render(0x100);
             if (Input::hoverWidget) {
                 const auto& actionTable(getActionTable(Input::hoverWidget->actions));
                 assert(actionTable.onHover);
+                Context::render.resetScissor();
                 Context::actions.execute(actionTable.onHover, Input::hoverWidget);
             }
             Context::render.endFrame();

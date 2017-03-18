@@ -31,8 +31,7 @@ namespace webui {
                 mouseAction = action;
                 currentMods = mods;
                 updateCalled = true;
-                if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT &&
-                    Input::mouseAction == GLFW_PRESS)
+                if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT && Input::mouseAction == GLFW_PRESS)
                     cursorLeftPress = cursor;
                 updateModifications |= Context::app.update();
                 if (action == GLFW_RELEASE) {
@@ -51,7 +50,14 @@ namespace webui {
                              Context::app.dump());
                 }
             });
-
+        glfwSetScrollCallback(win, [](GLFWwindow* window, double xoff, double yoff) {
+                scroll.x = xoff;
+                scroll.y = yoff;
+                scrollAction = updateCalled = true;
+                updateModifications |= Context::app.update();
+                scrollAction = false;
+                scroll.x = scroll.y = 0.0f;
+            });
     }
 
     bool Input::refresh() {
@@ -112,6 +118,10 @@ namespace webui {
     int Input::mouseAction;
     int Input::currentMods;
     Widget* Input::mouseButtonWidget;
+
+    bool Input::scrollAction;
+    V2f Input::scroll;
+
     int Input::hoverTime;
     Widget* Input::hoverWidget;
     V2f Input::hoverCursor;
