@@ -93,7 +93,7 @@ namespace webui {
     }
 
     float Render::text(float x, float y, const char* str) {
-        return nvgText(vg, x, y, str, nullptr);
+        return str ? nvgText(vg, x, y, str, nullptr) : x;
     }
 
 }
