@@ -260,7 +260,8 @@ namespace webui {
         while (true) {
             char c = get(ml);
             if (c == end) { ++ml; return true; }
-            if (!c) return ERROR_FALSE(ml, "expection '\"' or '\'' but found EOF");
+            if (c == 0x1b) ml += 4; // escape sequence \x1b + RGBA
+            else if (!c) return ERROR_FALSE(ml, "expection '\"' or '\'' but found EOF");
             ++ml;
         }
     }

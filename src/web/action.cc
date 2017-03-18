@@ -30,11 +30,12 @@ namespace {
     Type Float6Prototype[] =       { Type::Float,   Type::Float,    Type::Float, Type::Float, Type::Float, Type::Float, Type::LastType };
     Type ColorPrototype[] =        { Type::Color,   Type::LastType };
     Type StrIdPrototype[] =        { Type::StrId,   Type::LastType };
+    Type TextPrototype[] =         { Type::Text,    Type::LastType };
 
     Type ModPrototype[] =          { Type::Float,   Type::Color,    Type::LastType };
     Type FillVertGradPrototype[] = { Type::Color,   Type::Color,    Type::Float, Type::Float, Type::LastType };
     Type FontPrototype[] =         { Type::Float,   Type::FontIdx,  Type::LastType };
-    Type TextPrototype[] =         { Type::StrId,   Type::Float,    Type::Float, Type::LastType };
+    Type TextFuncPrototype[] =     { Type::StrId,   Type::Float,    Type::Float, Type::LastType };
     Type TextCharPtrPrototype[] =  { Type::Text,    Type::Float,    Type::Float, Type::LastType };
     Type QueryPrototype[] =        { Type::Id,      Type::StrId,    Type::LastType };
     Type AssignPrototype[] =       { Type::Unknown, Type::VoidPtr,  Type::LastType };
@@ -165,6 +166,16 @@ namespace {
         float end(FunctionTextLeftCommon(s[0].f, s[1].f, s[2].text));
         stack.resize(stack.size() - 2);
         stack.back().f = end;
+    }
+
+    void FunctionTextWidth() {
+        assert(stack.size() >= 1);
+        stack.back().f = Context::render.textWidth(Context::strMng.get(stack.back().l));
+    }
+
+    void FunctionTextWidthCPtr() {
+        assert(stack.size() >= 1);
+        stack.back().f = Context::render.textWidth(stack.back().text);
     }
 
     void FunctionTranslate() {
@@ -317,10 +328,12 @@ namespace {
         { Identifier::strokeColor,     FunctionStrokeColor,    ColorPrototype,        Type::LastType },
         { Identifier::stroke,          FunctionStroke,         VoidPrototype,         Type::LastType },
         { Identifier::font,            FunctionFont,           FontPrototype,         Type::LastType },
-        { Identifier::text,            FunctionText,           TextPrototype,         Type::Float },
+        { Identifier::text,            FunctionText,           TextFuncPrototype,     Type::Float },
         { Identifier::text,            FunctionTextCharPtr,    TextCharPtrPrototype,  Type::Float },
-        { Identifier::textLeft,        FunctionTextLeft,       TextPrototype,         Type::Float },
+        { Identifier::textLeft,        FunctionTextLeft,       TextFuncPrototype,     Type::Float },
         { Identifier::textLeft,        FunctionTextLeftCharPtr,TextCharPtrPrototype,  Type::Float },
+        { Identifier::textWidth,       FunctionTextWidth,      StrIdPrototype,        Type::Float },
+        { Identifier::textWidth,       FunctionTextWidthCPtr,  TextPrototype,         Type::Float },
         { Identifier::translate,       FunctionTranslate,      Float2Prototype,       Type::LastType },
         { Identifier::scale,           FunctionScale,          FloatPrototype,        Type::LastType },
         { Identifier::resetTransform,  FunctionResetTransform, VoidPrototype,         Type::LastType },
@@ -849,6 +862,9 @@ namespace webui {
                         } else if (iFunction == int(Function::TextLeft) && prop->type == Type::Text) {
                             // change function from text to textCharPtr
                             actions[iAction].param = int(Function::TextLeftCharPtr);
+                        } else if (iFunction == int(Function::TextWidth) && prop->type == Type::Text) {
+                            // change function from text to textCharPtr
+                            actions[iAction].param = int(Function::TextWidthCharPtr);
                         } else
                             // no polymorphism found
                             cast = false;

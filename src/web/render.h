@@ -53,6 +53,7 @@ namespace webui {
         inline void fontSize(float size) const { nvgFontSize(vg, size); }
         void textAlign(int align);
         float text(float x, float y, const char* str);
+        float textWidth(const char* str);
 
         int loadFont(const char* name, char* data, int nData) { return nvgCreateFontMem(vg, name, (uint8_t*)data, nData, false); }
 

@@ -82,6 +82,7 @@ namespace {
         "font" _
         "text" _
         "textLeft" _
+        "textWidth" _
         "translate" _
         "scale" _
         "resetTransform" _

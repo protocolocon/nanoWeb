@@ -58,6 +58,8 @@ namespace webui {
         TextCharPtr,
         TextLeft,
         TextLeftCharPtr,
+        TextWidth,
+        TextWidthCharPtr,
         Translate,
         Scale,
         ResetTransform,

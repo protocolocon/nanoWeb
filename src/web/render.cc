@@ -93,7 +93,34 @@ namespace webui {
     }
 
     float Render::text(float x, float y, const char* str) {
-        return str ? nvgText(vg, x, y, str, nullptr) : x;
+        if (!str) return x;
+        const char* prev(str);
+        while (*str) {
+            if (*str == 0x1b) {
+                if (prev != str) x = nvgText(vg, x, y, prev, str);
+                uint32_t c(uint32_t(str[1]) << 24 | uint32_t(str[2]) << 16 | uint32_t(str[3]) << 8 | uint32_t(str[4])); // for emscripten
+                nvgFillColor(vg, RGBA(c << 1).toVGColor());
+                str += 5;
+                prev = str;
+            } else
+                ++str;
+        }
+        return nvgText(vg, x, y, prev, str);
+    }
+
+    float Render::textWidth(const char* str) {
+        if (!str) return 0.0f;
+        const char* prev(str);
+        float width(0);
+        while (*str) {
+            if (*str == 0x1b) {
+                if (prev != str) width += nvgTextBounds(vg, 0, 0, prev, str, nullptr);
+                str += 5;
+                prev = str;
+            } else
+                ++str;
+        }
+        return width + nvgTextBounds(vg, 0, 0, prev, str, nullptr);
     }
 
 }
