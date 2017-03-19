@@ -25,13 +25,13 @@ namespace webui {
     void Input::init() {
         auto* win(Context::render.getWin());
         glfwPollEvents();
-        glfwSetMouseButtonCallback(win, [](GLFWwindow* win, int button, int action, int mods) {
+        glfwSetMouseButtonCallback(win, [](GLFWwindow* win, int button, int action_, int mods) {
                 mouseButtonAction = true;
-                mouseButton = button;
-                mouseAction = action;
+                keyButton = button;
+                action = action_;
                 currentMods = mods;
                 updateCalled = true;
-                if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT && Input::mouseAction == GLFW_PRESS)
+                if (keyButton == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
                     cursorLeftPress = cursor;
                 updateModifications |= Context::app.update();
                 if (action == GLFW_RELEASE) {
@@ -39,8 +39,9 @@ namespace webui {
                     mouseButtonWidget = nullptr;
                 }
                 mouseButtonAction = false;
+                keyButton = 0;
             });
-        glfwSetKeyCallback(win, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        glfwSetKeyCallback(win, [](GLFWwindow* window, int key, int scancode, int action_, int mods) {
                 if (action == GLFW_PRESS) {
                     // exit
                     if (key == GLFW_KEY_ESCAPE && mods == GLFW_MOD_CONTROL)
@@ -49,6 +50,13 @@ namespace webui {
                     DIAG(else if (key == GLFW_KEY_ESCAPE && mods == (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT))
                              Context::app.dump());
                 }
+                keyboardAction = updateCalled = true;
+                keyButton = key;
+                action = action_;
+                currentMods = mods;
+                updateModifications |= Context::app.update();
+                keyboardAction = false;
+                keyButton = 0;
             });
         glfwSetScrollCallback(win, [](GLFWwindow* window, double xoff, double yoff) {
                 scroll.x = xoff;
@@ -92,7 +100,7 @@ namespace webui {
                 hoverWidget = Context::hoverWidget;        // activate hover widget if any
                 hoverCursor = cursor;
                 ret = true;                                // make hover appear immediately
-                //DIAG(LOG("hover: %p", Input::hoverWidget));
+                //DIAG(LOG("hover: %p", hoverWidget));
             }
         }
         updateCalled = updateModifications = false;
@@ -114,8 +122,8 @@ namespace webui {
     bool Input::updateModifications;
     bool Input::mouseButtonAction;
     bool Input::keyboardAction;
-    int Input::mouseButton;
-    int Input::mouseAction;
+    int Input::keyButton;
+    int Input::action;
     int Input::currentMods;
     Widget* Input::mouseButtonWidget;
 

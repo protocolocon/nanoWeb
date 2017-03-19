@@ -86,10 +86,10 @@ namespace webui {
         if (canFocus && Input::mouseButtonAction) {
             // this widget takes care of the event and does not propagate upwards
             Input::mouseButtonAction = false;
-            if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT) {
-                if (Input::mouseAction == GLFW_PRESS)
+            if (Input::keyButton == GLFW_MOUSE_BUTTON_LEFT) {
+                if (Input::action == GLFW_PRESS)
                     Input::mouseButtonWidget = this;
-                else if (Input::mouseAction == GLFW_RELEASE) {
+                else if (Input::action == GLFW_RELEASE) {
                     // it's a click only if the widget of press is the widget of release
                     if (Input::mouseButtonWidget == this)
                         Context::actions.execute(Context::app.getActionTable(actions).onClick, this);

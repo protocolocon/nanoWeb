@@ -70,17 +70,25 @@ namespace webui {
 
     bool WidgetLayout::input() {
         // scroll content
+        if (scrollable && Input::keyboardAction && (Input::action == GLFW_PRESS || Input::action == GLFW_REPEAT)) {
+            /**/ if (Input::keyButton == GLFW_KEY_HOME)      { positionTarget  = margin; return true; }
+            else if (Input::keyButton == GLFW_KEY_END)       { positionTarget  = -1e5f;  return true; }
+            else if (Input::keyButton == GLFW_KEY_PAGE_UP)   { positionTarget += 150;    return true; }
+            else if (Input::keyButton == GLFW_KEY_PAGE_DOWN) { positionTarget -= 150;    return true; }
+            else if (Input::keyButton == GLFW_KEY_UP)        { positionTarget +=  50;    return true; }
+            else if (Input::keyButton == GLFW_KEY_DOWN)      { positionTarget -=  50;    return true; }
+        }
         if (scrollable && Context::cursor == Cursor::Hand && Input::mouseButtonAction &&
-            Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT && Input::mouseAction == GLFW_PRESS) {
+            Input::keyButton == GLFW_MOUSE_BUTTON_LEFT && Input::action == GLFW_PRESS) {
             // this widge takes care of the event and does not propagate upwards
             Input::mouseButtonAction = false;
             Input::mouseButtonWidget = this;
             Input::cursorLeftPress[coord] -= positionTarget;
             scrolling = true;
         } else if (scrolling) {
-            if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT && Input::mouseAction == GLFW_RELEASE) {
+            if (Input::keyButton == GLFW_MOUSE_BUTTON_LEFT && Input::action == GLFW_RELEASE) {
                 scrolling = false;
-            } else if (Input::mouseAction) {
+            } else {
                 positionTarget = Input::cursor[coord] - Input::cursorLeftPress[coord];
                 return true;
             }
@@ -99,8 +107,8 @@ namespace webui {
                         break;
                     }
             }
-            if (Input::mouseButton == GLFW_MOUSE_BUTTON_LEFT &&
-                Input::mouseAction == GLFW_RELEASE && dragDrop) {
+            if (Input::keyButton == GLFW_MOUSE_BUTTON_LEFT &&
+                Input::action == GLFW_RELEASE && dragDrop) {
                 dragDrop = Input::mouseButtonWidget = nullptr;
                 return true;
             }

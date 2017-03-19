@@ -27,8 +27,8 @@ namespace webui {
         static bool updateModifications;   // if any app.update() returned true => app has to check for layout modifications
         static bool mouseButtonAction;     // if there are mouse button actions
         static bool keyboardAction;        // if there is keyboard action
-        static int mouseButton;            // glfw enum
-        static int mouseAction;            // glfw enum
+        static int keyButton;              // glfw enum (GLFW_KEY_ENTER, GLFW_MOUSE_BUTTON_LEFT...)
+        static int action;                 // glfw enum (GLFW_PRESS, GLFW_RELEASE, GLFW_REPEAT)
         static int currentMods;            // glfw
         static Widget* mouseButtonWidget;  // the widget taking the press action
 
