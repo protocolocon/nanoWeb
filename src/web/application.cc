@@ -647,10 +647,6 @@ namespace webui {
     }
 
     bool Application::executeQuery(StringId query, StringId widgetId) {
-        DIAG(if (widgets.find(widgetId) == widgets.end()) {
-                LOG("internal: cannot find widget %s to send query", Context::strMng.get(widgetId));
-                return false;
-            });
         new RequestXHR(widgetId, query);
         return true;
     }
