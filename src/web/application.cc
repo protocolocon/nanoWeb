@@ -76,7 +76,7 @@ namespace webui {
             auto* timer(timers.top());
             if (timer->nextExecutionMs  <= now) {
                 // execute
-                DIAG(LOG("executing timer: %s", Context::strMng.get(timer->getId())));
+                //DIAG(LOG("executing timer: %s", Context::strMng.get(timer->getId())));
                 dev |= timer->refreshTimer();
                 // take out from timers
                 timers.pop();
@@ -101,7 +101,9 @@ namespace webui {
 
     bool Application::update() {
         assert(root);
+        // recalculate cursor and hover
         Context::cursor = Cursor::Default;
+        Context::hoverWidget = nullptr;
         auto dev(root->update());
         setCursor(Context::cursor);
         return dev;

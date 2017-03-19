@@ -52,9 +52,6 @@ namespace webui {
         Context::renderVisibilityBox.pos.assign(0, 0);
         Context::renderVisibilityBox.size.assign(Context::render.getWidth(), Context::render.getHeight());
 
-        // reset hover
-        Context::hoverWidget = nullptr;
-
         // mouse cursor
         cursor = Input::cursor;
         hover = Input::hoverCursor;

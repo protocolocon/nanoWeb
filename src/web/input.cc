@@ -57,6 +57,8 @@ namespace webui {
                 updateModifications |= Context::app.update();
                 keyboardAction = false;
                 keyButton = 0;
+                // deactivate hover on any keystroke
+                if (hoverWidget) { hoverWidget = nullptr; updateModifications = true; }
             });
         glfwSetScrollCallback(win, [](GLFWwindow* window, double xoff, double yoff) {
                 scroll.x = xoff;
@@ -98,7 +100,7 @@ namespace webui {
             if (hoverTime && ctx.getTimeMs() > hoverTime) {
                 hoverTime = 0;                             // deactivate trigger
                 hoverWidget = Context::hoverWidget;        // activate hover widget if any
-                hoverCursor = cursor;
+                hoverCursor = cursor;                      // position of the mouse when hover triggered
                 ret = true;                                // make hover appear immediately
                 //DIAG(LOG("hover: %p", hoverWidget));
             }
