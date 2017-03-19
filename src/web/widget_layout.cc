@@ -93,7 +93,7 @@ namespace webui {
                 return true;
             }
         } else if (scrollable && Input::scroll[coord] != 0.0f) {
-            positionTarget += Input::scroll[coord] * 50;
+            positionTarget -= Input::scroll[coord] * 50;
             return true;
         }
 
