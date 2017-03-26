@@ -7,6 +7,7 @@
 */
 
 #include "compatibility.h"
+#include "widget.h"
 #include "context.h"
 #include "application.h"
 #include <stdlib.h>
@@ -42,7 +43,17 @@ namespace webui {
     }
 
     char* RequestXHR::buildQuery(char* buffer, int nBuffer) {
-        snprintf(buffer, nBuffer, "%s?id=%s", Context::strMng.get(req), Context::strMng.get(id));
+        int iBuffer(snprintf(buffer, nBuffer, "%s?id=%s", Context::strMng.get(req), Context::strMng.get(id)));
+
+        // get params from widget
+        const auto& widgets(Context::app.getWidgets());
+        auto it(widgets.find(id));
+        if (it != widgets.end()) {
+            char bufferParams[1024];
+            const char* params(it->second->queryParams(bufferParams, sizeof(bufferParams)));
+            if (params)
+                snprintf(buffer + iBuffer, nBuffer - iBuffer, "&%s", params);
+        }
         return buffer;
     }
 

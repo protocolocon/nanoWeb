@@ -113,6 +113,10 @@ namespace webui {
         return false;
     }
 
+    const char* Widget::queryParams(char* buffer, int nBuffer) {
+        return nullptr;
+    }
+
     const Property* Widget::getProp(StringId id) const {
         auto it(typeWidget->find(Identifier(id.getId())));
         if (it == typeWidget->end()) return nullptr;

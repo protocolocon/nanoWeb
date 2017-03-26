@@ -42,6 +42,7 @@ namespace webui {
         virtual bool input();                     // returns true if actions were executed (affecting application)
         virtual bool layout(const Box4f& box);    // returns true if stable
         virtual bool setData(int iTpl, int fTpl); // returns true if ok
+        virtual const char* queryParams(char* buffer, int nBuffer);
 
         // render utils
         int renderBase(int alphaMult);
