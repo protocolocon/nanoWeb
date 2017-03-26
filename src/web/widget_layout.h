@@ -25,8 +25,13 @@ namespace webui {
         virtual void render(int alphaMult) final override;
         virtual bool input() final override; // returns true if actions were executed (affecting application)
         virtual bool layout(const Box4f& box) final override; // returns true if stable
+        virtual const char* queryParams(char* buffer, int nBuffer) final override;
 
         float margin;         // amount of pixels before and after content
+
+        // incremental / cyclic
+        uint32_t cyclicSize;  // 0 means no incremental and no cyclic, otherwise, the circular buffer size as: 1 << cyclicSize
+        uint32_t cyclicLast;  // last update received
 
     private:
         bool scrolling;

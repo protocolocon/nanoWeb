@@ -39,6 +39,7 @@ namespace {
         "canFocus" _
         "active" _
         "draggable" _
+        "nodelete" _
         "color" _
         "onEnter" _
         "onLeave" _
@@ -57,6 +58,8 @@ namespace {
         "mouseY" _
         "hoverX" _
         "hoverY" _
+        "size" _
+        "last" _
         "ALast" _
 
         "propInt16" _

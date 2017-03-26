@@ -46,7 +46,8 @@ namespace webui {
         canFocus         = OffsetEnum(inside),
         active           = OffsetEnum(canFocus),
         draggable        = OffsetEnum(active),
-        color            = OffsetEnum(draggable),
+        nodelete         = OffsetEnum(draggable),
+        color            = OffsetEnum(nodelete),
         onEnter          = OffsetEnum(color),
         onLeave          = OffsetEnum(onEnter),
         onClick          = OffsetEnum(onLeave),
@@ -64,7 +65,9 @@ namespace webui {
         mouseY           = OffsetEnum(mouseX),
         hoverX           = OffsetEnum(mouseY),
         hoverY           = OffsetEnum(hoverX),
-        ALast            = OffsetEnum(hoverY),
+        size             = OffsetEnum(hoverY),
+        last             = OffsetEnum(size),
+        ALast            = OffsetEnum(last),
 
         // property attribute definition
         propInt16        = OffsetEnum(ALast),

@@ -33,6 +33,7 @@ namespace {
             { Identifier::canFocus,       PROP(Widget, byte0,      Bit,          1, 3, 1) },
             { Identifier::active,         PROP(Widget, byte0,      Bit,          1, 4, 1) },
             { Identifier::draggable,      PROP(Widget, byte0,      Bit,          1, 5, 1) },
+            { Identifier::nodelete,       PROP(Widget, byte0,      Bit,          1, 7, 1) }, // constStructural
             { Identifier::onEnter,        PROP(Widget, actions,    ActionTable,  4, 0, 1) },
             { Identifier::onLeave,        PROP(Widget, actions,    ActionTable,  4, 0, 1) },
             { Identifier::onClick,        PROP(Widget, actions,    ActionTable,  4, 0, 1) },

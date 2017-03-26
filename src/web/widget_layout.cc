@@ -25,6 +25,8 @@ namespace {
     TypeWidget widgetLayoutVerType = {
         Identifier::LayoutVer, sizeof(WidgetLayout), {
             { Identifier::margin,         PROP(WidgetLayout, margin,     Float,        4, 0, 0) },
+            { Identifier::size,           PROP(WidgetLayout, cyclicSize, Int32,        4, 0, 0) },
+            { Identifier::last,           PROP(WidgetLayout, cyclicLast, Int32,        4, 0, 0) },
         }
     };
 
@@ -33,7 +35,8 @@ namespace {
 namespace webui {
 
     WidgetLayout::WidgetLayout(Widget* parent, int coord):
-        Widget(parent), margin(0), scrolling(false), coord(coord), positionTarget(1e10f), dragDrop(nullptr) {
+        Widget(parent), margin(0), cyclicSize(0), cyclicLast(0),
+        scrolling(false), coord(coord), positionTarget(1e10f), dragDrop(nullptr) {
         typeWidget = coord ? &widgetLayoutVerType : &widgetLayoutHorType;
     }
 
@@ -53,7 +56,10 @@ namespace webui {
             Context::renderVisibilityBox.intersect(box);
 
             float maxCoord(Context::renderVisibilityBox.pos[coord] + Context::renderVisibilityBox.size[coord]);
-            for (auto* child: children) {
+            size_t cyclic(cyclicLast & ((1 << cyclicSize) - 1)/*mask*/); // cyclic arrangements
+            for (size_t i = 0; i < children.size(); i++, cyclic++) {
+                if (cyclic >= children.size()) cyclic -= children.size();
+                auto child(children[cyclic]);
                 if (child->box.pos[coord] >= maxCoord) break;
                 child->render(alphaMult);
             }
@@ -152,16 +158,21 @@ namespace webui {
             // use linear arrangement util
             LinearArrangement<float>::Elem elems[children.size() + 1];
             LinearArrangement<float> la(elems, boxAvail.pos[coord] + position);
-            for (auto child: children)
+            size_t cyclic(cyclicLast & ((1 << cyclicSize) - 1)/*mask*/); // cyclic arrangements
+            for (size_t i = 0; i < children.size(); i++, cyclic++) {
+                if (cyclic >= children.size()) cyclic -= children.size();
+                auto child(children[cyclic]);
                 if (child->isVisible())
                     la.add(child->box.size[coord], child->size[coord].get(boxAvail.size[coord]), child->size[coord].relative);
                 else
                     la.add(child->box.size[coord], 0, true);
+            }
             stable = la.calculate(boxAvail.size[coord]);
 
             float lastCoord(la.get(0));
-            for (size_t idx = 0; idx < children.size(); idx++) {
-                auto* child(children[idx]);
+            for (size_t idx = 0; idx < children.size(); idx++, cyclic++) {
+                if (cyclic >= children.size()) cyclic -= children.size();
+                auto* child(children[cyclic]);
                 Box4f b;
                 float newCoord = la.get(idx + 1);
                 // calculate children box
@@ -210,6 +221,14 @@ namespace webui {
                 Input::cursorLeftPress[coord] += dragDrop->box.pos[coord] - prevCoord;
         }
         return animeAlpha() && stable;
+    }
+
+    const char* WidgetLayout::queryParams(char* buffer, int nBuffer) {
+        if (cyclicSize) {
+            snprintf(buffer, nBuffer, "last=%d", cyclicLast);
+            return buffer;
+        }
+        return nullptr;
     }
 
 }
