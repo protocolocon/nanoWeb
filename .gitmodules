@@ -7,3 +7,6 @@
 [submodule "submodules/Catch"]
 	path = submodules/Catch
 	url = https://github.com/protocolocon/Catch.git
+[submodule "submodules/uWebSockets"]
+	path = submodules/uWebSockets
+	url = https://github.com/protocolocon/uWebSockets.git

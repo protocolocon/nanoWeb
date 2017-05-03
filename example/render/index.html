@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Render</title>
+    <style>
+      html, body {
+        width:  100%;
+        height: 100%;
+        margin: 0px;
+      }
+      body {
+        background-color: #ffffff;
+      }
+    </style>
+  </head>
+  <body onresize="resizeCanvas()">
+    <canvas id="canvas"></canvas>
+    <script type="text/javascript">
+      // export canvas
+      var canvas = document.getElementById("canvas");
+      var Module = {};
+      Module.canvas = canvas;
+      // canvas size
+      function resizeCanvas() {
+          canvas.width  = window.innerWidth;
+          canvas.height = window.innerHeight - 4;
+          javascriptCanvasResize = Module.cwrap('javascriptCanvasResize', ['number', 'number']);
+          javascriptCanvasResize(canvas.width, canvas.height);
+      }
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight - 4;
+      // fullscreen on double click
+      function keyListener(event) {
+          Module.requestFullScreen(false /* lock mouse */, true /* fullscreen */);
+      }
+      canvas.addEventListener('dblclick', keyListener);
+      // main
+      var script = document.createElement('script');
+      script.src = "render.js";
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>

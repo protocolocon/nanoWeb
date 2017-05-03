@@ -104,7 +104,7 @@ set(FLAGS "${FLAGS} -DSTBI_NO_SIMD")
 if(NANO_BROWSER)
   set(FLAGS "${FLAGS} -DSTBI_NO_STDIO")
   set(FLAGS "${FLAGS} -s EXPORTED_FUNCTIONS=\"['_javascriptCanvasResize','_main']\"")
-  set(FLAGS "${FLAGS} -s ELIMINATE_DUPLICATE_FUNCTIONS=1 -s NO_FILESYSTEM=1 -s USE_GLFW=3")
+  set(FLAGS "${FLAGS} -s ELIMINATE_DUPLICATE_FUNCTIONS=1 -s USE_GLFW=3")
   if(NANO_IOSTREAM)
     set(FLAGS "${FLAGS} -DNANO_IOSTREAM")
   endif()
@@ -115,10 +115,12 @@ if(NANO_BROWSER)
     set(FLAGS "${FLAGS} -DNVG_NO_STDIO")
   endif()
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s EMTERPRETIFY=0")
-  set(TARGET_NAME "nanoWeb.js")
+  set(NANOWEB_NAME "nanoWeb.js")
+  set(RENDER_NAME "render.js")
 else()
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lglfw -lGL -lcurl")
-  set(TARGET_NAME "nanoWeb")
+  set(NANOWEB_NAME "nanoWeb")
+  set(RENDER_NAME "render")
 endif()
 set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS} -std=c++14 -fno-exceptions -fno-rtti")
@@ -127,50 +129,11 @@ message("BUILD_TYPE:       ${CMAKE_BUILD_TYPE}")
 message("CXX_FLAGS:        ${CMAKE_CXX_FLAGS}")
 message("EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
 
-include_directories(
-  ${PROJECT_SOURCE_DIR}/submodules/nanovg/src)
-
-# nanoWeb library
-add_library(nanoweb
-  src/web/main.cc
-  src/web/util.cc
-  src/web/types.cc
-  src/web/input.cc
-  src/web/action.cc
-  src/web/widget.cc
-  src/web/render.cc
-  src/web/context.cc
-  src/web/ml_parser.cc
-  src/web/type_widget.cc
-  src/web/application.cc
-  src/web/widget_timer.cc
-  src/web/compatibility.cc
-  src/web/widget_layout.cc
-  src/web/string_manager.cc
-  src/web/reserved_words.cc
-  src/web/widget_template.cc
-  src/web/widget_application.cc
-  submodules/nanovg/src/nanovg.c)
-
-add_executable(${TARGET_NAME}
-  src/web/main.cc)
-
-target_link_libraries(${TARGET_NAME} nanoweb)
+add_subdirectory(src/web)
+add_subdirectory(src/render)
 
 # test framework
 if(NOT NANO_BROWSER)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -frtti")
-
-  include_directories(
-    ${PROJECT_SOURCE_DIR}/src/web
-    ${PROJECT_SOURCE_DIR}/submodules/Catch/include)
-
-  add_executable(test_nanoweb
-    test/test.cc
-    test/test_action.cc
-    test/test_parser.cc
-    test/test_application.cc)
-
-  target_link_libraries(test_nanoweb nanoweb)
-
+  add_subdirectory(src/server)
+  add_subdirectory(test)
 endif()
