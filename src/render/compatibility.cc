@@ -16,7 +16,7 @@ namespace {
 
     // server communication
     const char* serverIp = "127.0.0.1";
-    const char* serverPort = "9999";
+    const char* serverPort = "3000";
 
 }
 

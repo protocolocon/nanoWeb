@@ -7,6 +7,7 @@
 */
 
 #include "server.h"
+#include "uWS.h"
 #include <thread>
 #include <sstream>
 #include <fstream>
@@ -16,37 +17,66 @@ using namespace std;
 
 namespace server {
 
-    bool Server::run() {
+    Server::Server():
+        createAppHandler([](Application&) { return nullptr; }),
+        destroyAppHandler([](void*) { }) {
+    }
+
+    bool Server::run(uint16_t port, const string& docRoot) {
+        documentRoot = docRoot;
         uWS::Hub hub;
 
-        hub.onMessage([this](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode) {
-                cout << "M: {" << string(message, length) << "} " << opCode << endl;
-                //ws->send(message, length, opCode);
+        hub.onConnection([this](uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest req) {
+                auto* app(new Application(ws, *this));
+                app->userData = createAppHandler(*app);
+                ws->setUserData(app);
             });
 
-        hub.onError([](void *user) {
-                cout << "error" << endl;
+        hub.onDisconnection([this](uWS::WebSocket<uWS::SERVER>* ws, int code, char *message, size_t length) {
+                auto* app(reinterpret_cast<Application*>(ws->getUserData()));
+                destroyAppHandler(app->userData);
+                delete app;
             });
 
-        hub.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t length, size_t remainingBytes) {
+        hub.onError([this](void* user) {
+                auto* app(reinterpret_cast<Application*>(user));
+                destroyAppHandler(app->userData);
+                delete app;
+            });
+
+        hub.onMessage([this](uWS::WebSocket<uWS::SERVER>* ws, char* message, size_t length, uWS::OpCode opCode) {
+                auto* app(reinterpret_cast<Application*>(ws->getUserData()));
+                app->pushData(message, length);
+            });
+
+        hub.onHttpRequest([this](uWS::HttpResponse* res, uWS::HttpRequest req, char* data, size_t length, size_t remainingBytes) {
                 auto urlHeader(req.getUrl());
                 auto url(string(urlHeader.value, urlHeader.valueLength));
                 if (url == "/") url = "/index.html";
                 stringstream ss;
-                ss << ifstream("." + url).rdbuf();
+                ss << ifstream(documentRoot + url).rdbuf();
                 auto content(ss.str());
                 res->end(content.data(), content.size());
+                cout << "HTTP: " << url << endl;
             });
 
-        hub.listen(9999);
-        thread background([&]() { hub.run(); });
+        hub.listen(port);
+        thread background([&]() {
+                cout << "listening on: " << port << endl;
+                hub.run();
+            });
 
         while (true) {
-            this_thread::sleep_for(chrono::milliseconds(1000));
-            hub.getDefaultGroup<uWS::SERVER>().broadcast("Ping", 4, uWS::OpCode::BINARY);
+            this_thread::sleep_for(chrono::milliseconds(30000));
+            //hub.getDefaultGroup<uWS::SERVER>().broadcast("Ping", 4, uWS::OpCode::BINARY);
         }
 
         return true;
+    }
+
+    int Server::addFont(const string& fontPath) {
+        fonts.push_back(fontPath);
+        return fonts.size() - 1;
     }
 
 }

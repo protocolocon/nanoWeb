@@ -135,5 +135,7 @@ add_subdirectory(src/render)
 # test framework
 if(NOT NANO_BROWSER)
   add_subdirectory(src/server)
-  add_subdirectory(test)
+  add_subdirectory(example/application)
+  add_subdirectory(test/web)
+  add_subdirectory(test/render)
 endif()

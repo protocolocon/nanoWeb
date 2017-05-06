@@ -7,13 +7,25 @@ else()
     ${PROJECT_SOURCE_DIR}/submodules/uWebSockets/src)
 endif()
 
+include_directories(
+  ${PROJECT_SOURCE_DIR}/src/protocol
+  ${PROJECT_SOURCE_DIR}/submodules/nanovg/src)
+
 # render
-add_executable(${RENDER_NAME}
-  main.cc
+add_library(render_lib
+  font.cc
+  atlas.cc
+  vertex.cc
   render.cc
   context.cc
+  application.cc
   compatibility.cc)
 
 if(NOT NANO_BROWSER)
-  target_link_libraries(${RENDER_NAME} uwebsockets)
+  target_link_libraries(render_lib uwebsockets)
 endif()
+
+add_executable(${RENDER_NAME}
+  main.cc)
+
+target_link_libraries(${RENDER_NAME} render_lib)

@@ -1,7 +1,5 @@
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -lssl -lcrypto -lz")
-
-
 include_directories(
+  ${PROJECT_SOURCE_DIR}/src/protocol
   ${PROJECT_SOURCE_DIR}/submodules/uWebSockets/src)
 
 # µws
@@ -17,8 +15,8 @@ add_library(uwebsockets
   ${PROJECT_SOURCE_DIR}/submodules/uWebSockets/src/Epoll.cpp)
 
 # server
-add_executable(server
-  main.cc
-  server.cc)
+add_library(server_lib
+  server.cc
+  application.cc)
 
-target_link_libraries(server uwebsockets)
+target_link_libraries(server_lib uwebsockets)

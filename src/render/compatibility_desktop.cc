@@ -65,7 +65,8 @@ namespace render {
         hub.onError([](void *user) {
                 LOG("error");
                 this_thread::sleep_for(chrono::milliseconds(100));
-                hub.connect("ws://"s + serverIp + ':' + serverPort);
+                //hub.connect("ws://"s + serverIp + ':' + serverPort);
+                cancelMainLoop();
             });
         hub.onMessage([](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length, uWS::OpCode opCode) {
                 assert(opCode == uWS::OpCode::BINARY);
@@ -82,6 +83,8 @@ namespace render {
             loop();
             this_thread::sleep_for(chrono::milliseconds(10));
         };
+
+        networking.join();
     }
 
     void cancelMainLoop() {

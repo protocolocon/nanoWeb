@@ -6,12 +6,4 @@
     BSD-style license that can be found in the LICENSE.txt file.
 */
 
-#include "server.h"
-
-using namespace server;
-
-int main(int argc, char* argv[]) {
-    Server server;
-    server.run();
-    return 0;
-}
+#include "catch_with_main.hpp"

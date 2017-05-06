@@ -15,9 +15,16 @@ struct GLFWwindow;
 
 namespace render {
 
+    enum {
+        LOC_VERTEX  = 0,
+        LOC_TEXTURE = 1,
+        LOC_COLOR   = 2,
+    };
+
     class Render {
     public:
-        Render(): win(nullptr) { }
+        Render(): win(nullptr), shaderProgram(0) { }
+        DIAG(~Render());
         bool init();
         DIAG(void finish());
         void setWindowSize(int width, int height);
@@ -32,6 +39,9 @@ namespace render {
     private:
         GLFWwindow* win;
         webui::V2s windowSize;
+        GLuint shaderProgram;
+
+        bool shaderLoad(const char* vertexShader, const char* fragmentShader);
     };
 
 }

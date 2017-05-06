@@ -9,10 +9,15 @@
 #pragma once
 
 #include "compatibility.h"
+#include <vector>
 
 namespace render {
 
+    class Font;
+    class Atlas;
     class Render;
+    class Application;
+    class VertexBuffer;
 
     class Context {
     public:
@@ -35,6 +40,10 @@ namespace render {
     };
 
     extern Context ctx;
+    extern Atlas atlas;
     extern Render render;
+    extern Application app;
+    extern std::vector<Font> fonts;
+    extern VertexBuffer vertexBuffer;
 
 }

@@ -7,8 +7,14 @@
 */
 
 #include "context.h"
+#include "font.h"
+#include "atlas.h"
 #include "render.h"
+#include "vertex.h"
+#include "application.h"
 #include <cassert>
+
+using namespace std;
 
 namespace render {
 
@@ -22,6 +28,13 @@ namespace render {
                 assert(false && "cannot initialize render");
             }
         }
+
+        if (!vertexBuffer.init())
+            LOG("cannot initialize vertex buffer");
+
+        if (!atlas.init())
+            LOG("cannot initialize atlas");
+
         updateTime();
     }
 
@@ -29,23 +42,29 @@ namespace render {
         // calculate time / and frame offset
         updateTime();
 
-        if (!serverRefresh()) {
-            // server context is lost
-            LOG("server communication restarted");
-        }
-        if (serverWrite((uint8_t*)"test", 4) != 4)
-            LOG("cannot send");
-
-        int nBuffer;
-        uint8_t buffer[16];
-        if ((nBuffer = serverRead(buffer, sizeof(buffer))))
-            LOG("%.*s", nBuffer, buffer);
+        app.refresh();
 
         // render if required
         if (renderForced) {
             renderForced = false;
+
+            // test render code
+            vertexBuffer.clear();
+            auto *v(vertexBuffer.addTriangle());
+            v[0] = { { 0,    0    }, { 0x0000, 0x0000 }, RGBA(0x80000000) };
+            v[1] = { { 1024, 0    }, { 0xffff, 0x0000 }, RGBA(0x80000000) };
+            v[2] = { { 1024, 1024 }, { 0xffff, 0xffff }, RGBA(0x80000000) };
+            v = vertexBuffer.addTriangle();
+            v[0] = { { 0,    0    }, { 0x0000, 0x0000 }, RGBA(0x80000000) };
+            v[2] = { { 1024, 1024 }, { 0xffff, 0xffff }, RGBA(0x80000000) };
+            v[1] = { { 0,    1024 }, { 0x0000, 0xffff }, RGBA(0x80000000) };
+
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            vertexBuffer.render(GL_TRIANGLES);
             render.swapBuffers();
         }
+        renderForced = true;///// !!!!!!
     }
 
     void Context::resize(int width, int height) {
@@ -61,6 +80,10 @@ namespace render {
     }
 
     Context ctx;
+    Atlas atlas;
     Render render;
+    Application app;
+    vector<Font> fonts;
+    VertexBuffer vertexBuffer;
 
 }
