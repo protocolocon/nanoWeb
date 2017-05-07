@@ -79,10 +79,11 @@ namespace render {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // debug GL status
-        GLint caps[] = { GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST, GL_DITHER, GL_POLYGON_OFFSET_FILL, GL_SAMPLE_ALPHA_TO_COVERAGE,
-                         GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_STENCIL_TEST };
-        for (auto cap: caps)
-            LOG("Cap %x: %s", cap, glIsEnabled(cap) ? "on" : "off");
+        DBG(
+            GLint caps[] = { GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST, GL_DITHER, GL_POLYGON_OFFSET_FILL, GL_SAMPLE_ALPHA_TO_COVERAGE,
+                    GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_STENCIL_TEST };
+            for (auto cap: caps)
+                LOG("Cap %x: %s", cap, glIsEnabled(cap) ? "on" : "off"));
 
         return checkError();
     }

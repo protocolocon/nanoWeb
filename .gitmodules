@@ -10,3 +10,6 @@
 [submodule "submodules/uWebSockets"]
 	path = submodules/uWebSockets
 	url = https://github.com/protocolocon/uWebSockets.git
+[submodule "submodules/freetype2"]
+	path = submodules/freetype2
+	url = https://github.com/protocolocon/freetype2.git

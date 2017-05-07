@@ -11,8 +11,10 @@ include_directories(${PROJECT_SOURCE_DIR}/src/protocol)
 
 if(NANO_USE_FREETYPE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFT2_BUILD_LIBRARY")
-  include_directories(${PROJECT_SOURCE_DIR}/external/freetype-2.7.1/include)
-  set(FTDIR "${PROJECT_SOURCE_DIR}/external/freetype-2.7.1/src")
+  #include_directories(${PROJECT_SOURCE_DIR}/external/freetype-2.7.1/include)
+  #set(FTDIR "${PROJECT_SOURCE_DIR}/external/freetype-2.7.1/src")
+  include_directories(${PROJECT_SOURCE_DIR}/submodules/freetype2/freetype2/include)
+  set(FTDIR "${PROJECT_SOURCE_DIR}/submodules/freetype2/freetype2/src")
   add_library(freetype
     #${FTDIR}/autofit/autofit.c
     ${FTDIR}/base/ftbase.c
