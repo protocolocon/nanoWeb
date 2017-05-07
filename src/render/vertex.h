@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "vector.h"
 #include "compatibility.h"
 #include <vector>
 
@@ -40,7 +41,9 @@ namespace render {
         void finish();
 
         void clear();
+        int size() const { return vertices.size(); }
         Vertex* addTriangle(); // 3 vertices
+        void addQuad(const webui::Box4f& vertex, const webui::Box4us& tex, RGBA color = 0x80808080);
 
         bool render(int glMode);
 

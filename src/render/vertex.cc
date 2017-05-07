@@ -9,6 +9,8 @@
 #include "vertex.h"
 #include "render.h"
 
+using namespace webui;
+
 namespace render {
 
     VertexBuffer::VertexBuffer(): vbo(0) {
@@ -49,6 +51,15 @@ namespace render {
     Vertex* VertexBuffer::addTriangle() {
         vertices.resize(vertices.size() + 3);
         return &vertices.back() - 2;
+    }
+
+    void VertexBuffer::addQuad(const Box4f& vertex, const Box4us& tex, RGBA color) {
+        vertices.resize(vertices.size() + 6);
+        auto* v(&vertices.back() - 5);
+        v[0] = v[3] = { { vertex[0], vertex[1] }, { tex[0], tex[1] }, color };
+        v[2] = v[4] = { { vertex[2], vertex[3] }, { tex[2], tex[3] }, color };
+        v[1] =        { { vertex[2], vertex[1] }, { tex[2], tex[1] }, color };
+        v[5] =        { { vertex[0], vertex[3] }, { tex[0], tex[3] }, color };
     }
 
     bool VertexBuffer::render(int glMode) {

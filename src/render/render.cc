@@ -34,6 +34,11 @@ namespace render {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+        glfwWindowHint(GLFW_ALPHA_BITS, 0);   // remove alpha channel from window
+        glfwWindowHint(GLFW_DEPTH_BITS, 0);   // depth buffer not required
+        glfwWindowHint(GLFW_STENCIL_BITS, 0); // not using stencil either
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
         int width(defaultWidth());
         int height(defaultHeight());
@@ -72,7 +77,12 @@ namespace render {
         // enable alpha blending
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable(GL_CULL_FACE);
+
+        // debug GL status
+        GLint caps[] = { GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST, GL_DITHER, GL_POLYGON_OFFSET_FILL, GL_SAMPLE_ALPHA_TO_COVERAGE,
+                         GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_STENCIL_TEST };
+        for (auto cap: caps)
+            LOG("Cap %x: %s", cap, glIsEnabled(cap) ? "on" : "off");
 
         return checkError();
     }

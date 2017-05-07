@@ -13,6 +13,7 @@
 #include <cstring>
 
 using namespace std;
+using namespace webui;
 
 namespace {
 
@@ -41,13 +42,12 @@ namespace render {
     }
 
     bool Atlas::init() {
+        // reset atlas (required for webgl)
         RGBA* pixmap((RGBA*)malloc(Size * Size * sizeof(RGBA)));
         memset(pixmap, 0, Size * Size * sizeof(RGBA));
-
         glGenTextures(1, &glTextureId);
         glBindTexture(GL_TEXTURE_2D, glTextureId);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Size, Size, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixmap);
-
         free(pixmap);
 
 #if 1
@@ -70,14 +70,14 @@ namespace render {
 
     void Atlas::addBitmap(int iSprite, const uint8_t* bitmap) {
         const auto& sprite(sprites[iSprite]);
-        auto w(sprite.x[1] - sprite.x[0]);
-        auto h(sprite.y[1] - sprite.y[0]);
+        auto w(sprite.box.width());
+        auto h(sprite.box.height());
         auto s(w * h);
         RGBA* pixmap((RGBA*)malloc(s * sizeof(RGBA)));
         for (int i = 0; i < s; i++) pixmap[i].c = 0xffffff | uint32_t(bitmap[i]) << 24;
         
         glBindTexture(GL_TEXTURE_2D, glTextureId);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, sprite.x[0], sprite.y[0], w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixmap);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, sprite.box.x0, sprite.box.y0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixmap);
 
         // test
 #if 0
@@ -91,8 +91,8 @@ namespace render {
     int Atlas::add(int width, int height) {
         int index;
         if ((index = tryAdd(0, 0, width, height)) >= 0) return index;
-        for (auto& s: sprites) if ((index = tryAdd(s.x[1] + 1, s.y[0], width, height)) >= 0) return index;
-        for (auto& s: sprites) if ((index = tryAdd(s.x[0], s.y[1] + 1, width, height)) >= 0) return index;
+        for (auto& s: sprites) if ((index = tryAdd(s.box.x1 + 1, s.box.y0, width, height)) >= 0) return index;
+        for (auto& s: sprites) if ((index = tryAdd(s.box.x0, s.box.y1 + 1, width, height)) >= 0) return index;
         return -1;
     }
 
@@ -100,9 +100,9 @@ namespace render {
         assert(iSprite >= 0 && iSprite < int(sprites.size()));
         auto& sprite(sprites[iSprite]);
         // remove from cells
-        for (uint32_t i = sprite.y[0] >> CellRot; i <= uint32_t(sprite.y[1] >> CellRot); i++) {
+        for (uint32_t i = sprite.box.y0 >> CellRot; i <= uint32_t(sprite.box.y1 >> CellRot); i++) {
             auto* row(&cells[i * NCell]);
-            for (uint32_t j = sprite.x[0] >> CellRot; j <= uint32_t(sprite.x[1] >> CellRot); j++) {
+            for (uint32_t j = sprite.box.x0 >> CellRot; j <= uint32_t(sprite.box.x1 >> CellRot); j++) {
                 assert(row[j]);
                 uint32_t* prev(&row[j]);
                 auto* cell(&linkedCells[row[j]]);
@@ -135,8 +135,8 @@ namespace render {
                     auto* cell(&linkedCells[row[j]]);
                     while (true) {
                         auto& sprite(sprites[cell->sprite]);
-                        if (sprite.x[0] < xx && sprite.x[1] >= x &&
-                            sprite.y[0] < yy && sprite.y[1] >= y) return -1;
+                        if (sprite.box.x0 < xx && sprite.box.x1 >= x &&
+                            sprite.box.y0 < yy && sprite.box.y1 >= y) return -1;
                         if (!cell->next) break;
                         cell = &linkedCells[cell->next];
                     }
@@ -146,10 +146,10 @@ namespace render {
         // space found
         int iSprite(getFreeSprite());
         auto& sprite(sprites[iSprite]);
-        sprite.x[0] = x;
-        sprite.y[0] = y;
-        sprite.x[1] = xx - 1;
-        sprite.y[1] = yy - 1;
+        sprite.box.x0 = x;
+        sprite.box.y0 = y;
+        sprite.box.x1 = xx - 1;
+        sprite.box.y1 = yy - 1;
 
         // ok, so mark blocks
         for (uint32_t i = y >> CellRot; i <= (yy-1) >> CellRot; i++) {
@@ -206,7 +206,7 @@ namespace render {
     void Atlas::dump() const {
         LOG("Sprites:");
         for (auto& sprite: sprites)
-            LOG("  %5d:  %4d %4d  : %4d %4d", int(&sprite - sprites.data()), sprite.x[0], sprite.y[0], sprite.x[1], sprite.y[1]);
+            LOG("  %5d:  %4d %4d  : %4d %4d", int(&sprite - sprites.data()), sprite.box.x0, sprite.box.y0, sprite.box.x1, sprite.box.y1);
         LOG("Sprite holes:");
         for (auto& hole: spriteHoles)
             LOG("  %4d", hole);
@@ -266,6 +266,15 @@ namespace render {
             ok = false;
         }
         return ok;
+    }
+
+    Box4us Atlas::Sprite::tex() const {
+        Box4us tex;
+        tex[0] = box[0] << (16 - SizeRot);
+        tex[1] = box[1] << (16 - SizeRot);
+        tex[2] = box[2] << (16 - SizeRot);
+        tex[3] = box[3] << (16 - SizeRot);
+        return tex;
     }
 
 }

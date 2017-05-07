@@ -10,6 +10,7 @@
 
 #include <limits>
 #include <cstdlib>
+#include <cstdint>
 #include <algorithm>
 
 namespace webui {
@@ -148,20 +149,38 @@ namespace webui {
     using V2i = Vector<int>;
     using V2f = Vector<float>;
     using V2d = Vector<double>;
+    using V2us = Vector<uint16_t>;
 
     template <typename C>
     struct Box {
         Box() { }
+        Box(const Box& b): x0(b.x0), y0(b.y0), x1(b.x1), y1(b.y1) { }
         Box(C x, C y, C w, C h): pos(x, y), size(w, h) { }
+        Box& operator=(const Box& b) { x0 = b.x0; y0 = b.y0; x1 = b.x1; y1 = b.y1; return *this; }
         void intersect(Box b) {
             if (b.pos.x > pos.x) { size.x -= b.pos.x - pos.x; pos.x = b.pos.x; }
             if (b.pos.y > pos.y) { size.y -= b.pos.y - pos.y; pos.y = b.pos.y; }
             if (b.pos.x + b.size.x < pos.x + size.x) size.x = b.pos.x + b.size.x - pos.x;
             if (b.pos.y + b.size.y < pos.y + size.y) size.y = b.pos.y + b.size.y - pos.y;
         }
-        Vector<C> pos;
-        Vector<C> size;
+        inline bool operator==(const Box& b) const { return x0 == b.x0 && y0 == b.y0 && x1 == b.x1 && y1 == b.y1; }
+        inline C& operator[](int i) { return v[i]; }
+        inline C operator[](int i) const { return v[i]; }
+        inline C width() const { return x1 - x0; }
+        inline C height() const { return y1 - y0; }
+        union {
+            struct {
+                Vector<C> pos;
+                Vector<C> size;
+            };
+            struct {
+                C x0, y0, x1, y1;
+            };
+            C v[4];
+        };
     };
 
     using Box4f = Box<float>;
+    using Box4us = Box<uint16_t>;
+
 }

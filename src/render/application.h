@@ -24,9 +24,12 @@ namespace render {
         std::vector<uint8_t> delay;
 
         void doDelay();
+        bool doDelayIfFailed(bool delayed, bool ok);
         bool execute(bool delayed);     // execute command in transfer, returns false if failed
-        bool commandText(bool delayed); // false if failed
+        bool commandText(); // false if failed
         void commandFont();
+
+        void missingFont(int font);
     };
 
 }

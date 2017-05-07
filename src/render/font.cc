@@ -8,8 +8,8 @@
 
 #include "font.h"
 #include "atlas.h"
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "stb_truetype.h"
+#include "vertex.h"
+#include <cmath>
 
 using namespace std;
 
@@ -55,61 +55,63 @@ namespace {
 
 namespace render {
 
-    Font::Font() {
-        info.data = nullptr;
+    Font::Font(): initInProgress(false) {
     }
 
-    Font::~Font() {
-        free(info.data);
+    bool Font::initializationInProgress() {
+        return initInProgress;
     }
 
-    bool Font::init(uint8_t* font) {
-        DIAG(
-            for (int index = 0; ; index++) {
-                auto off(stbtt_GetFontOffsetForIndex(font, index));
-                if (off < 0) break;
-                LOG("Subfont %d at %d", index, off);
-            });
-
-        if (!stbtt_InitFont(&info, font, 0/*offset*/)) {
-            LOG("cannot initialize font");
-            free(font);
-            info.data = nullptr;
-            return false;
-        }
-        assert(info.data == font);
-        return true;
+    void Font::markInitInProgress() {
+        initInProgress = true;
     }
 
     void Font::text(const char* text, const char* textEnd, int height, Atlas& atlas, VertexBuffer& vertex) {
 	uint32_t utf8state = 0;
 	uint32_t codepoint;
+        float x(40.f), y(40.f);
+        float scale(scaleHeight(height));
         for (; text < textEnd; ++text) {
             if (fons__decutf8(&utf8state, &codepoint, *(const uint8_t*)text)) continue;
+
+            // get index
             auto codepointIt(codepointIndex.find(codepoint));
             if (codepointIt == codepointIndex.end()) {
-                int index(stbtt_FindGlyphIndex(&info, codepoint));
+                int index(glyphIndex(codepoint));
                 codepointIt = codepointIndex.insert(make_pair(codepoint, index)).first;
             }
 
-            // get font metrics
-            int ix0, iy0, ix1, iy1;
-            float scale(STBTT_POINT_SIZE(stbtt_ScaleForPixelHeight(&info, height)));
-            stbtt_GetGlyphBitmapBox(&info, codepointIt->second, scale, scale, &ix0, &iy0, &ix1, &iy1);
-
-            LOG("Codepoint=%x Index=%d H=%d -> %.3f", codepoint, codepointIt->second, height, scale);
-
             // get glyph
-            auto glyphIt(glyphs.find(Glyph(codepointIt->second, height)));
-            if (glyphIt == glyphs.end()) {
-                // need to create
-                LOG("Glyph=(%d %d)", ix1 - ix0, iy1 - iy0);
-                glyphIt = glyphs.insert(Glyph(codepointIt->second, height, atlas.add(ix1 - ix0, iy1 - iy0))).first;
-                auto* bitmap(stbtt_GetGlyphBitmap(&info, scale, scale, codepointIt->second, 0, 0, 0, 0));
-                atlas.addBitmap(glyphIt->atlas, bitmap);
-                free(bitmap);
-            }
+            auto glyphIt(getGlyph(codepointIt->second, height, atlas));
+
+            // add vertices
+            const auto& sprite(atlas.get(glyphIt->atlas));
+            vertex.addQuad({
+                    x + glyphIt->x0,                             y + glyphIt->y0,
+                    x + glyphIt->x0 + float(sprite.box.width()), y + glyphIt->y0 + float(sprite.box.height()) }, sprite.tex(), RGBA(0x80000000));
+
+            // advance to next position
+            x += floorf(float(glyphIt->advance) * scale + 0.5f);
         }
+    }
+
+    unordered_set<Font::Glyph, Font::Glyph, Font::Glyph>::iterator Font::getGlyph(int index, int height, Atlas& atlas) {
+        auto glyphIt(glyphs.find(Glyph(index, height)));
+        if (glyphIt == glyphs.end()) {
+            // get font metrics
+            int advance, lsb, ix0, iy0, ix1, iy1;
+            glyphParams(index, height, &advance, &lsb, &ix0, &iy0, &ix1, &iy1);
+
+            // need to create
+            LOG("Index=%d H=%d Glyph=(%d %d) %d %d %d %d", index, height, ix1 - ix0, iy1 - iy0, advance, ix0, iy0, lsb);
+            glyphIt = glyphs.insert(Glyph(index, height, atlas.add(ix1 - ix0, iy1 - iy0), advance, ix0, iy0)).first;
+            atlas.addBitmap(glyphIt->atlas, glyphBitmap());
+        }
+        return glyphIt;
+    }
+
+    void Font::populate(int height, Atlas& atlas) {
+        for (int index = 0; index < 2000; index++) getGlyph(index, height, atlas);
     }
 
 }

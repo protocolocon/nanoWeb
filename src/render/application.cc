@@ -66,7 +66,7 @@ namespace render {
     bool Application::execute(bool delayed) {
         ProtoBase* base(reinterpret_cast<ProtoBase*>(transferBuffer.data()));
         switch (base->com) {
-        case Command::Text: return commandText(delayed);
+        case Command::Text: return doDelayIfFailed(delayed, commandText());
         case Command::Font: commandFont(); return true;
         }
         return false;
@@ -82,23 +82,21 @@ namespace render {
         LOG("delayed command: %d -> %d bytes", int(base->com), base->size);
     }
 
-    bool Application::commandText(bool delayed) {
+    bool Application::doDelayIfFailed(bool delayed, bool ok) {
+        if (!delayed && !ok) doDelay();
+        return ok;
+    }
+
+    bool Application::commandText() {
         Text* text(reinterpret_cast<Text*>(transferBuffer.data()));
-        LOG("text %d %d %f %f %.*s", text->font, text->fontSize, text->x, text->y, int(transferBuffer.size() - sizeof(Text)), text->str);
         if (text->font >= int(fonts.size()) || !fonts[text->font].initialized()) {
-            LOG("resource font %d missing", text->font);
-            if (!delayed) {
-                // ask for resource
-                FontResource font(text->font, 0);
-                if (serverWrite((uint8_t*)&font, sizeof(font)) != sizeof(font)) LOG("cannot send");
-                // delay command
-                doDelay();
-            }
+            missingFont(text->font);
             return false;
         } else {
+            LOG("text %d %d %f %f %.*s", text->font, text->fontSize, text->x, text->y, int(transferBuffer.size() - sizeof(Text)), text->str);
             fonts[text->font].text(text->str, text->str + transferBuffer.size() - sizeof(Text), text->fontSize, atlas, vertexBuffer);
+            return true;
         }
-        return true;
     }
 
     void Application::commandFont() {
@@ -109,10 +107,24 @@ namespace render {
         uint8_t* fft((uint8_t*)malloc(size));
         memcpy(fft, font->data, size);
         // initialize font
-        if (font->font >= int(fonts.size())) fonts.resize(font->font + 1);
-        if (!fonts[font->font].init(fft))
+        assert(font->font < int(fonts.size()) && fonts[font->font].initializationInProgress());
+        if (!fonts[font->font].init(fft, int(transferBuffer.size() - sizeof(FontResource))))
             LOG("error: cannot initialize font: %d", font->font);
         assert(font->font < int(fonts.size()) && fonts[font->font].initialized());
+        //fonts[font->font].populate(32, atlas);
+    }
+
+    void Application::missingFont(int fontIdx) {
+        if (fontIdx >= int(fonts.size())) fonts.resize(fontIdx + 1);
+        if (!fonts[fontIdx].initializationInProgress()) {
+            LOG("resource font %d missing", fontIdx);
+            // ask for resource
+            FontResource font(fontIdx, 0);
+            if (serverWrite((uint8_t*)&font, sizeof(font)) != sizeof(font))
+                LOG("cannot send");
+            else
+                fonts[fontIdx].markInitInProgress();
+        }
     }
 
 }

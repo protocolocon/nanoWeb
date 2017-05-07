@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "vector.h"
 #include "compatibility.h"
 #include <vector>
 
@@ -22,10 +23,11 @@ namespace render {
 
         // sprite storage
         struct Sprite {
-            uint16_t x[2], y[2];
+            webui::Box4us box; // x0, y0, x1, y1
             Sprite() { }
-            Sprite(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1): x{x0, x1}, y{y0, y1} { }
-            inline bool operator==(const Sprite& s) const { return x[0] == s.x[0] && x[1] == s.x[1] && y[0] == s.y[0] && y[1] == s.y[1]; }
+            Sprite(const webui::Box4us& box): box(box) { }
+            webui::Box4us tex() const;
+            inline bool operator==(const Sprite& s) const { return box == s.box; }
         };
 
         inline const Sprite& get(int i) const { return sprites.at(i); }

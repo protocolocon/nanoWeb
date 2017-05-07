@@ -15,9 +15,9 @@ using namespace render;
 TEST_CASE("basic", "[atlas]") {
     Atlas atlas;
     CHECK(atlas.add(10, 10) == 0);
-    CHECK(atlas.get(0) == Atlas::Sprite(0, 0, 10, 10));
+    CHECK(atlas.get(0) == Atlas::Sprite({ 0, 0, 10, 10 }));
     CHECK(atlas.add(10, 10) == 1);
-    CHECK(atlas.get(1) == Atlas::Sprite(11, 0, 21, 10));
+    CHECK(atlas.get(1) == Atlas::Sprite({ 11, 0, 21, 10 }));
     atlas.remove(0);
     atlas.remove(1);
     CHECK(atlas.check());

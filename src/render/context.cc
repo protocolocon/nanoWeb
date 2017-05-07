@@ -35,6 +35,10 @@ namespace render {
         if (!atlas.init())
             LOG("cannot initialize atlas");
 
+        // test render code (atlas)
+        vertexBuffer.clear();
+        vertexBuffer.addQuad({ 0.f, 0.f, 1024.f, 1024.f }, { 0, 0, 0xffff, 0xffff }, RGBA(0x80000000));
+
         updateTime();
     }
 
@@ -48,21 +52,11 @@ namespace render {
         if (renderForced) {
             renderForced = false;
 
-            // test render code
-            vertexBuffer.clear();
-            auto *v(vertexBuffer.addTriangle());
-            v[0] = { { 0,    0    }, { 0x0000, 0x0000 }, RGBA(0x80000000) };
-            v[1] = { { 1024, 0    }, { 0xffff, 0x0000 }, RGBA(0x80000000) };
-            v[2] = { { 1024, 1024 }, { 0xffff, 0xffff }, RGBA(0x80000000) };
-            v = vertexBuffer.addTriangle();
-            v[0] = { { 0,    0    }, { 0x0000, 0x0000 }, RGBA(0x80000000) };
-            v[2] = { { 1024, 1024 }, { 0xffff, 0xffff }, RGBA(0x80000000) };
-            v[1] = { { 0,    1024 }, { 0x0000, 0xffff }, RGBA(0x80000000) };
-
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
             vertexBuffer.render(GL_TRIANGLES);
             render.swapBuffers();
+            //LOG("vertices: %d", vertexBuffer.size());
         }
         renderForced = true;///// !!!!!!
     }
