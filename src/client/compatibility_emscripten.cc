@@ -80,6 +80,7 @@ namespace render {
             } else if (fcntl(serverSock, F_SETFL, O_NONBLOCK) < 0 ||
                 (connect(serverSock, (struct sockaddr *)&addr, sizeof(addr)) < 0 && errno != EINPROGRESS)) {
                 close(serverSock);
+                serverSock = -1;
                 LOG("cannot connect non-blocking socket");
             }
             return false;

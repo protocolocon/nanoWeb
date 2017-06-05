@@ -7,6 +7,7 @@
 */
 
 #include "server.h"
+#include "protocol.h"
 #include "uWS.h"
 #include <thread>
 #include <sstream>
@@ -14,11 +15,12 @@
 #include <iostream>
 
 using namespace std;
+using namespace prot;
 
 namespace server {
 
     Server::Server():
-        createAppHandler([](Application&) { return nullptr; }),
+        createAppHandler([](ServerApp&) { return nullptr; }),
         destroyAppHandler([](void*) { }) {
     }
 
@@ -27,25 +29,29 @@ namespace server {
         uWS::Hub hub;
 
         hub.onConnection([this](uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest req) {
-                auto* app(new Application(ws, *this));
+                // indicate new session created to client
+                Chunk chunk(ChunkType::Session, 0);
+                ws->send((const char*)&chunk, sizeof(chunk), uWS::OpCode::BINARY);
+                // create session
+                auto* app(new ServerApp(ws, *this));
                 app->userData = createAppHandler(*app);
                 ws->setUserData(app);
             });
 
         hub.onDisconnection([this](uWS::WebSocket<uWS::SERVER>* ws, int code, char *message, size_t length) {
-                auto* app(reinterpret_cast<Application*>(ws->getUserData()));
+                auto* app(reinterpret_cast<ServerApp*>(ws->getUserData()));
                 destroyAppHandler(app->userData);
                 delete app;
             });
 
         hub.onError([this](void* user) {
-                auto* app(reinterpret_cast<Application*>(user));
+                auto* app(reinterpret_cast<ServerApp*>(user));
                 destroyAppHandler(app->userData);
                 delete app;
             });
 
         hub.onMessage([this](uWS::WebSocket<uWS::SERVER>* ws, char* message, size_t length, uWS::OpCode opCode) {
-                auto* app(reinterpret_cast<Application*>(ws->getUserData()));
+                auto* app(reinterpret_cast<ServerApp*>(ws->getUserData()));
                 app->pushData(message, length);
             });
 
@@ -72,11 +78,6 @@ namespace server {
         }
 
         return true;
-    }
-
-    int Server::addFont(const string& fontPath) {
-        fonts.push_back(fontPath);
-        return fonts.size() - 1;
     }
 
 }

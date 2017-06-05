@@ -54,7 +54,6 @@ namespace render {
 
         // server communication
         hub.onConnection([](uWS::WebSocket<uWS::CLIENT> *ws, uWS::HttpRequest req) {
-                LOG("connected");
                 serverRestarted = true;
             });
         hub.onDisconnection([](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
@@ -63,7 +62,7 @@ namespace render {
                 hub.connect("ws://"s + serverIp + ':' + serverPort);
             });
         hub.onError([](void *user) {
-                LOG("error");
+                LOG("communication error");
                 this_thread::sleep_for(chrono::milliseconds(100));
                 //hub.connect("ws://"s + serverIp + ':' + serverPort);
                 cancelMainLoop();

@@ -13,63 +13,54 @@
 
 namespace prot {
 
-    struct ApplicationBase {
+    struct ChunkedCommunicationBase {
         uint32_t transferProgress;
         std::vector<uint8_t> transferBuffer;
 
-        inline ApplicationBase();
+        inline ChunkedCommunicationBase();
         inline void reset();
         inline void expectTransfer(int size);
         inline void continueTransfer(int size);
     };
 
-    enum class Command: uint32_t {
-        Text,
-        Font,
+    enum class ChunkType: uint32_t {
+        Application,
+        Session,
+        FontResource,
     };
 
-    struct ProtoBase {
-        ProtoBase(Command com, uint32_t size): com(com), size(size) { }
-        Command com;
-        uint32_t size;
+    struct Chunk {
+        Chunk(ChunkType type, uint32_t size): type(type), size(size) { }
+        ChunkType type;
+        uint32_t size; // of next chunk
     };
 
-    struct Text: ProtoBase {
-        Text(int font, int fontSize, float x, float y, int strSize):
-            ProtoBase(Command::Text, sizeof(Text) - sizeof(ProtoBase) + strSize),
-            font(font), fontSize(fontSize), x(x), y(y) { }
+
+    // Out of band messages
+    struct FontResource: Chunk {
+        FontResource(int font, uint32_t size): Chunk(ChunkType::FontResource, sizeof(FontResource) - sizeof(Chunk) + size), font(font) { }
+        uint32_t getSize() const { return size - sizeof(FontResource) + sizeof(Chunk); }
         int font;
-        int fontSize;
-        float x;
-        float y;
-        char str[];
-    };
-
-    struct FontResource: ProtoBase {
-        FontResource(int font, int dataSize):
-            ProtoBase(Command::Font, sizeof(FontResource) - sizeof(ProtoBase) + dataSize),
-            font(font) { }
-        int font;
-        uint8_t data[];
+        char data[];
     };
 
 
-    // Application base implementation
-    ApplicationBase::ApplicationBase() {
+    // Chunked communication base base implementation
+    ChunkedCommunicationBase::ChunkedCommunicationBase() {
         transferBuffer.reserve(1 << 16);
         reset();
     }
 
-    void ApplicationBase::reset() {
-        expectTransfer(sizeof(ProtoBase));
+    void ChunkedCommunicationBase::reset() {
+        expectTransfer(sizeof(Chunk));
     }
 
-    void ApplicationBase::expectTransfer(int size) {
+    void ChunkedCommunicationBase::expectTransfer(int size) {
         transferProgress = 0;
         transferBuffer.resize(size);
     }
 
-    void ApplicationBase::continueTransfer(int size) {
+    void ChunkedCommunicationBase::continueTransfer(int size) {
         transferBuffer.resize(size);
     }
 

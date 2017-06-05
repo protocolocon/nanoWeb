@@ -55,17 +55,6 @@ namespace {
 
 namespace render {
 
-    Font::Font(): initInProgress(false) {
-    }
-
-    bool Font::initializationInProgress() {
-        return initInProgress;
-    }
-
-    void Font::markInitInProgress() {
-        initInProgress = true;
-    }
-
     void Font::text(const char* text, const char* textEnd, int height, Atlas& atlas, VertexBuffer& vertex) {
 	uint32_t utf8state = 0;
 	uint32_t codepoint;

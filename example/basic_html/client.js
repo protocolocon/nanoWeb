@@ -1,0 +1,1 @@
+../../build_release_web/example/basic/client_basic.js

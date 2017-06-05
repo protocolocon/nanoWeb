@@ -9,7 +9,7 @@
 #include "render.h"
 #include <cassert>
 
-#define DBG(x, ...)          x, ##__VA_ARGS__
+#define DBG(x, ...)          //x, ##__VA_ARGS__
 
 namespace render {
 

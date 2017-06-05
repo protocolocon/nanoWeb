@@ -17,6 +17,6 @@ add_library(uwebsockets
 # server
 add_library(server_lib
   server.cc
-  application.cc)
+  server_app.cc)
 
 target_link_libraries(server_lib uwebsockets)

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "application.h"
+#include "server_app.h"
 #include <string>
 #include <cstdint>
 #include <functional>
@@ -19,23 +19,19 @@ namespace server {
     public:
         Server();
 
-        // add resources
-        int addFont(const std::string& fontPath);
-
-        void onCreateApp(std::function<void*(Application&)> h) { createAppHandler = h; }
+        void onCreateApp(std::function<void*(ServerApp&)> h) { createAppHandler = h; }
         void onDestroyApp(std::function<void(void* user)> h) { destroyAppHandler = h; }
 
         bool run(uint16_t port, const std::string& documentRoot = ".");
 
-    private:
-        friend class Application;
+        const std::string& getDocumentRoot() const { return documentRoot; }
 
+    private:
         // resources
         std::string documentRoot;
-        std::vector<std::string> fonts;
 
         // hooks
-        std::function<void*(Application&)> createAppHandler;
+        std::function<void*(ServerApp&)> createAppHandler;
         std::function<void(void*)> destroyAppHandler;
     };
 

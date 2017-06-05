@@ -20,10 +20,6 @@ namespace render {
 
     class Font: public FontLL {
     public:
-        Font();
-        bool initializationInProgress();
-        void markInitInProgress();
-
         void text(const char* text, const char* textEnd, int height, Atlas& atlas, VertexBuffer& vertex);
 
         // debug, populate all font codepoints in atlas
@@ -44,7 +40,6 @@ namespace render {
             bool operator()(const Glyph& g0, const Glyph& g1) const { return g0.index == g1.index && g0.height == g1.height; }
         };
         std::unordered_set<Glyph, Glyph, Glyph> glyphs;
-        bool initInProgress;
 
         std::unordered_set<Glyph, Glyph, Glyph>::iterator getGlyph(int index, int height, Atlas& atlas);
     };
